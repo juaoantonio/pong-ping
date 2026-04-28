@@ -6,4 +6,7 @@ export default defineConfig({
     path: "prisma/migrations",
     seed: "node prisma/seed.mjs",
   },
+  datasource: {
+    url: "file:./dev.db",
+  },
 });
