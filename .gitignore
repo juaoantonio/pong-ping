@@ -3,6 +3,9 @@
 # Jetbrains
 .idea
 
+# Prisma generated client
+generated
+
 # dependencies
 /node_modules
 /.pnp
