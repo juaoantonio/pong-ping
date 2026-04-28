@@ -1,11 +1,16 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import type { ReactNode } from "react";
 import { useTransition } from "react";
 import { logout } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 
-export function LogoutButton() {
+type LogoutButtonProps = {
+  icon?: ReactNode;
+};
+
+export function LogoutButton({ icon }: LogoutButtonProps) {
   const [loading, startTransition] = useTransition();
 
   return (
@@ -18,7 +23,7 @@ export function LogoutButton() {
       }}
       variant="outline"
     >
-      <LogOut className="size-4" />
+      {icon ?? <LogOut className="size-4" />}
       {loading ? "Saindo..." : "Sair"}
     </Button>
   );

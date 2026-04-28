@@ -1,6 +1,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogoutButton } from "@/components/logout-button";
+import { Badge } from "@/components/ui/badge";
+import { MainNav } from "@/components/main-nav";
 import { requireAuth } from "@/lib/auth";
 
 export default async function DashboardPage() {
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
               <h1 className="text-2xl font-semibold">{user.name ?? "Usuario"}</h1>
             </div>
           </div>
-          <LogoutButton />
+          <MainNav role={user.role} />
         </header>
 
         <Card>
@@ -29,6 +30,10 @@ export default async function DashboardPage() {
             <div className="flex flex-col gap-1 rounded-md bg-muted p-4 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-muted-foreground">Email</span>
               <span className="font-medium">{user.email}</span>
+            </div>
+            <div className="flex flex-col gap-1 rounded-md bg-muted p-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-muted-foreground">Role</span>
+              <Badge variant="outline">{user.role}</Badge>
             </div>
           </CardContent>
         </Card>
