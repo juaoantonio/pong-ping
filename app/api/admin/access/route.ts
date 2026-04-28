@@ -16,11 +16,23 @@ type AccessRequestBody = {
   type?: unknown;
 };
 
-async function requireAdmin() {
+async function requireAdmin(): Promise<
+  | {
+      actor: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
+      response?: never;
+    }
+  | { actor: null; response: NextResponse }
+> {
   const actor = await getCurrentUser();
 
   if (!actor) {
-    return { actor: null, response: NextResponse.json({ error: "Nao autenticado." }, { status: 401 }) };
+    return {
+      actor: null,
+      response: NextResponse.json(
+        { error: "Nao autenticado." },
+        { status: 401 },
+      ),
+    };
   }
 
   if (!canAccessAdmin(actor.role)) {
@@ -35,10 +47,13 @@ async function requireAdmin() {
       },
     });
 
-    return { actor: null, response: NextResponse.json({ error: "Sem permissao." }, { status: 403 }) };
+    return {
+      actor: null,
+      response: NextResponse.json({ error: "Sem permissao." }, { status: 403 }),
+    };
   }
 
-  return { actor, response: null };
+  return { actor };
 }
 
 export async function GET() {
@@ -83,7 +98,9 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const body = (await request.json().catch(() => null)) as AccessRequestBody | null;
+  const body = (await request
+    .json()
+    .catch(() => null)) as AccessRequestBody | null;
 
   if (body?.type === "invite") {
     const token = createInvitationToken();
@@ -104,7 +121,10 @@ export async function POST(request: Request) {
       data: {
         actorUserId: actor.id,
         action: "invitation_created",
-        metadata: { invitationId: invitation.id, expiresAt: invitation.expiresAt },
+        metadata: {
+          invitationId: invitation.id,
+          expiresAt: invitation.expiresAt,
+        },
       },
     });
 
@@ -119,13 +139,19 @@ export async function POST(request: Request) {
   }
 
   if (typeof body?.email !== "string") {
-    return NextResponse.json({ error: "Informe um email valido." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Informe um email valido." },
+      { status: 400 },
+    );
   }
 
   const email = normalizeEmail(body.email);
 
   if (!isValidEmail(email)) {
-    return NextResponse.json({ error: "Informe um email valido." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Informe um email valido." },
+      { status: 400 },
+    );
   }
 
   const allowedEmail = await allowEmail(email, actor.id);
