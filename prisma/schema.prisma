@@ -13,25 +13,28 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  googleId      String?   @unique
-  avatarUrl     String?
-  role          Role      @default(user)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  auditLogs     AuditLog[] @relation("ActorAuditLogs")
-  allowedEmails AllowedEmail[] @relation("AllowedEmailCreator")
-  invitations   AuthInvitation[] @relation("AuthInvitationCreator")
-  playerRanking PlayerRanking?
-  matchesCreated Match[] @relation("MatchCreator")
-  matchesWon     Match[] @relation("MatchWinner")
-  matchesLost    Match[] @relation("MatchLoser")
+  id                    String                    @id @default(cuid())
+  name                  String?
+  email                 String?                   @unique
+  emailVerified         DateTime?
+  image                 String?
+  googleId              String?                   @unique
+  avatarUrl             String?
+  role                  Role                      @default(user)
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @default(now()) @updatedAt
+  accounts              Account[]
+  sessions              Session[]
+  auditLogs             AuditLog[]                @relation("ActorAuditLogs")
+  allowedEmails         AllowedEmail[]            @relation("AllowedEmailCreator")
+  invitations           AuthInvitation[]          @relation("AuthInvitationCreator")
+  playerRanking         PlayerRanking?
+  matchesCreated        Match[]                   @relation("MatchCreator")
+  matchesWon            Match[]                   @relation("MatchWinner")
+  matchesLost           Match[]                   @relation("MatchLoser")
+  roomMemberships       PingPongRoomParticipant[]
+  roomInvitationsCreated PingPongRoomInvitation[] @relation("RoomInvitationCreator")
+  roomsCreated          PingPongRoom[]            @relation("RoomCreator")
 }
 
 model Account {
@@ -140,6 +143,7 @@ model RankLevel {
 
 model Match {
   id           String   @id @default(cuid())
+  roomId       String?
   winnerUserId String
   loserUserId  String
   createdById  String
@@ -151,12 +155,59 @@ model Match {
   createdAt    DateTime @default(now())
   finishedAt   DateTime @default(now())
 
-  winner   User @relation("MatchWinner", fields: [winnerUserId], references: [id], onDelete: Restrict)
-  loser    User @relation("MatchLoser", fields: [loserUserId], references: [id], onDelete: Restrict)
-  createdBy User @relation("MatchCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  room      PingPongRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  winner    User          @relation("MatchWinner", fields: [winnerUserId], references: [id], onDelete: Restrict)
+  loser     User          @relation("MatchLoser", fields: [loserUserId], references: [id], onDelete: Restrict)
+  createdBy User          @relation("MatchCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
+  @@index([roomId])
   @@index([winnerUserId])
   @@index([loserUserId])
   @@index([createdById])
   @@index([createdAt])
+}
+
+model PingPongRoom {
+  id          String                   @id @default(cuid())
+  name        String
+  createdById String
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @default(now()) @updatedAt
+  createdBy   User                     @relation("RoomCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  invitations PingPongRoomInvitation[]
+  matches     Match[]
+  participants PingPongRoomParticipant[]
+
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model PingPongRoomParticipant {
+  id            String       @id @default(cuid())
+  roomId        String
+  userId        String
+  queuePosition Int
+  joinedAt      DateTime     @default(now())
+  room          PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@unique([roomId, queuePosition])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model PingPongRoomInvitation {
+  id         String       @id @default(cuid())
+  roomId     String
+  token      String       @unique
+  createdById String
+  expiresAt  DateTime
+  createdAt  DateTime     @default(now())
+  room       PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy  User         @relation("RoomInvitationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([roomId])
+  @@index([createdById])
+  @@index([expiresAt])
 }

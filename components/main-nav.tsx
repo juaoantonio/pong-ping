@@ -21,9 +21,9 @@ export function MainNav({ role }: MainNavProps) {
             <Shield className="size-4" />
             Admin
           </Link>
-          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/admin/matches">
+          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/admin/superadmin">
             <Trophy className="size-4" />
-            Partidas
+            Salas
           </Link>
         </>
       ) : null}

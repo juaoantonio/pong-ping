@@ -3,5 +3,5 @@ import { requireRole } from "@/lib/auth/session";
 
 export default async function AdminPage() {
   await requireRole("admin");
-  redirect("/admin/users");
+  redirect("/admin/superadmin");
 }
