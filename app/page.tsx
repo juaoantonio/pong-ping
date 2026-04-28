@@ -57,8 +57,6 @@ export default async function Home() {
     }),
   ]);
 
-  console.log("rankLevels", rankLevels);
-  console.log("users", users);
 
   const rankings = users
     .map((user) => {
