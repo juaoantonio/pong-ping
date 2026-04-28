@@ -8,6 +8,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   oauth_failed: "Nao foi possivel concluir o login com Google.",
   oauth_state_invalid: "A sessao de login expirou. Tente novamente.",
   access_denied: "O acesso pelo Google foi cancelado.",
+  email_not_allowed: "Este email ainda nao foi autorizado por um admin.",
 };
 
 type LoginPageProps = {

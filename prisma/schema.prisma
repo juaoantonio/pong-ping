@@ -7,14 +7,28 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+enum Role {
+  superadmin
+  admin
+  user
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  googleId      String?   @unique
+  avatarUrl     String?
+  role          Role      @default(user)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
   accounts      Account[]
   sessions      Session[]
+  auditLogs     AuditLog[] @relation("ActorAuditLogs")
+  allowedEmails AllowedEmail[] @relation("AllowedEmailCreator")
+  invitations   AuthInvitation[] @relation("AuthInvitationCreator")
 }
 
 model Account {
@@ -51,4 +65,47 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String?
+  targetUserId String?
+  action       String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  actor User? @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([targetUserId])
+  @@index([action])
+}
+
+model AllowedEmail {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  createdBy User? @relation("AllowedEmailCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdByUserId])
+}
+
+model AuthInvitation {
+  id              String    @id @default(cuid())
+  tokenHash       String    @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  usedByEmail     String?
+  createdByUserId String?
+  createdAt       DateTime  @default(now())
+
+  createdBy User? @relation("AuthInvitationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdByUserId])
+  @@index([expiresAt])
+  @@index([usedAt])
 }
