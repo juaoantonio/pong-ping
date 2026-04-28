@@ -20,6 +20,12 @@ type UserOption = {
   avatarUrl: string | null;
 };
 
+type UserIdentityLike = {
+  name: string | null;
+  email: string | null;
+  avatarUrl?: string | null;
+};
+
 type RoomParticipant = {
   id: string;
   queuePosition: number;
@@ -89,7 +95,7 @@ async function readApiError(response: Response) {
   return body?.error ?? "Nao foi possivel concluir a acao.";
 }
 
-function userLabel(user: UserOption | RoomParticipant["user"] | RoomMatch["winner"]) {
+function userLabel(user: UserIdentityLike) {
   return user.name ?? user.email ?? "Usuario";
 }
 
@@ -97,14 +103,14 @@ function UserIdentity({
   user,
   emphasis = false,
 }: {
-  user: UserOption | RoomParticipant["user"] | RoomMatch["winner"];
+  user: UserIdentityLike;
   emphasis?: boolean;
 }) {
   const label = userLabel(user);
 
   return (
     <div className="flex items-center gap-3">
-      <Avatar className="size-9" name={label} src={user.avatarUrl} />
+      <Avatar className="size-9" name={label} src={user.avatarUrl ?? null} />
       <div className="min-w-0">
         <p className={emphasis ? "truncate font-semibold" : "truncate font-medium"}>{label}</p>
         {user.email ? <p className="truncate text-xs text-muted-foreground">{user.email}</p> : null}
