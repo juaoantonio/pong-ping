@@ -81,6 +81,7 @@ type RoomSummary = {
 };
 
 type RoomAdminProps = {
+  canManage?: boolean;
   rooms: RoomSummary[];
   users: UserOption[];
 };
@@ -133,7 +134,7 @@ function buildInvitationLink(token: string) {
   return `${window.location.origin}/room-invite/${token}`;
 }
 
-export function RoomAdmin({ rooms, users }: RoomAdminProps) {
+export function RoomAdmin({ canManage = true, rooms, users }: RoomAdminProps) {
   const router = useRouter();
   const [roomName, setRoomName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Record<string, string>>({});
@@ -283,33 +284,39 @@ export function RoomAdmin({ rooms, users }: RoomAdminProps) {
         )
       ) : null}
 
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle>Nova sala</CardTitle>
-          <CardDescription>
-            O criador pode montar a fila manualmente ou compartilhar um convite para autoentrada.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" onSubmit={createRoom}>
-            <label className="grid gap-2 text-sm font-medium" htmlFor="room-name">
-              Nome da sala
-              <Input
-                disabled={isPending}
-                id="room-name"
-                onChange={(event) => setRoomName(event.target.value)}
-                placeholder="Mesa principal"
-                required
-                value={roomName}
-              />
-            </label>
-            <Button disabled={isPending || !roomName.trim()} type="submit">
-              {busyKey === "create-room" ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-              Criar sala
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {canManage ? (
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle>Nova sala</CardTitle>
+            <CardDescription>
+              O criador pode montar a fila manualmente ou compartilhar um convite para autoentrada.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" onSubmit={createRoom}>
+              <label className="grid gap-2 text-sm font-medium" htmlFor="room-name">
+                Nome da sala
+                <Input
+                  disabled={isPending}
+                  id="room-name"
+                  onChange={(event) => setRoomName(event.target.value)}
+                  placeholder="Mesa principal"
+                  required
+                  value={roomName}
+                />
+              </label>
+              <Button disabled={isPending || !roomName.trim()} type="submit">
+                {busyKey === "create-room" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                Criar sala
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {rooms.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
@@ -341,94 +348,96 @@ export function RoomAdmin({ rooms, users }: RoomAdminProps) {
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-5">
-                  <div className="grid gap-3">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <Users className="size-4" />
-                      Entrada de jogadores
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-                      <label className="grid gap-2 text-sm font-medium">
-                        Adicionar manualmente
-                        <Select
-                          disabled={isPending || availableUsers.length === 0}
-                          onChange={(event) =>
-                            setSelectedUsers((current) => ({ ...current, [room.id]: event.target.value }))
-                          }
-                          value={selectedUsers[room.id] ?? ""}
-                        >
-                          <option value="">Selecione um jogador</option>
-                          {availableUsers.map((user) => (
-                            <option key={user.id} value={user.id}>
-                              {userLabel(user)}
-                            </option>
-                          ))}
-                        </Select>
-                      </label>
-                      <Button
-                        className="self-end"
-                        disabled={isPending || availableUsers.length === 0}
-                        onClick={() => addParticipant(room.id)}
-                        type="button"
-                        variant="outline"
-                      >
-                        {busyKey === `add-participant:${room.id}` ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <UserPlus className="size-4" />
-                        )}
-                        Adicionar
-                      </Button>
-                    </div>
-
-                    <div className="rounded-lg border border-border bg-muted/20 p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="grid gap-1">
-                          <p className="text-sm font-medium">Convite por link</p>
-                          <p className="text-xs text-muted-foreground">
-                            O link permite que qualquer usuario autenticado entre no fim da fila.
-                          </p>
-                        </div>
+                  {canManage ? (
+                    <div className="grid gap-3">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Users className="size-4" />
+                        Entrada de jogadores
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                        <label className="grid gap-2 text-sm font-medium">
+                          Adicionar manualmente
+                          <Select
+                            disabled={isPending || availableUsers.length === 0}
+                            onChange={(event) =>
+                              setSelectedUsers((current) => ({ ...current, [room.id]: event.target.value }))
+                            }
+                            value={selectedUsers[room.id] ?? ""}
+                          >
+                            <option value="">Selecione um jogador</option>
+                            {availableUsers.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {userLabel(user)}
+                              </option>
+                            ))}
+                          </Select>
+                        </label>
                         <Button
-                          disabled={isPending}
-                          onClick={() => createInvitation(room.id)}
+                          className="self-end"
+                          disabled={isPending || availableUsers.length === 0}
+                          onClick={() => addParticipant(room.id)}
                           type="button"
                           variant="outline"
                         >
-                          {busyKey === `create-invite:${room.id}` ? (
+                          {busyKey === `add-participant:${room.id}` ? (
                             <Loader2 className="size-4 animate-spin" />
                           ) : (
-                            <Plus className="size-4" />
+                            <UserPlus className="size-4" />
                           )}
-                          Gerar convite
+                          Adicionar
                         </Button>
                       </div>
 
-                      {invitationLink ? (
-                        <div className="mt-3 grid gap-2">
-                          <div className="rounded-md border border-border bg-background px-3 py-2 text-sm break-all">
-                            {invitationLink}
+                      <div className="rounded-lg border border-border bg-muted/20 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="grid gap-1">
+                            <p className="text-sm font-medium">Convite por link</p>
+                            <p className="text-xs text-muted-foreground">
+                              O link permite que qualquer usuario autenticado entre no fim da fila.
+                            </p>
                           </div>
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                            <span>Expira em {formatDateTime(room.currentInvitation!.expiresAt)}</span>
-                            <Button
-                              disabled={isPending}
-                              onClick={() => copyInvitation(room.currentInvitation!.token)}
-                              size="sm"
-                              type="button"
-                              variant="ghost"
-                            >
-                              {busyKey === `copy-invite:${room.currentInvitation!.token}` ? (
-                                <Loader2 className="size-4 animate-spin" />
-                              ) : (
-                                <Copy className="size-4" />
-                              )}
-                              Copiar link
-                            </Button>
-                          </div>
+                          <Button
+                            disabled={isPending}
+                            onClick={() => createInvitation(room.id)}
+                            type="button"
+                            variant="outline"
+                          >
+                            {busyKey === `create-invite:${room.id}` ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Plus className="size-4" />
+                            )}
+                            Gerar convite
+                          </Button>
                         </div>
-                      ) : null}
+
+                        {invitationLink ? (
+                          <div className="mt-3 grid gap-2">
+                            <div className="rounded-md border border-border bg-background px-3 py-2 text-sm break-all">
+                              {invitationLink}
+                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                              <span>Expira em {formatDateTime(room.currentInvitation!.expiresAt)}</span>
+                              <Button
+                                disabled={isPending}
+                                onClick={() => copyInvitation(room.currentInvitation!.token)}
+                                size="sm"
+                                type="button"
+                                variant="ghost"
+                              >
+                                {busyKey === `copy-invite:${room.currentInvitation!.token}` ? (
+                                  <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                  <Copy className="size-4" />
+                                )}
+                                Copiar link
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
 
                   <div className="grid gap-3">
                     <div className="flex items-center gap-2 text-sm font-medium">
@@ -451,19 +460,21 @@ export function RoomAdmin({ rooms, users }: RoomAdminProps) {
                                   </div>
                                   <Badge>{participant.user.playerRanking?.elo ?? 1000} Elo</Badge>
                                 </div>
-                                <Button
-                                  className="mt-4 w-full"
-                                  disabled={isPending}
-                                  onClick={() => finishMatch(room.id, participant.id, playerName)}
-                                  type="button"
-                                >
-                                  {busyKey === `finish-match:${room.id}:${participant.id}` ? (
-                                    <Loader2 className="size-4 animate-spin" />
-                                  ) : (
-                                    <Trophy className="size-4" />
-                                  )}
-                                  Marcar {playerName} como vencedor
-                                </Button>
+                                {canManage ? (
+                                  <Button
+                                    className="mt-4 w-full"
+                                    disabled={isPending}
+                                    onClick={() => finishMatch(room.id, participant.id, playerName)}
+                                    type="button"
+                                  >
+                                    {busyKey === `finish-match:${room.id}:${participant.id}` ? (
+                                      <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                      <Trophy className="size-4" />
+                                    )}
+                                    Marcar {playerName} como vencedor
+                                  </Button>
+                                ) : null}
                               </div>
                             );
                           })}
@@ -490,7 +501,7 @@ export function RoomAdmin({ rooms, users }: RoomAdminProps) {
                           <TableHead>Jogador</TableHead>
                           <TableHead>Elo</TableHead>
                           <TableHead>Entrada</TableHead>
-                          <TableHead className="text-right">Acao</TableHead>
+                          {canManage ? <TableHead className="text-right">Acao</TableHead> : null}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -502,20 +513,22 @@ export function RoomAdmin({ rooms, users }: RoomAdminProps) {
                             </TableCell>
                             <TableCell>{participant.user.playerRanking?.elo ?? 1000}</TableCell>
                             <TableCell className="text-muted-foreground">{formatDateTime(participant.joinedAt)}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                disabled={isPending}
-                                onClick={() => removeParticipant(room.id, participant.id)}
-                                size="sm"
-                                type="button"
-                                variant="ghost"
-                              >
-                                {busyKey === `remove-participant:${participant.id}` ? (
-                                  <Loader2 className="size-4 animate-spin" />
-                                ) : null}
-                                Remover
-                              </Button>
-                            </TableCell>
+                            {canManage ? (
+                              <TableCell className="text-right">
+                                <Button
+                                  disabled={isPending}
+                                  onClick={() => removeParticipant(room.id, participant.id)}
+                                  size="sm"
+                                  type="button"
+                                  variant="ghost"
+                                >
+                                  {busyKey === `remove-participant:${participant.id}` ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                  ) : null}
+                                  Remover
+                                </Button>
+                              </TableCell>
+                            ) : null}
                           </TableRow>
                         ))}
                       </TableBody>
