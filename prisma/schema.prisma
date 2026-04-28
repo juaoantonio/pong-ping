@@ -29,6 +29,10 @@ model User {
   auditLogs     AuditLog[] @relation("ActorAuditLogs")
   allowedEmails AllowedEmail[] @relation("AllowedEmailCreator")
   invitations   AuthInvitation[] @relation("AuthInvitationCreator")
+  playerRanking PlayerRanking?
+  matchesCreated Match[] @relation("MatchCreator")
+  matchesWon     Match[] @relation("MatchWinner")
+  matchesLost    Match[] @relation("MatchLoser")
 }
 
 model Account {
@@ -108,4 +112,52 @@ model AuthInvitation {
   @@index([createdByUserId])
   @@index([expiresAt])
   @@index([usedAt])
+}
+
+model PlayerRanking {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  elo           Int      @default(1000)
+  wins          Int      @default(0)
+  total_matches Int      @default(0)
+  winRate       Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([elo])
+  @@index([wins])
+}
+
+model RankLevel {
+  id         String @id @default(cuid())
+  name       String @unique
+  minElo     Int    @unique
+  iconImgKey String
+
+  @@index([minElo])
+}
+
+model Match {
+  id           String   @id @default(cuid())
+  winnerUserId String
+  loserUserId  String
+  createdById  String
+  kFactor      Int
+  winnerOldElo Int
+  winnerNewElo Int
+  loserOldElo  Int
+  loserNewElo  Int
+  createdAt    DateTime @default(now())
+  finishedAt   DateTime @default(now())
+
+  winner   User @relation("MatchWinner", fields: [winnerUserId], references: [id], onDelete: Restrict)
+  loser    User @relation("MatchLoser", fields: [loserUserId], references: [id], onDelete: Restrict)
+  createdBy User @relation("MatchCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([winnerUserId])
+  @@index([loserUserId])
+  @@index([createdById])
+  @@index([createdAt])
 }

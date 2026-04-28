@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Shield, UserRound } from "lucide-react";
+import { LogOut, Shield, Trophy, UserRound } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
 import { buttonVariants } from "@/components/ui/button";
 import { canAccessAdmin, type Role } from "@/lib/auth/roles";
@@ -16,10 +16,16 @@ export function MainNav({ role }: MainNavProps) {
         Dashboard
       </Link>
       {canAccessAdmin(role) ? (
-        <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/admin/users">
-          <Shield className="size-4" />
-          Admin
-        </Link>
+        <>
+          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/admin/users">
+            <Shield className="size-4" />
+            Admin
+          </Link>
+          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/admin/matches">
+            <Trophy className="size-4" />
+            Partidas
+          </Link>
+        </>
       ) : null}
       <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/dashboard">
         <UserRound className="size-4" />
