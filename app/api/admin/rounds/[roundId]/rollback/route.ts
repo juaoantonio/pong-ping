@@ -3,22 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { isSuperAdmin } from "@/lib/auth/roles";
 import { getCurrentUser } from "@/lib/auth/session";
 import { rollbackRoomMatch } from "@/lib/rooms/service";
+import { deny } from "@/app/api/admin/rooms/route";
 
 type RouteContext = {
   params: Promise<{
     roundId: string;
   }>;
 };
-
-async function deny(actorUserId: string | null, reason: string) {
-  await prisma.auditLog.create({
-    data: {
-      actorUserId,
-      action: "admin_action_denied",
-      metadata: { reason },
-    },
-  });
-}
 
 export async function POST(_request: Request, context: RouteContext) {
   const actor = await getCurrentUser();

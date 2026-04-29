@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, Swords, UsersRound } from "lucide-react";
+import { ArrowRight, Swords, Trash, UsersRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +14,9 @@ import {
 } from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
 import type { RoomListItem, UserIdentityLike } from "@/components/rooms/types";
-import { Fragment } from "react";
+import { Fragment, startTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 function userLabel(user: UserIdentityLike) {
   return user.name ?? user.email ?? "Usuario";
@@ -25,7 +29,38 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+async function readApiError(response: Response) {
+  const body = (await response.json().catch(() => null)) as {
+    error?: string;
+  } | null;
+  return body?.error ?? "Nao foi possivel processar a requisicao.";
+}
+
 export function RoomList({ rooms }: { rooms: RoomListItem[] }) {
+  const router = useRouter();
+
+  function deleteRoom(roomId: string) {
+    const userConfirmed = window.confirm(
+      "Tem certeza que deseja remover esta sala?",
+    );
+    if (!userConfirmed) {
+      return;
+    }
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/rooms/${roomId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        toast.error(await readApiError(response));
+        return;
+      }
+
+      router.refresh();
+    });
+  }
+
   if (rooms.length === 0) {
     return (
       <div className="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground">
@@ -100,12 +135,21 @@ export function RoomList({ rooms }: { rooms: RoomListItem[] }) {
               </div>
             ) : null}
 
-            <Button asChild className="justify-self-start" variant="outline">
-              <Link href={`/rooms/${room.id}`}>
-                Abrir sala
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild className="justify-self-start" variant="outline">
+                <Link href={`/rooms/${room.id}`}>
+                  Abrir sala
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button
+                className="justify-self-start"
+                onClick={() => deleteRoom(room.id)}
+              >
+                <Trash className="size-4" />
+                Remover sala
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ))}

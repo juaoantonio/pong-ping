@@ -7,6 +7,7 @@ import {
   isInvitationExpiryPreset,
 } from "@/lib/invitations";
 import { createRoomInvitationToken } from "@/lib/rooms/invitations";
+import { deny } from "@/app/api/admin/rooms/route";
 
 type RoomInvitationRequestBody = {
   expiresIn?: unknown;
@@ -18,16 +19,6 @@ type RouteContext = {
     roomId: string;
   }>;
 };
-
-async function deny(actorUserId: string | null, reason: string) {
-  await prisma.auditLog.create({
-    data: {
-      actorUserId,
-      action: "admin_action_denied",
-      metadata: { reason },
-    },
-  });
-}
 
 export async function POST(request: Request, context: RouteContext) {
   const actor = await getCurrentUser();
@@ -48,7 +39,10 @@ export async function POST(request: Request, context: RouteContext) {
   });
 
   if (!room) {
-    return NextResponse.json({ error: "Sala nao encontrada." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Sala nao encontrada." },
+      { status: 404 },
+    );
   }
 
   const body = (await request

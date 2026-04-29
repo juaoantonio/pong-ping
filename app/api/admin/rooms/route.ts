@@ -7,7 +7,7 @@ type CreateRoomBody = {
   name?: unknown;
 };
 
-async function deny(actorUserId: string | null, reason: string) {
+export async function deny(actorUserId: string | null, reason: string) {
   await prisma.auditLog.create({
     data: {
       actorUserId,
@@ -29,11 +29,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sem permissao." }, { status: 403 });
   }
 
-  const body = (await request.json().catch(() => null)) as CreateRoomBody | null;
+  const body = (await request
+    .json()
+    .catch(() => null)) as CreateRoomBody | null;
   const name = typeof body?.name === "string" ? body.name.trim() : "";
 
   if (!name) {
-    return NextResponse.json({ error: "Informe o nome da sala." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Informe o nome da sala." },
+      { status: 400 },
+    );
   }
 
   const room = await prisma.$transaction(async (tx) => {

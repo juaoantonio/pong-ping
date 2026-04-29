@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { removeParticipantFromRoom } from "@/lib/rooms/service";
+import { deny } from "@/app/api/admin/rooms/route";
 
 type RouteContext = {
   params: Promise<{
@@ -10,16 +11,6 @@ type RouteContext = {
     participantId: string;
   }>;
 };
-
-async function deny(actorUserId: string | null, reason: string) {
-  await prisma.auditLog.create({
-    data: {
-      actorUserId,
-      action: "admin_action_denied",
-      metadata: { reason },
-    },
-  });
-}
 
 export async function DELETE(_: Request, context: RouteContext) {
   const actor = await getCurrentUser();
@@ -55,7 +46,10 @@ export async function DELETE(_: Request, context: RouteContext) {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "participant_not_found") {
-      return NextResponse.json({ error: "Participante nao encontrado." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Participante nao encontrado." },
+        { status: 404 },
+      );
     }
 
     throw error;

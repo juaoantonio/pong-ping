@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 export async function getRoomListItems() {
   const rooms = await prisma.pingPongRoom.findMany({
     orderBy: { createdAt: "desc" },
+    where: {
+      deletedAt: null,
+    },
     select: {
       id: true,
       name: true,
