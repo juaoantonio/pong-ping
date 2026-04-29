@@ -49,6 +49,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
+import {
+  INVITATION_EXPIRY_PRESETS,
+  type InvitationExpiryPreset,
+} from "@/lib/invitations";
 import type {
   RoomParticipant,
   RoomSummary,
@@ -141,6 +145,9 @@ function RoundPlayer({
 export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
   const router = useRouter();
   const [selectedUser, setSelectedUser] = useState("");
+  const [inviteExpiresIn, setInviteExpiresIn] =
+    useState<InvitationExpiryPreset>("7d");
+  const [inviteUseMode, setInviteUseMode] = useState("reusable");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -191,6 +198,11 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
     runAction("create-invite", async () => {
       const response = await fetch(`/api/admin/rooms/${room.id}/invites`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expiresIn: inviteExpiresIn,
+          oneTimeUse: inviteUseMode === "one-time",
+        }),
       });
 
       if (!response.ok) {
@@ -482,12 +494,49 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
 
             <Separator />
 
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_minmax(140px,170px)_auto] md:items-end">
               <div>
                 <p className="text-sm font-medium">Convite por link</p>
                 <p className="text-sm text-muted-foreground">
                   Qualquer usuario autenticado com o link entra no fim da fila.
                 </p>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="room-invite-expires-in">Validade</Label>
+                <Select
+                  disabled={isPending}
+                  onValueChange={(value: InvitationExpiryPreset) =>
+                    setInviteExpiresIn(value)
+                  }
+                  value={inviteExpiresIn}
+                >
+                  <SelectTrigger id="room-invite-expires-in">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INVITATION_EXPIRY_PRESETS.map((preset) => (
+                      <SelectItem key={preset.value} value={preset.value}>
+                        {preset.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="room-invite-use-mode">Uso</Label>
+                <Select
+                  disabled={isPending}
+                  onValueChange={setInviteUseMode}
+                  value={inviteUseMode}
+                >
+                  <SelectTrigger id="room-invite-use-mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="one-time">Uso unico</SelectItem>
+                    <SelectItem value="reusable">Reutilizavel</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button
                 disabled={isPending}
@@ -511,6 +560,11 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
                 <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
                   <span>
                     Expira em {formatDateTime(room.currentInvitation.expiresAt)}
+                  </span>
+                  <span>
+                    {room.currentInvitation.oneTimeUse
+                      ? "Uso unico"
+                      : "Reutilizavel"}
                   </span>
                   <Button
                     disabled={isPending}

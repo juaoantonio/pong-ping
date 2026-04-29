@@ -2,8 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
-
-const INVITE_TTL_MINUTES = 15;
+export { getInvitationExpiry } from "@/lib/invitations";
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -19,10 +18,6 @@ export function hashInvitationToken(token: string) {
 
 export function createInvitationToken() {
   return randomBytes(32).toString("base64url");
-}
-
-export function getInvitationExpiry() {
-  return new Date(Date.now() + INVITE_TTL_MINUTES * 60 * 1000);
 }
 
 export async function isEmailAllowed(email?: string | null) {

@@ -109,6 +109,7 @@ model AuthInvitation {
   id              String    @id @default(cuid())
   tokenHash       String    @unique
   expiresAt       DateTime
+  oneTimeUse      Boolean   @default(true)
   usedAt          DateTime?
   usedByEmail     String?
   createdByUserId String?
@@ -210,16 +211,20 @@ model PingPongRoomParticipant {
 }
 
 model PingPongRoomInvitation {
-  id          String       @id @default(cuid())
-  roomId      String
-  token       String       @unique
-  createdById String
-  expiresAt   DateTime
-  createdAt   DateTime     @default(now())
-  room        PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  createdBy   User         @relation("RoomInvitationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  id           String       @id @default(cuid())
+  roomId       String
+  token        String       @unique
+  createdById  String
+  expiresAt    DateTime
+  oneTimeUse   Boolean      @default(false)
+  usedAt       DateTime?
+  usedByUserId String?
+  createdAt    DateTime     @default(now())
+  room         PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("RoomInvitationCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
   @@index([roomId])
   @@index([createdById])
   @@index([expiresAt])
+  @@index([usedAt])
 }

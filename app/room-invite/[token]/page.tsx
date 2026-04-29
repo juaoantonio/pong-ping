@@ -15,11 +15,14 @@ type RoomInvitePageProps = {
 export default async function RoomInvitePage({ params }: RoomInvitePageProps) {
   const currentUser = await requireAuth();
   const { token } = await params;
+  const now = new Date();
 
   const invitation = await prisma.pingPongRoomInvitation.findUnique({
     where: { token },
     select: {
       expiresAt: true,
+      oneTimeUse: true,
+      usedAt: true,
       room: {
         select: {
           id: true,
@@ -35,7 +38,11 @@ export default async function RoomInvitePage({ params }: RoomInvitePageProps) {
     },
   });
 
-  if (!invitation) {
+  if (
+    !invitation ||
+    invitation.expiresAt < now ||
+    (invitation.oneTimeUse && invitation.usedAt)
+  ) {
     notFound();
   }
 

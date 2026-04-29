@@ -54,6 +54,7 @@ export type RoomSummary = {
     id: string;
     token: string;
     expiresAt: string;
+    oneTimeUse: boolean;
   } | null;
   participants: RoomParticipant[];
   recentMatches: RoomMatch[];

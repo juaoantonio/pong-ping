@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 
 export default async function AdminAccessPage() {
   await requireRole("admin");
+  const now = new Date();
   const [allowedEmails, invitations] = await Promise.all([
     prisma.allowedEmail.findMany({
       orderBy: { createdAt: "desc" },
@@ -32,6 +33,7 @@ export default async function AdminAccessPage() {
       select: {
         id: true,
         expiresAt: true,
+        oneTimeUse: true,
         usedAt: true,
         usedByEmail: true,
         createdAt: true,
@@ -64,10 +66,18 @@ export default async function AdminAccessPage() {
             invitations={invitations.map((invitation) => ({
               id: invitation.id,
               expiresAt: invitation.expiresAt.toISOString(),
+              oneTimeUse: invitation.oneTimeUse,
               usedAt: invitation.usedAt?.toISOString() ?? null,
               usedByEmail: invitation.usedByEmail,
               createdAt: invitation.createdAt.toISOString(),
-              status: invitation.usedAt ? "Usado" : "Disponivel",
+              status:
+                invitation.expiresAt <= now
+                  ? "Expirado"
+                  : invitation.oneTimeUse && invitation.usedAt
+                    ? "Usado"
+                    : invitation.oneTimeUse
+                      ? "Disponivel"
+                      : "Reutilizavel",
             }))}
           />
         </CardContent>

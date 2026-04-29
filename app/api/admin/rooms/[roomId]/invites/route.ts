@@ -2,7 +2,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/auth/roles";
+import {
+  getInvitationExpiry,
+  isInvitationExpiryPreset,
+} from "@/lib/invitations";
 import { createRoomInvitationToken } from "@/lib/rooms/invitations";
+
+type RoomInvitationRequestBody = {
+  expiresIn?: unknown;
+  oneTimeUse?: unknown;
+};
 
 type RouteContext = {
   params: Promise<{
@@ -20,7 +29,7 @@ async function deny(actorUserId: string | null, reason: string) {
   });
 }
 
-export async function POST(_: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   const actor = await getCurrentUser();
 
   if (!actor) {
@@ -42,8 +51,22 @@ export async function POST(_: Request, context: RouteContext) {
     return NextResponse.json({ error: "Sala nao encontrada." }, { status: 404 });
   }
 
+  const body = (await request
+    .json()
+    .catch(() => null)) as RoomInvitationRequestBody | null;
+  const expiresIn = body?.expiresIn ?? "7d";
+
+  if (!isInvitationExpiryPreset(expiresIn)) {
+    return NextResponse.json(
+      { error: "Informe uma validade valida para o convite." },
+      { status: 400 },
+    );
+  }
+
+  const oneTimeUse =
+    typeof body?.oneTimeUse === "boolean" ? body.oneTimeUse : false;
   const token = createRoomInvitationToken();
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+  const expiresAt = getInvitationExpiry(expiresIn);
 
   const invite = await prisma.$transaction(async (tx) => {
     const createdInvite = await tx.pingPongRoomInvitation.create({
@@ -52,10 +75,12 @@ export async function POST(_: Request, context: RouteContext) {
         token,
         createdById: actor.id,
         expiresAt,
+        oneTimeUse,
       },
       select: {
         id: true,
         expiresAt: true,
+        oneTimeUse: true,
       },
     });
 
@@ -67,6 +92,7 @@ export async function POST(_: Request, context: RouteContext) {
           roomId,
           invitationId: createdInvite.id,
           expiresAt: createdInvite.expiresAt.toISOString(),
+          oneTimeUse: createdInvite.oneTimeUse,
         },
       },
     });

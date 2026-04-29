@@ -132,6 +132,7 @@ export async function getRoomDetail(roomId: string) {
           expiresAt: {
             gt: new Date(),
           },
+          OR: [{ oneTimeUse: false }, { usedAt: null }],
         },
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -139,6 +140,7 @@ export async function getRoomDetail(roomId: string) {
           id: true,
           token: true,
           expiresAt: true,
+          oneTimeUse: true,
         },
       },
       participants: {
@@ -219,6 +221,7 @@ export async function getRoomDetail(roomId: string) {
           id: room.invitations[0].id,
           token: room.invitations[0].token,
           expiresAt: room.invitations[0].expiresAt.toISOString(),
+          oneTimeUse: room.invitations[0].oneTimeUse,
         }
       : null,
     participants: room.participants.map((participant) => ({

@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -17,6 +24,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  getInvitationExpiryLabel,
+  INVITATION_EXPIRY_PRESETS,
+  type InvitationExpiryPreset,
+} from "@/lib/invitations";
 
 type AccessAdminProps = {
   allowedEmails: {
@@ -31,10 +43,11 @@ type AccessAdminProps = {
   invitations: {
     id: string;
     expiresAt: string;
+    oneTimeUse: boolean;
     usedAt: string | null;
     usedByEmail: string | null;
     createdAt: string;
-    status: "Disponivel" | "Usado";
+    status: "Disponivel" | "Usado" | "Expirado" | "Reutilizavel";
   }[];
 };
 
@@ -48,6 +61,9 @@ async function readApiError(response: Response) {
 export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
   const router = useRouter();
   const [accessEmail, setAccessEmail] = useState("");
+  const [inviteExpiresIn, setInviteExpiresIn] =
+    useState<InvitationExpiryPreset>("15m");
+  const [inviteUseMode, setInviteUseMode] = useState("one-time");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -86,7 +102,11 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
       const response = await fetch("/api/admin/access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "invite" }),
+        body: JSON.stringify({
+          type: "invite",
+          expiresIn: inviteExpiresIn,
+          oneTimeUse: inviteUseMode === "one-time",
+        }),
       });
 
       if (!response.ok) {
@@ -98,7 +118,7 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
       setInviteUrl(body.inviteUrl);
       setMessage({
         type: "success",
-        text: "Convite criado. Ele expira em 15 minutos.",
+        text: `Convite criado. Ele expira em ${getInvitationExpiryLabel(inviteExpiresIn)}.`,
       });
       router.refresh();
     });
@@ -143,13 +163,50 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
         </Button>
       </form>
 
-      <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
+      <div className="grid gap-3 md:grid-cols-[minmax(150px,180px)_minmax(150px,180px)_auto_minmax(0,1fr)_auto] md:items-end">
+        <div className="grid gap-2">
+          <Label htmlFor="invite-expires-in">Validade</Label>
+          <Select
+            disabled={isPending}
+            onValueChange={(value: InvitationExpiryPreset) =>
+              setInviteExpiresIn(value)
+            }
+            value={inviteExpiresIn}
+          >
+            <SelectTrigger id="invite-expires-in">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {INVITATION_EXPIRY_PRESETS.map((preset) => (
+                <SelectItem key={preset.value} value={preset.value}>
+                  {preset.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="invite-use-mode">Uso</Label>
+          <Select
+            disabled={isPending}
+            onValueChange={setInviteUseMode}
+            value={inviteUseMode}
+          >
+            <SelectTrigger id="invite-use-mode">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="one-time">Uso unico</SelectItem>
+              <SelectItem value="reusable">Reutilizavel</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button disabled={isPending} onClick={createInvite} variant="outline">
           <Link2 className="size-4" />
           Criar convite
         </Button>
         <p className="min-w-0 truncate rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">
-          {inviteUrl ?? "Convites expiram em 15 minutos e sao de uso unico."}
+          {inviteUrl ?? "Configure validade e modo de uso do convite."}
         </p>
         <Button
           disabled={!inviteUrl}
@@ -211,6 +268,7 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Status</TableHead>
+              <TableHead>Uso</TableHead>
               <TableHead>Email usado</TableHead>
               <TableHead>Expira em</TableHead>
             </TableRow>
@@ -228,6 +286,9 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
                   >
                     {invitation.status}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {invitation.oneTimeUse ? "Uso unico" : "Reutilizavel"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {invitation.usedByEmail ?? "-"}

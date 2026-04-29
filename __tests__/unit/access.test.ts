@@ -1,11 +1,15 @@
 import {
   allowEmail,
-  getInvitationExpiry,
   hashInvitationToken,
   isEmailAllowed,
   isValidEmail,
   normalizeEmail,
 } from "@/lib/auth/access";
+import {
+  getInvitationExpiry,
+  getInvitationExpiryLabel,
+  isInvitationExpiryPreset,
+} from "@/lib/invitations";
 import { prisma } from "@/lib/prisma";
 
 jest.mock("@/lib/prisma", () => ({
@@ -71,6 +75,12 @@ describe("helpers de acesso por email e convite", () => {
     expect(isValidEmail("invalid-email")).toBe(false);
     expect(hashInvitationToken("token")).toBe(hashInvitationToken("token"));
     expect(getInvitationExpiry()).toEqual(new Date("2026-04-28T12:15:00.000Z"));
+    expect(getInvitationExpiry("1h")).toEqual(new Date("2026-04-28T13:00:00.000Z"));
+    expect(getInvitationExpiry("1d")).toEqual(new Date("2026-04-29T12:00:00.000Z"));
+    expect(getInvitationExpiry("7d")).toEqual(new Date("2026-05-05T12:00:00.000Z"));
+    expect(isInvitationExpiryPreset("15m")).toBe(true);
+    expect(isInvitationExpiryPreset("bad")).toBe(false);
+    expect(getInvitationExpiryLabel("7d")).toBe("7 dias");
 
     jest.restoreAllMocks();
   });

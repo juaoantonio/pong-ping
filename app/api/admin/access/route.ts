@@ -5,14 +5,19 @@ import { canAccessAdmin } from "@/lib/auth/roles";
 import {
   allowEmail,
   createInvitationToken,
-  getInvitationExpiry,
   hashInvitationToken,
   isValidEmail,
   normalizeEmail,
 } from "@/lib/auth/access";
+import {
+  getInvitationExpiry,
+  isInvitationExpiryPreset,
+} from "@/lib/invitations";
 
 type AccessRequestBody = {
   email?: unknown;
+  expiresIn?: unknown;
+  oneTimeUse?: unknown;
   type?: unknown;
 };
 
@@ -81,6 +86,7 @@ export async function GET() {
       select: {
         id: true,
         expiresAt: true,
+        oneTimeUse: true,
         usedAt: true,
         usedByEmail: true,
         createdAt: true,
@@ -103,16 +109,29 @@ export async function POST(request: Request) {
     .catch(() => null)) as AccessRequestBody | null;
 
   if (body?.type === "invite") {
+    const expiresIn = body.expiresIn ?? "15m";
+
+    if (!isInvitationExpiryPreset(expiresIn)) {
+      return NextResponse.json(
+        { error: "Informe uma validade valida para o convite." },
+        { status: 400 },
+      );
+    }
+
     const token = createInvitationToken();
+    const oneTimeUse =
+      typeof body.oneTimeUse === "boolean" ? body.oneTimeUse : true;
     const invitation = await prisma.authInvitation.create({
       data: {
         tokenHash: hashInvitationToken(token),
-        expiresAt: getInvitationExpiry(),
+        expiresAt: getInvitationExpiry(expiresIn),
+        oneTimeUse,
         createdByUserId: actor.id,
       },
       select: {
         id: true,
         expiresAt: true,
+        oneTimeUse: true,
         createdAt: true,
       },
     });
@@ -124,6 +143,7 @@ export async function POST(request: Request) {
         metadata: {
           invitationId: invitation.id,
           expiresAt: invitation.expiresAt,
+          oneTimeUse: invitation.oneTimeUse,
         },
       },
     });
