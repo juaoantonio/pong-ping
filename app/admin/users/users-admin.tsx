@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import { canDeleteUser, type Role } from "@/lib/auth/roles";
+import { toast } from "sonner";
 
 type AdminUser = {
   id: string;
@@ -73,10 +73,6 @@ async function readApiError(response: Response) {
 export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
   const router = useRouter();
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const canChangeRoles = currentUser.role === "superadmin";
 
@@ -85,7 +81,6 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
       return;
     }
 
-    setMessage(null);
     setPendingUserId(user.id);
 
     startTransition(async () => {
@@ -96,19 +91,18 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
       });
 
       if (!response.ok) {
-        setMessage({ type: "error", text: await readApiError(response) });
+        toast.error(await readApiError(response));
         setPendingUserId(null);
         return;
       }
 
-      setMessage({ type: "success", text: "Role atualizada." });
+      toast.success("Role atualizada.");
       setPendingUserId(null);
       router.refresh();
     });
   }
 
   function deleteUser(user: AdminUser) {
-    setMessage(null);
     setPendingUserId(user.id);
 
     startTransition(async () => {
@@ -117,12 +111,12 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
       });
 
       if (!response.ok) {
-        setMessage({ type: "error", text: await readApiError(response) });
+        toast.error(await readApiError(response));
         setPendingUserId(null);
         return;
       }
 
-      setMessage({ type: "success", text: "Usuario removido." });
+      toast.success("Usuário removido.");
       setPendingUserId(null);
       router.refresh();
     });
@@ -130,12 +124,6 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
 
   return (
     <div className="grid gap-4">
-      {message ? (
-        <Alert variant={message.type === "error" ? "destructive" : "default"}>
-          <AlertDescription>{message.text}</AlertDescription>
-        </Alert>
-      ) : null}
-
       <Table>
         <TableHeader>
           <TableRow>
@@ -152,7 +140,7 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
             const canDelete =
               !isSelf && canDeleteUser(currentUser.role, user.role);
             const canChangeRole = canChangeRoles && !isSelf;
-            const label = user.name ?? user.email ?? "Usuario";
+            const label = user.name ?? user.email ?? "Usuário";
 
             return (
               <TableRow key={user.id}>
@@ -215,7 +203,8 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
                         <DialogHeader>
                           <DialogTitle>Remover usuario</DialogTitle>
                           <DialogDescription>
-                            Esta acao remove {user.email ?? user.name ?? "este usuario"}.
+                            Esta acao remove{" "}
+                            {user.email ?? user.name ?? "este usuario"}.
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>

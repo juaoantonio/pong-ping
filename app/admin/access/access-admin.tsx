@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { Copy, Link2, MailPlus } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +28,7 @@ import {
   INVITATION_EXPIRY_PRESETS,
   type InvitationExpiryPreset,
 } from "@/lib/invitations";
+import { toast } from "sonner";
 
 type AccessAdminProps = {
   allowedEmails: {
@@ -65,15 +65,10 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
     useState<InvitationExpiryPreset>("15m");
   const [inviteUseMode, setInviteUseMode] = useState("one-time");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function authorizeEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
     setInviteUrl(null);
 
     startTransition(async () => {
@@ -84,18 +79,19 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
       });
 
       if (!response.ok) {
-        setMessage({ type: "error", text: await readApiError(response) });
+        toast.error(await readApiError(response));
         return;
       }
 
       setAccessEmail("");
-      setMessage({ type: "success", text: "Email autorizado para login." });
+      toast.success(
+        "Email autorizado. Agora esta pessoa pode entrar com Google.",
+      );
       router.refresh();
     });
   }
 
   function createInvite() {
-    setMessage(null);
     setInviteUrl(null);
 
     startTransition(async () => {
@@ -110,16 +106,15 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
       });
 
       if (!response.ok) {
-        setMessage({ type: "error", text: await readApiError(response) });
+        toast.error(await readApiError(response));
         return;
       }
 
       const body = (await response.json()) as { inviteUrl: string };
       setInviteUrl(body.inviteUrl);
-      setMessage({
-        type: "success",
-        text: `Convite criado. Ele expira em ${getInvitationExpiryLabel(inviteExpiresIn)}.`,
-      });
+      toast.success(
+        `Convite criado. Ele expira em ${getInvitationExpiryLabel(inviteExpiresIn)}.`,
+      );
       router.refresh();
     });
   }
@@ -130,17 +125,11 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
     }
 
     await navigator.clipboard.writeText(inviteUrl);
-    setMessage({ type: "success", text: "Link do convite copiado." });
+    toast.success("Link do convite copiado para a area de transferencia.");
   }
 
   return (
     <div className="grid gap-6">
-      {message ? (
-        <Alert variant={message.type === "error" ? "destructive" : "default"}>
-          <AlertDescription>{message.text}</AlertDescription>
-        </Alert>
-      ) : null}
-
       <form
         className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]"
         onSubmit={authorizeEmail}

@@ -2,12 +2,11 @@
 
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { FormEvent } from "react";
-import { useState, useTransition } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SubmitEvent, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 type ProfileFormProps = {
   initialName: string;
@@ -23,17 +22,12 @@ async function readApiError(response: Response) {
 export function ProfileForm({ initialName }: ProfileFormProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const normalizedName = name.trim();
   const hasChanges = normalizedName !== initialName;
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
 
     startTransition(async () => {
       const response = await fetch("/api/auth/me", {
@@ -43,24 +37,18 @@ export function ProfileForm({ initialName }: ProfileFormProps) {
       });
 
       if (!response.ok) {
-        setMessage({ type: "error", text: await readApiError(response) });
+        toast.error(await readApiError(response));
         return;
       }
 
       setName(normalizedName);
-      setMessage({ type: "success", text: "Perfil atualizado." });
+      toast.success("Perfil atualizado.");
       router.refresh();
     });
   }
 
   return (
     <form className="grid gap-4" onSubmit={submit}>
-      {message ? (
-        <Alert variant={message.type === "error" ? "destructive" : "default"}>
-          <AlertDescription>{message.text}</AlertDescription>
-        </Alert>
-      ) : null}
-
       <div className="grid gap-2">
         <Label htmlFor="profile-name">Nome</Label>
         <Input
