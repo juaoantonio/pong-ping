@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
 import type { RoomListItem, UserIdentityLike } from "@/components/rooms/types";
+import { Fragment } from "react";
 
 function userLabel(user: UserIdentityLike) {
   return user.name ?? user.email ?? "Usuario";
@@ -50,26 +51,27 @@ export function RoomList({ rooms }: { rooms: RoomListItem[] }) {
           <CardContent className="grid gap-4">
             <div className="grid gap-3 rounded-lg border bg-muted/20 p-4">
               <div className="flex items-center gap-2 text-sm font-medium">
-                <Swords className="size-4" />
-                Mesa atual
+                Rodada atual
               </div>
               {room.currentPlayers.length > 0 ? (
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 items-center justify-between">
                   {room.currentPlayers.map((player, index) => {
                     const label = userLabel(player);
 
                     return (
-                      <div
-                        className="flex min-w-0 items-center gap-2"
-                        key={`${room.id}-${index}-${label}`}
-                      >
-                        <UserAvatar
-                          className="size-8"
-                          name={label}
-                          src={player.avatarUrl}
-                        />
-                        <span className="truncate text-sm">{label}</span>
-                      </div>
+                      <Fragment key={`${room.id}-${index}-${label}`}>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <UserAvatar
+                            className="size-8"
+                            name={label}
+                            src={player.avatarUrl}
+                          />
+                          <span className="truncate text-sm si">{label}</span>
+                        </div>{" "}
+                        {index === 0 && (
+                          <Swords className={"size-8 text-gray-600"} />
+                        )}
+                      </Fragment>
                     );
                   })}
                 </div>
