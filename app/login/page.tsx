@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleLoginButton } from "@/components/google-login-button";
 
@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
 
   if (session?.user) {
-    redirect("/dashboard");
+    redirect("/rooms");
   }
 
   const params = await searchParams;
@@ -35,7 +35,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <CardDescription>Entre para acessar sua area autenticada.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {error ? <Alert>{error}</Alert> : null}
+          {error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
           <GoogleLoginButton />
         </CardContent>
       </Card>

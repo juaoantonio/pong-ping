@@ -16,8 +16,8 @@ export default function UnauthorizedPage() {
           <CardDescription>Seu usuario nao tem permissao para acessar esta area.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Link className={cn(buttonVariants())} href="/dashboard">
-            Voltar ao dashboard
+          <Link className={cn(buttonVariants())} href="/rooms">
+            Voltar as salas
           </Link>
         </CardContent>
       </Card>

@@ -3,7 +3,7 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 type RoomInviteFormProps = {
@@ -52,7 +52,9 @@ export function RoomInviteForm({ expiresAt, roomName, token }: RoomInviteFormPro
             {message.text}
           </div>
         ) : (
-          <Alert>{message.text}</Alert>
+          <Alert variant="destructive">
+            <AlertDescription>{message.text}</AlertDescription>
+          </Alert>
         )
       ) : null}
 

@@ -58,8 +58,8 @@ export default async function RoomInvitePage({ params }: RoomInvitePageProps) {
             roomName={invitation.room.name}
             token={token}
           />
-          <Link className={buttonVariants({ variant: "ghost" })} href="/dashboard">
-            Voltar ao dashboard
+          <Link className={buttonVariants({ variant: "ghost" })} href="/rooms">
+            Voltar as salas
           </Link>
         </CardContent>
       </Card>

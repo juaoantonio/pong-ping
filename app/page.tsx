@@ -102,9 +102,9 @@ export default async function Home() {
           </div>
           <Link
             className={cn(buttonVariants({ variant: "outline" }))}
-            href={session?.user ? "/dashboard" : "/login"}
+            href={session?.user ? "/rooms" : "/login"}
           >
-            {session?.user ? "Dashboard" : "Login"}
+            {session?.user ? "Salas" : "Login"}
           </Link>
         </header>
 

@@ -3,8 +3,10 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type InviteFormProps = {
   token: string;
@@ -50,14 +52,15 @@ export function InviteForm({ token }: InviteFormProps) {
             {message.text}
           </div>
         ) : (
-          <Alert>{message.text}</Alert>
+          <Alert variant="destructive">
+            <AlertDescription>{message.text}</AlertDescription>
+          </Alert>
         )
       ) : null}
 
-      <label className="grid gap-2 text-sm font-medium" htmlFor="invite-email">
-        Email
-        <input
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+      <div className="grid gap-2">
+        <Label htmlFor="invite-email">Email</Label>
+        <Input
           disabled={isPending || message?.type === "success"}
           id="invite-email"
           onChange={(event) => setEmail(event.target.value)}
@@ -66,7 +69,7 @@ export function InviteForm({ token }: InviteFormProps) {
           type="email"
           value={email}
         />
-      </label>
+      </div>
 
       <Button disabled={isPending || message?.type === "success"} type="submit">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
