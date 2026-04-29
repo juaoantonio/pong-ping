@@ -30,16 +30,24 @@ export async function getRoomListItems() {
           },
         },
       },
-      matches: {
+      matchHistories: {
         orderBy: { createdAt: "desc" },
         take: 1,
         select: {
           id: true,
+          kind: true,
+          rollbackOfId: true,
           createdAt: true,
           winnerOldElo: true,
           winnerNewElo: true,
+          winnerDiffPoints: true,
           loserOldElo: true,
           loserNewElo: true,
+          loserDiffPoints: true,
+          rollbacks: {
+            select: { id: true },
+            take: 1,
+          },
           winner: {
             select: {
               name: true,
@@ -76,23 +84,30 @@ export async function getRoomListItems() {
       email: participant.user.email,
       avatarUrl: participant.user.avatarUrl ?? participant.user.image,
     })),
-    latestMatch: room.matches[0]
+    latestMatch: room.matchHistories[0]
       ? {
-          id: room.matches[0].id,
-          createdAt: room.matches[0].createdAt.toISOString(),
-          winnerOldElo: room.matches[0].winnerOldElo,
-          winnerNewElo: room.matches[0].winnerNewElo,
-          loserOldElo: room.matches[0].loserOldElo,
-          loserNewElo: room.matches[0].loserNewElo,
+          id: room.matchHistories[0].id,
+          kind: room.matchHistories[0].kind,
+          rollbackOfId: room.matchHistories[0].rollbackOfId,
+          rolledBack: room.matchHistories[0].rollbacks.length > 0,
+          createdAt: room.matchHistories[0].createdAt.toISOString(),
+          winnerOldElo: room.matchHistories[0].winnerOldElo,
+          winnerNewElo: room.matchHistories[0].winnerNewElo,
+          winnerDiffPoints: room.matchHistories[0].winnerDiffPoints,
+          loserOldElo: room.matchHistories[0].loserOldElo,
+          loserNewElo: room.matchHistories[0].loserNewElo,
+          loserDiffPoints: room.matchHistories[0].loserDiffPoints,
           winner: {
-            ...room.matches[0].winner,
+            ...room.matchHistories[0].winner,
             avatarUrl:
-              room.matches[0].winner.avatarUrl ?? room.matches[0].winner.image,
+              room.matchHistories[0].winner.avatarUrl ??
+              room.matchHistories[0].winner.image,
           },
           loser: {
-            ...room.matches[0].loser,
+            ...room.matchHistories[0].loser,
             avatarUrl:
-              room.matches[0].loser.avatarUrl ?? room.matches[0].loser.image,
+              room.matchHistories[0].loser.avatarUrl ??
+              room.matchHistories[0].loser.image,
           },
         }
       : null,
@@ -151,16 +166,24 @@ export async function getRoomDetail(roomId: string) {
           },
         },
       },
-      matches: {
+      matchHistories: {
         orderBy: { createdAt: "desc" },
         take: 10,
         select: {
           id: true,
+          kind: true,
+          rollbackOfId: true,
           createdAt: true,
           winnerOldElo: true,
           winnerNewElo: true,
+          winnerDiffPoints: true,
           loserOldElo: true,
           loserNewElo: true,
+          loserDiffPoints: true,
+          rollbacks: {
+            select: { id: true },
+            take: 1,
+          },
           winner: {
             select: {
               name: true,
@@ -210,13 +233,18 @@ export async function getRoomDetail(roomId: string) {
         playerRanking: participant.user.playerRanking,
       },
     })),
-    recentMatches: room.matches.map((match) => ({
+    recentMatches: room.matchHistories.map((match) => ({
       id: match.id,
+      kind: match.kind,
+      rollbackOfId: match.rollbackOfId,
+      rolledBack: match.rollbacks.length > 0,
       createdAt: match.createdAt.toISOString(),
       winnerOldElo: match.winnerOldElo,
       winnerNewElo: match.winnerNewElo,
+      winnerDiffPoints: match.winnerDiffPoints,
       loserOldElo: match.loserOldElo,
       loserNewElo: match.loserNewElo,
+      loserDiffPoints: match.loserDiffPoints,
       winner: {
         ...match.winner,
         avatarUrl: match.winner.avatarUrl ?? match.winner.image,

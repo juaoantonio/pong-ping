@@ -19,6 +19,28 @@ async function getNextQueuePosition(tx: Tx, roomId: string) {
   return (lastParticipant?.queuePosition ?? -1) + 1;
 }
 
+async function reorderRoomQueue(tx: Tx, participantIds: string[]) {
+  const temporaryOffset = participantIds.length + 1000;
+
+  await Promise.all(
+    participantIds.map((participantId, index) =>
+      tx.pingPongRoomParticipant.update({
+        where: { id: participantId },
+        data: { queuePosition: temporaryOffset + index },
+      }),
+    ),
+  );
+
+  await Promise.all(
+    participantIds.map((participantId, index) =>
+      tx.pingPongRoomParticipant.update({
+        where: { id: participantId },
+        data: { queuePosition: index },
+      }),
+    ),
+  );
+}
+
 export async function addUserToRoom(tx: Tx, roomId: string, userId: string) {
   const [room, user, existingParticipant] = await Promise.all([
     tx.pingPongRoom.findUnique({
@@ -58,14 +80,20 @@ export async function addUserToRoom(tx: Tx, roomId: string, userId: string) {
   });
 }
 
-export async function removeParticipantFromRoom(tx: Tx, roomId: string, participantId: string) {
+export async function removeParticipantFromRoom(
+  tx: Tx,
+  roomId: string,
+  participantId: string,
+) {
   const participants = await tx.pingPongRoomParticipant.findMany({
     where: { roomId },
     orderBy: { queuePosition: "asc" },
     select: { id: true },
   });
 
-  const nextQueue = participants.filter((participant) => participant.id !== participantId);
+  const nextQueue = participants.filter(
+    (participant) => participant.id !== participantId,
+  );
 
   if (nextQueue.length === participants.length) {
     throw new Error("participant_not_found");
@@ -75,17 +103,18 @@ export async function removeParticipantFromRoom(tx: Tx, roomId: string, particip
     where: { id: participantId },
   });
 
-  await Promise.all(
-    nextQueue.map((participant, index) =>
-      tx.pingPongRoomParticipant.update({
-        where: { id: participant.id },
-        data: { queuePosition: index },
-      }),
-    ),
+  await reorderRoomQueue(
+    tx,
+    nextQueue.map((participant) => participant.id),
   );
 }
 
-export async function finishRoomMatch(tx: Tx, roomId: string, winnerParticipantId: string, actorUserId: string) {
+export async function finishRoomMatch(
+  tx: Tx,
+  roomId: string,
+  winnerParticipantId: string,
+  actorUserId: string,
+) {
   const room = await tx.pingPongRoom.findUnique({
     where: { id: roomId },
     select: { id: true },
@@ -111,8 +140,12 @@ export async function finishRoomMatch(tx: Tx, roomId: string, winnerParticipantI
   );
 
   const currentPlayers = queue.slice(0, 2);
-  const winnerParticipant = currentPlayers.find((participant) => participant.id === winnerParticipantId);
-  const loserParticipant = currentPlayers.find((participant) => participant.id !== winnerParticipantId);
+  const winnerParticipant = currentPlayers.find(
+    (participant) => participant.id === winnerParticipantId,
+  );
+  const loserParticipant = currentPlayers.find(
+    (participant) => participant.id !== winnerParticipantId,
+  );
 
   if (!winnerParticipant || !loserParticipant) {
     throw new Error("winner_not_in_current_match");
@@ -131,28 +164,38 @@ export async function finishRoomMatch(tx: Tx, roomId: string, winnerParticipantI
     }),
   ]);
 
-  const nextElo = calculateElo(winnerRanking.elo, loserRanking.elo, MATCH_ELO_K);
+  const nextElo = calculateElo(
+    winnerRanking.elo,
+    loserRanking.elo,
+    MATCH_ELO_K,
+  );
   const winnerWins = winnerRanking.wins + 1;
   const winnerTotalMatches = winnerRanking.total_matches + 1;
   const loserTotalMatches = loserRanking.total_matches + 1;
 
+  const winnerDiffPoints = nextElo.winnerElo - winnerRanking.elo;
+  const loserDiffPoints = nextElo.loserElo - loserRanking.elo;
+
   const [createdMatch] = await Promise.all([
-    tx.match.create({
+    tx.matchHistory.create({
       data: {
         roomId,
-        winnerUserId: winnerParticipant.userId,
-        loserUserId: loserParticipant.userId,
+        winnerId: winnerParticipant.userId,
+        loserId: loserParticipant.userId,
+        kind: "match",
         createdById: actorUserId,
         kFactor: MATCH_ELO_K,
         winnerOldElo: winnerRanking.elo,
         winnerNewElo: nextElo.winnerElo,
+        winnerDiffPoints,
         loserOldElo: loserRanking.elo,
         loserNewElo: nextElo.loserElo,
+        loserDiffPoints,
       },
       select: {
         id: true,
-        winnerUserId: true,
-        loserUserId: true,
+        winnerId: true,
+        loserId: true,
         winnerNewElo: true,
         loserNewElo: true,
       },
@@ -180,22 +223,130 @@ export async function finishRoomMatch(tx: Tx, roomId: string, winnerParticipantI
         action: "room_match_finished",
         metadata: {
           roomId,
-          winnerUserId: winnerParticipant.userId,
-          loserUserId: loserParticipant.userId,
+          winnerId: winnerParticipant.userId,
+          loserId: loserParticipant.userId,
           kFactor: MATCH_ELO_K,
         },
       },
     }),
   ]);
 
-  await Promise.all(
-    reorderedQueueIds.map((participantId, index) =>
-      tx.pingPongRoomParticipant.update({
-        where: { id: participantId },
-        data: { queuePosition: index },
-      }),
-    ),
-  );
+  await reorderRoomQueue(tx, reorderedQueueIds);
 
   return createdMatch;
+}
+
+export async function rollbackRoomMatch(
+  tx: Tx,
+  roomId: string,
+  matchHistoryId: string,
+  actorUserId: string,
+) {
+  const match = await tx.matchHistory.findFirst({
+    where: { id: matchHistoryId, roomId },
+    select: {
+      id: true,
+      roomId: true,
+      winnerId: true,
+      loserId: true,
+      kind: true,
+      kFactor: true,
+      winnerDiffPoints: true,
+      loserDiffPoints: true,
+      rollbacks: {
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+
+  if (!match) {
+    throw new Error("match_not_found");
+  }
+
+  if (match.kind === "rollback") {
+    throw new Error("cannot_rollback_rollback");
+  }
+
+  if (match.rollbacks.length > 0) {
+    throw new Error("match_already_rolled_back");
+  }
+
+  const [winnerRanking, loserRanking] = await Promise.all([
+    tx.playerRanking.findUnique({
+      where: { userId: match.winnerId },
+    }),
+    tx.playerRanking.findUnique({
+      where: { userId: match.loserId },
+    }),
+  ]);
+
+  if (!winnerRanking || !loserRanking) {
+    throw new Error("ranking_not_found");
+  }
+
+  const nextWinnerElo = winnerRanking.elo - match.winnerDiffPoints;
+  const nextLoserElo = loserRanking.elo - match.loserDiffPoints;
+  const nextWinnerWins = Math.max(0, winnerRanking.wins - 1);
+  const nextWinnerTotalMatches = Math.max(0, winnerRanking.total_matches - 1);
+  const nextLoserTotalMatches = Math.max(0, loserRanking.total_matches - 1);
+
+  const [rollback] = await Promise.all([
+    tx.matchHistory.create({
+      data: {
+        roomId,
+        winnerId: match.winnerId,
+        loserId: match.loserId,
+        kind: "rollback",
+        rollbackOfId: match.id,
+        createdById: actorUserId,
+        kFactor: match.kFactor,
+        winnerOldElo: winnerRanking.elo,
+        winnerNewElo: nextWinnerElo,
+        winnerDiffPoints: -match.winnerDiffPoints,
+        loserOldElo: loserRanking.elo,
+        loserNewElo: nextLoserElo,
+        loserDiffPoints: -match.loserDiffPoints,
+      },
+      select: {
+        id: true,
+        rollbackOfId: true,
+        winnerId: true,
+        loserId: true,
+        winnerNewElo: true,
+        loserNewElo: true,
+      },
+    }),
+    tx.playerRanking.update({
+      where: { userId: match.winnerId },
+      data: {
+        elo: nextWinnerElo,
+        wins: nextWinnerWins,
+        total_matches: nextWinnerTotalMatches,
+        winRate: calculateWinRate(nextWinnerWins, nextWinnerTotalMatches),
+      },
+    }),
+    tx.playerRanking.update({
+      where: { userId: match.loserId },
+      data: {
+        elo: nextLoserElo,
+        total_matches: nextLoserTotalMatches,
+        winRate: calculateWinRate(loserRanking.wins, nextLoserTotalMatches),
+      },
+    }),
+    tx.auditLog.create({
+      data: {
+        actorUserId,
+        action: "room_match_rolled_back",
+        metadata: {
+          roomId,
+          matchHistoryId,
+          winnerId: match.winnerId,
+          loserId: match.loserId,
+        },
+      },
+    }),
+  ]);
+
+  return rollback;
 }

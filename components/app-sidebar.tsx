@@ -6,6 +6,7 @@ import {
   Home,
   LogOut,
   Shield,
+  Swords,
   Trophy,
   UserRound,
   UsersRound,
@@ -27,7 +28,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { canAccessAdmin, type Role } from "@/lib/auth/roles";
+import { canAccessAdmin, isSuperAdmin, type Role } from "@/lib/auth/roles";
 
 type AppSidebarProps = {
   user: {
@@ -47,6 +48,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
   const userName = user.name ?? user.email ?? "Usuario";
   const canUseAdmin = canAccessAdmin(user.role);
+  const canUseRoundManagement = isSuperAdmin(user);
 
   return (
     <Sidebar collapsible="icon" variant="inset">
@@ -143,6 +145,19 @@ export function AppSidebar({ user }: AppSidebarProps) {
                         <Link href="/admin/access">Acesso</Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
+                    {canUseRoundManagement ? (
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/admin/rounds"}
+                        >
+                          <Link href="/admin/rounds">
+                            <Swords />
+                            Rodadas
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ) : null}
                   </SidebarMenuSub>
                 </SidebarMenuItem>
               </SidebarMenu>

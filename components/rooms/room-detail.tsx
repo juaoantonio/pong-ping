@@ -5,6 +5,7 @@ import {
   Copy,
   Loader2,
   Plus,
+  RotateCcw,
   Swords,
   Trophy,
   UserPlus,
@@ -248,6 +249,23 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
       toast.success(
         `Rodada encerrada. ${winnerName} venceu e o Elo foi recalculado.`,
       );
+      router.refresh();
+    });
+  }
+
+  function rollbackMatch(matchId: string) {
+    runAction(`rollback-match:${matchId}`, async () => {
+      const response = await fetch(
+        `/api/admin/rooms/${room.id}/matches/${matchId}/rollback`,
+        { method: "POST" },
+      );
+
+      if (!response.ok) {
+        toast.error(await readApiError(response));
+        return;
+      }
+
+      toast.success("Rodada revertida com registro de auditoria.");
       router.refresh();
     });
   }
@@ -524,15 +542,32 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Status</TableHead>
                   <TableHead>Vencedor</TableHead>
                   <TableHead>Perdedor</TableHead>
                   <TableHead>Elo</TableHead>
                   <TableHead>Data</TableHead>
+                  {canManage ? (
+                    <TableHead className="text-right">Acao</TableHead>
+                  ) : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {room.recentMatches.map((match) => (
                   <TableRow key={match.id}>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          match.kind === "rollback" ? "secondary" : "outline"
+                        }
+                      >
+                        {match.kind === "rollback"
+                          ? "Rollback"
+                          : match.rolledBack
+                            ? "Revertida"
+                            : "Rodada"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <UserIdentity user={match.winner} />
                     </TableCell>
@@ -546,6 +581,25 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
                     <TableCell className="text-muted-foreground">
                       {formatDateTime(match.createdAt)}
                     </TableCell>
+                    {canManage ? (
+                      <TableCell className="text-right">
+                        {match.kind === "match" && !match.rolledBack ? (
+                          <Button
+                            disabled={isPending}
+                            onClick={() => rollbackMatch(match.id)}
+                            size="sm"
+                            variant="ghost"
+                          >
+                            {busyKey === `rollback-match:${match.id}` ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <RotateCcw className="size-4" />
+                            )}
+                            Reverter
+                          </Button>
+                        ) : null}
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>

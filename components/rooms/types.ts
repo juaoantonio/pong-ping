@@ -31,11 +31,16 @@ export type RoomParticipant = {
 
 export type RoomMatch = {
   id: string;
+  kind: "match" | "rollback";
+  rollbackOfId: string | null;
+  rolledBack: boolean;
   createdAt: string;
   winnerOldElo: number;
   winnerNewElo: number;
+  winnerDiffPoints: number;
   loserOldElo: number;
   loserNewElo: number;
+  loserDiffPoints: number;
   winner: UserIdentityLike;
   loser: UserIdentityLike;
 };

@@ -85,8 +85,18 @@ export function RoomList({ rooms }: { rooms: RoomListItem[] }) {
             {room.latestMatch ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <UsersRound className="size-4" />
-                Ultima rodada: {userLabel(room.latestMatch.winner)} venceu em{" "}
-                {formatDateTime(room.latestMatch.createdAt)}
+                {room.latestMatch.kind === "rollback" ? (
+                  <>
+                    Ultimo rollback: {userLabel(room.latestMatch.winner)} x{" "}
+                    {userLabel(room.latestMatch.loser)} em{" "}
+                    {formatDateTime(room.latestMatch.createdAt)}
+                  </>
+                ) : (
+                  <>
+                    Ultima rodada: {userLabel(room.latestMatch.winner)} venceu
+                    em {formatDateTime(room.latestMatch.createdAt)}
+                  </>
+                )}
               </div>
             ) : null}
 
