@@ -18,29 +18,29 @@ enum MatchHistoryKind {
 }
 
 model User {
-  id                     String                    @id @default(cuid())
-  name                   String?
-  email                  String?                   @unique
-  emailVerified          DateTime?
-  image                  String?
-  googleId               String?                   @unique
-  avatarUrl              String?
-  role                   Role                      @default(user)
-  createdAt              DateTime                  @default(now())
-  updatedAt              DateTime                  @default(now()) @updatedAt
-  accounts               Account[]
-  sessions               Session[]
-  auditLogs              AuditLog[]                @relation("ActorAuditLogs")
-  allowedEmails          AllowedEmail[]            @relation("AllowedEmailCreator")
-  invitations            AuthInvitation[]          @relation("AuthInvitationCreator")
-  playerRanking          PlayerRanking?
-  matchHistoriesCreated  MatchHistory[]            @relation("MatchHistoryCreator")
-  matchHistoriesWon      MatchHistory[]            @relation("MatchHistoryWinner")
-  matchHistoriesLost     MatchHistory[]            @relation("MatchHistoryLoser")
-  roomMemberships        PingPongRoomMember[]
-  roomQueueEntries       PingPongRoomParticipant[]
-  roomInvitationsCreated PingPongRoomInvitation[]  @relation("RoomInvitationCreator")
-  roomsCreated           PingPongRoom[]            @relation("RoomCreator")
+  id                      String                     @id @default(cuid())
+  name                    String?
+  email                   String?                    @unique
+  emailVerified           DateTime?
+  image                   String?
+  googleId                String?                    @unique
+  avatarUrl               String?
+  role                    Role                       @default(user)
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @default(now()) @updatedAt
+  accounts                Account[]
+  sessions                Session[]
+  auditLogs               AuditLog[]                 @relation("ActorAuditLogs")
+  allowedEmails           AllowedEmail[]             @relation("AllowedEmailCreator")
+  invitations             AuthInvitation[]           @relation("AuthInvitationCreator")
+  playerRanking           PlayerRanking?
+  matchHistoriesCreated   MatchHistory[]             @relation("MatchHistoryCreator")
+  matchHistoriesWon       MatchHistory[]             @relation("MatchHistoryWinner")
+  matchHistoriesLost      MatchHistory[]             @relation("MatchHistoryLoser")
+  tableMemberships        PingPongTableMember[]
+  tableQueueEntries       PingPongTableParticipant[]
+  tableInvitationsCreated PingPongTableInvitation[]  @relation("TableInvitationCreator")
+  tablesCreated           PingPongTable[]            @relation("TableCreator")
 }
 
 model Account {
@@ -150,7 +150,7 @@ model RankLevel {
 
 model MatchHistory {
   id               String           @id @default(cuid())
-  roomId           String?
+  tableId          String?
   winnerId         String
   loserId          String
   createdById      String
@@ -166,14 +166,14 @@ model MatchHistory {
   createdAt        DateTime         @default(now())
   finishedAt       DateTime         @default(now())
 
-  room       PingPongRoom?  @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  table      PingPongTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
   winner     User           @relation("MatchHistoryWinner", fields: [winnerId], references: [id], onDelete: Restrict)
   loser      User           @relation("MatchHistoryLoser", fields: [loserId], references: [id], onDelete: Restrict)
   createdBy  User           @relation("MatchHistoryCreator", fields: [createdById], references: [id], onDelete: Restrict)
   rollbackOf MatchHistory?  @relation("MatchHistoryRollback", fields: [rollbackOfId], references: [id], onDelete: Restrict)
   rollbacks  MatchHistory[] @relation("MatchHistoryRollback")
 
-  @@index([roomId])
+  @@index([tableId])
   @@index([winnerId])
   @@index([loserId])
   @@index([createdById])
@@ -181,65 +181,65 @@ model MatchHistory {
   @@index([createdAt])
 }
 
-model PingPongRoom {
-  id             String                    @id @default(cuid())
+model PingPongTable {
+  id             String                     @id @default(cuid())
   name           String
   createdById    String
-  createdAt      DateTime                  @default(now())
-  updatedAt      DateTime                  @default(now()) @updatedAt
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @default(now()) @updatedAt
   deletedAt      DateTime?
-  createdBy      User                      @relation("RoomCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  invitations    PingPongRoomInvitation[]
+  createdBy      User                       @relation("TableCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  invitations    PingPongTableInvitation[]
   matchHistories MatchHistory[]
-  members        PingPongRoomMember[]
-  participants   PingPongRoomParticipant[]
+  members        PingPongTableMember[]
+  participants   PingPongTableParticipant[]
 
   @@index([createdById])
   @@index([createdAt])
 }
 
-model PingPongRoomMember {
-  id       String       @id @default(cuid())
-  roomId   String
+model PingPongTableMember {
+  id       String        @id @default(cuid())
+  tableId  String
   userId   String
-  joinedAt DateTime     @default(now())
-  room     PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime      @default(now())
+  table    PingPongTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([roomId, userId])
-  @@index([roomId])
+  @@unique([tableId, userId])
+  @@index([tableId])
   @@index([userId])
 }
 
-model PingPongRoomParticipant {
-  id            String       @id @default(cuid())
-  roomId        String
+model PingPongTableParticipant {
+  id            String        @id @default(cuid())
+  tableId       String
   userId        String
   queuePosition Int
-  joinedAt      DateTime     @default(now())
-  room          PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt      DateTime      @default(now())
+  table         PingPongTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([roomId, userId])
-  @@unique([roomId, queuePosition])
-  @@index([roomId])
+  @@unique([tableId, userId])
+  @@unique([tableId, queuePosition])
+  @@index([tableId])
   @@index([userId])
 }
 
-model PingPongRoomInvitation {
-  id           String       @id @default(cuid())
-  roomId       String
-  token        String       @unique
+model PingPongTableInvitation {
+  id           String        @id @default(cuid())
+  tableId      String
+  token        String        @unique
   createdById  String
   expiresAt    DateTime
-  oneTimeUse   Boolean      @default(false)
+  oneTimeUse   Boolean       @default(false)
   usedAt       DateTime?
   usedByUserId String?
-  createdAt    DateTime     @default(now())
-  room         PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  createdBy    User         @relation("RoomInvitationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt    DateTime      @default(now())
+  table        PingPongTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation("TableInvitationCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
-  @@index([roomId])
+  @@index([tableId])
   @@index([createdById])
   @@index([expiresAt])
   @@index([usedAt])

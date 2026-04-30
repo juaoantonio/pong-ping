@@ -50,9 +50,9 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
     and.push({
       OR: [
         { id: textContains(q) },
-        { roomId: textContains(q) },
+        { tableId: textContains(q) },
         { rollbackOfId: textContains(q) },
-        { room: { name: textContains(q) } },
+        { table: { name: textContains(q) } },
         { winner: { name: textContains(q) } },
         { winner: { email: textContains(q) } },
         { loser: { name: textContains(q) } },
@@ -63,8 +63,8 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
     });
   }
 
-  if (filters.roomId) {
-    and.push({ roomId: textContains(filters.roomId) });
+  if (filters.tableId) {
+    and.push({ tableId: textContains(filters.tableId) });
   }
 
   if (filters.kind === "match" || filters.kind === "rollback") {
@@ -127,7 +127,7 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
     take: 200,
     select: {
       id: true,
-      roomId: true,
+      tableId: true,
       rollbackOfId: true,
       kind: true,
       winnerOldElo: true,
@@ -137,7 +137,7 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
       loserNewElo: true,
       loserDiffPoints: true,
       createdAt: true,
-      room: {
+      table: {
         select: {
           name: true,
         },
@@ -174,7 +174,7 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
       <CardHeader>
         <CardTitle>Historico auditavel</CardTitle>
         <CardDescription>
-          Todas as rodadas e rollbacks, incluindo o room id de origem.
+          Todas as rodadas e rollbacks, incluindo o table id de origem.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -182,7 +182,7 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
           filters={filters}
           rounds={rounds.map((round) => ({
             id: round.id,
-            roomId: round.roomId,
+            tableId: round.tableId,
             rollbackOfId: round.rollbackOfId,
             rolledBack: round.rollbacks.length > 0,
             kind: round.kind,
@@ -193,7 +193,7 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
             loserNewElo: round.loserNewElo,
             loserDiffPoints: round.loserDiffPoints,
             createdAt: round.createdAt.toISOString(),
-            roomName: round.room?.name ?? null,
+            tableName: round.table?.name ?? null,
             winner: round.winner,
             loser: round.loser,
             createdBy: round.createdBy,
@@ -213,7 +213,7 @@ export default async function AdminRoundsPage({
   ]);
   const filters: RoundAdminFilters = {
     q: firstParam(params.q)?.trim() ?? "",
-    roomId: firstParam(params.roomId)?.trim() ?? "",
+    tableId: firstParam(params.tableId)?.trim() ?? "",
     player: firstParam(params.player)?.trim() ?? "",
     createdBy: firstParam(params.createdBy)?.trim() ?? "",
     kind: firstParam(params.kind) ?? "all",

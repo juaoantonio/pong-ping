@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isSuperAdmin } from "@/lib/auth/roles";
 import { getCurrentUser } from "@/lib/auth/session";
-import { rollbackRoomMatch } from "@/lib/rooms/service";
+import { rollbackTableMatch } from "@/lib/tables/service";
 import { deny, getRollbackErrorResponse } from "@/app/api/admin/_shared";
 
 type RouteContext = {
@@ -26,7 +26,7 @@ export async function POST(_request: Request, context: RouteContext) {
   const { roundId } = await context.params;
   const round = await prisma.matchHistory.findUnique({
     where: { id: roundId },
-    select: { roomId: true },
+    select: { tableId: true },
   });
 
   if (!round) {
@@ -36,16 +36,16 @@ export async function POST(_request: Request, context: RouteContext) {
     );
   }
 
-  if (!round.roomId) {
+  if (!round.tableId) {
     return NextResponse.json(
-      { error: "Rodada sem room id nao pode ser revertida por esta tela." },
+      { error: "Rodada sem table id nao pode ser revertida por esta tela." },
       { status: 409 },
     );
   }
 
   try {
     const rollback = await prisma.$transaction((tx) =>
-      rollbackRoomMatch(tx, round.roomId!, roundId, actor.id),
+      rollbackTableMatch(tx, round.tableId!, roundId, actor.id),
     );
 
     return NextResponse.json({ rollback });

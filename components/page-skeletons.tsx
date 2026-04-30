@@ -46,7 +46,7 @@ export function CardTableSkeleton({ rows = 6 }: { rows?: number }) {
   );
 }
 
-export function RoomsGridSkeleton() {
+export function TablesGridSkeleton() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {Array.from({ length: 4 }).map((_, index) => (
@@ -66,7 +66,7 @@ export function RoomsGridSkeleton() {
   );
 }
 
-export function RoomDetailSkeleton() {
+export function TableDetailSkeleton() {
   return (
     <div className="grid gap-6">
       <div className="grid gap-6 lg:grid-cols-[minmax(260px,3fr)_minmax(0,7fr)]">

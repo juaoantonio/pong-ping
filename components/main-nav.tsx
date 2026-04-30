@@ -12,22 +12,34 @@ type MainNavProps = {
 export function MainNav({ role }: MainNavProps) {
   return (
     <nav className="flex flex-wrap items-center gap-2">
-      <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/rooms">
-        Salas
+      <Link
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+        href="/tables"
+      >
+        Mesas
       </Link>
       {canAccessAdmin(role) ? (
         <>
-          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/admin/users">
+          <Link
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            href="/admin/users"
+          >
             <Shield className="size-4" />
             Admin
           </Link>
-          <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/rooms">
+          <Link
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            href="/tables"
+          >
             <Trophy className="size-4" />
-            Salas
+            Mesas
           </Link>
         </>
       ) : null}
-      <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/profile">
+      <Link
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+        href="/profile"
+      >
         <UserRound className="size-4" />
         Perfil
       </Link>

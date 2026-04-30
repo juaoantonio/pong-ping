@@ -16,7 +16,7 @@ const segmentLabels: Record<string, string> = {
   admin: "Admin",
   access: "Acesso",
   profile: "Perfil",
-  rooms: "Salas",
+  tables: "Mesas",
   users: "Usuarios",
 };
 
@@ -37,7 +37,7 @@ export function AppBreadcrumbs() {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/rooms">Pong Ping</Link>
+            <Link href="/tables">Pong Ping</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {crumbs.map((crumb, index) => {

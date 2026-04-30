@@ -32,9 +32,9 @@ async function HomeAction() {
   return (
     <Link
       className={cn(buttonVariants({ variant: "outline" }))}
-      href={session?.user ? "/rooms" : "/login"}
+      href={session?.user ? "/tables" : "/login"}
     >
-      {session?.user ? "Salas" : "Login"}
+      {session?.user ? "Mesas" : "Login"}
     </Link>
   );
 }

@@ -54,7 +54,7 @@ export function AppSidebar() {
                 </span>
                 <span className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Pong Ping</span>
-                  <span className="truncate text-xs">Ranking e salas</span>
+                  <span className="truncate text-xs">Ranking e mesas</span>
                 </span>
               </Link>
             </SidebarMenuButton>
@@ -82,12 +82,12 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActivePath(pathname, "/rooms")}
-                  tooltip="Salas"
+                  isActive={isActivePath(pathname, "/tables")}
+                  tooltip="Mesas"
                 >
-                  <Link href="/rooms">
+                  <Link href="/tables">
                     <UsersRound />
-                    <span>Salas</span>
+                    <span>Mesas</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

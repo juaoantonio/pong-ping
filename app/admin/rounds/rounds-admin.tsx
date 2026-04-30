@@ -28,7 +28,7 @@ import { formatDateTime, readApiError, userLabel } from "@/lib/client-utils";
 
 export type RoundAdminFilters = {
   q: string;
-  roomId: string;
+  tableId: string;
   player: string;
   createdBy: string;
   kind: string;
@@ -44,7 +44,7 @@ type UserLabel = {
 
 type RoundAdminItem = {
   id: string;
-  roomId: string | null;
+  tableId: string | null;
   rollbackOfId: string | null;
   rolledBack: boolean;
   kind: "match" | "rollback";
@@ -55,7 +55,7 @@ type RoundAdminItem = {
   loserNewElo: number;
   loserDiffPoints: number;
   createdAt: string;
-  roomName: string | null;
+  tableName: string | null;
   winner: UserLabel;
   loser: UserLabel;
   createdBy: UserLabel;
@@ -104,15 +104,15 @@ export function RoundsAdmin({ filters, rounds }: RoundsAdminProps) {
               defaultValue={filters.q}
               id="round-q"
               name="q"
-              placeholder="id, room, jogador, criador"
+              placeholder="id, table, jogador, criador"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="round-room">Room id</Label>
+            <Label htmlFor="round-table">Table id</Label>
             <Input
-              defaultValue={filters.roomId}
-              id="round-room"
-              name="roomId"
+              defaultValue={filters.tableId}
+              id="round-table"
+              name="tableId"
               placeholder="cmok..."
             />
           </div>
@@ -207,8 +207,8 @@ export function RoundsAdmin({ filters, rounds }: RoundsAdminProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Status</TableHead>
-              <TableHead>Room id</TableHead>
-              <TableHead>Sala</TableHead>
+              <TableHead>Table id</TableHead>
+              <TableHead>Mesa</TableHead>
               <TableHead>Vencedor</TableHead>
               <TableHead>Perdedor</TableHead>
               <TableHead>Elo</TableHead>
@@ -221,14 +221,14 @@ export function RoundsAdmin({ filters, rounds }: RoundsAdminProps) {
           <TableBody>
             {rounds.map((round) => {
               const canRollback =
-                round.kind === "match" && !round.rolledBack && round.roomId;
+                round.kind === "match" && !round.rolledBack && round.tableId;
               const disabledReason =
                 round.kind === "rollback"
                   ? "Registro rollback"
                   : round.rolledBack
                     ? "Ja revertida"
-                    : !round.roomId
-                      ? "Sem room id"
+                    : !round.tableId
+                      ? "Sem table id"
                       : null;
 
               return (
@@ -247,9 +247,9 @@ export function RoundsAdmin({ filters, rounds }: RoundsAdminProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-44 truncate font-mono text-xs text-muted-foreground">
-                    {round.roomId ?? "sem-sala"}
+                    {round.tableId ?? "sem-mesa"}
                   </TableCell>
-                  <TableCell>{round.roomName ?? "Sem sala"}</TableCell>
+                  <TableCell>{round.tableName ?? "Sem mesa"}</TableCell>
                   <TableCell>{userLabel(round.winner)}</TableCell>
                   <TableCell>{userLabel(round.loser)}</TableCell>
                   <TableCell className="text-muted-foreground">
