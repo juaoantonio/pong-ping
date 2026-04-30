@@ -13,8 +13,10 @@ type TablesPageProps = {
 };
 
 async function TablesListContent({
+  canRemoveTables,
   searchParams,
 }: {
+  canRemoveTables: boolean;
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const result = await getTableListItems(
@@ -23,7 +25,7 @@ async function TablesListContent({
 
   return (
     <div className="grid gap-4">
-      <TableList tables={result.tables} />
+      <TableList canRemoveTables={canRemoveTables} tables={result.tables} />
       <PaginationControls
         itemLabel="mesas"
         pageInfo={result.pageInfo}
@@ -36,6 +38,7 @@ async function TablesListContent({
 
 export default async function TablesPage({ searchParams }: TablesPageProps) {
   const [user, params] = await Promise.all([requireAuth(), searchParams]);
+  const canManageTables = canAccessAdmin(user.role);
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-6">
@@ -43,11 +46,14 @@ export default async function TablesPage({ searchParams }: TablesPageProps) {
         <div>
           <h1 className="text-2xl font-semibold">Mesas</h1>
         </div>
-        {canAccessAdmin(user.role) ? <CreateTableForm /> : null}
+        {canManageTables ? <CreateTableForm /> : null}
       </div>
 
       <Suspense fallback={<TablesGridSkeleton />}>
-        <TablesListContent searchParams={params} />
+        <TablesListContent
+          canRemoveTables={canManageTables}
+          searchParams={params}
+        />
       </Suspense>
     </div>
   );

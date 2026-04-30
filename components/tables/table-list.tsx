@@ -19,7 +19,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { formatDateTime, readApiError, userLabel } from "@/lib/client-utils";
 
-export function TableList({ tables }: { tables: TableListItem[] }) {
+type TableListProps = {
+  canRemoveTables: boolean;
+  tables: TableListItem[];
+};
+
+export function TableList({ canRemoveTables, tables }: TableListProps) {
   const router = useRouter();
 
   function deleteTable(tableId: string) {
@@ -130,13 +135,15 @@ export function TableList({ tables }: { tables: TableListItem[] }) {
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button
-                className="justify-self-start"
-                onClick={() => deleteTable(table.id)}
-              >
-                <Trash className="size-4" />
-                Remover mesa
-              </Button>
+              {canRemoveTables ? (
+                <Button
+                  className="justify-self-start"
+                  onClick={() => deleteTable(table.id)}
+                >
+                  <Trash className="size-4" />
+                  Remover mesa
+                </Button>
+              ) : null}
             </div>
           </CardContent>
         </Card>
