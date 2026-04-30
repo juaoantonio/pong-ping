@@ -16,13 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel criar a sala.";
-}
+import { readApiError } from "@/lib/client-utils";
 
 export function CreateRoomForm() {
   const router = useRouter();
@@ -43,7 +37,7 @@ export function CreateRoomForm() {
       });
 
       if (!response.ok) {
-        setError(await readApiError(response));
+        setError(await readApiError(response, "Nao foi possivel criar a sala."));
         return;
       }
 

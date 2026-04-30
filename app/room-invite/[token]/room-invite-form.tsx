@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import type { SubmitEvent } from "react";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { formatDateTime, readApiError } from "@/lib/client-utils";
 import { toast } from "sonner";
 
 type RoomInviteFormProps = {
@@ -11,13 +12,6 @@ type RoomInviteFormProps = {
   roomName: string;
   token: string;
 };
-
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel entrar nesta sala.";
-}
 
 export function RoomInviteForm({
   expiresAt,
@@ -35,7 +29,9 @@ export function RoomInviteForm({
       });
 
       if (!response.ok) {
-        toast.error(await readApiError(response));
+        toast.error(
+          await readApiError(response, "Nao foi possivel entrar nesta sala."),
+        );
         return;
       }
 
@@ -49,12 +45,7 @@ export function RoomInviteForm({
     <form className="grid gap-4" onSubmit={joinRoom}>
       <div className="rounded-md border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
         Ao entrar, seu nome sera adicionado ao fim da fila atual da sala.
-        Convite valido ate{" "}
-        {new Intl.DateTimeFormat("pt-BR", {
-          dateStyle: "short",
-          timeStyle: "short",
-        }).format(new Date(expiresAt))}
-        .
+        Convite valido ate {formatDateTime(expiresAt)}.
       </div>
 
       <Button disabled={isPending} type="submit">

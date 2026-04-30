@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import { canDeleteUser, type Role } from "@/lib/auth/roles";
+import { formatDate, readApiError } from "@/lib/client-utils";
 import { toast } from "sonner";
 
 type AdminUser = {
@@ -62,13 +63,6 @@ const roleBadgeVariant: Record<Role, "default" | "secondary" | "outline"> = {
   admin: "secondary",
   user: "outline",
 };
-
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel concluir a acao.";
-}
 
 export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
   const router = useRouter();
@@ -163,9 +157,7 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {new Intl.DateTimeFormat("pt-BR", {
-                    dateStyle: "short",
-                  }).format(new Date(user.createdAt))}
+                  {formatDate(user.createdAt)}
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-2">

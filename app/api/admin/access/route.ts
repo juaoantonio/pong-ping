@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth/session";
-import { canAccessAdmin } from "@/lib/auth/roles";
+import { requireAdmin } from "@/app/api/admin/_shared";
 import {
   allowEmail,
   createInvitationToken,
@@ -21,48 +20,8 @@ type AccessRequestBody = {
   type?: unknown;
 };
 
-async function requireAdmin(): Promise<
-  | {
-      actor: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
-      response?: never;
-    }
-  | { actor: null; response: NextResponse }
-> {
-  const actor = await getCurrentUser();
-
-  if (!actor) {
-    return {
-      actor: null,
-      response: NextResponse.json(
-        { error: "Nao autenticado." },
-        { status: 401 },
-      ),
-    };
-  }
-
-  if (!canAccessAdmin(actor.role)) {
-    await prisma.auditLog.create({
-      data: {
-        actorUserId: actor.id,
-        action: "admin_action_denied",
-        metadata: {
-          reason: "access_management_forbidden",
-          actorRole: actor.role,
-        },
-      },
-    });
-
-    return {
-      actor: null,
-      response: NextResponse.json({ error: "Sem permissao." }, { status: 403 }),
-    };
-  }
-
-  return { actor };
-}
-
 export async function GET() {
-  const { actor, response } = await requireAdmin();
+  const { actor, response } = await requireAdmin("access_management_forbidden");
 
   if (!actor) {
     return response;
@@ -98,7 +57,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { actor, response } = await requireAdmin();
+  const { actor, response } = await requireAdmin("access_management_forbidden");
 
   if (!actor) {
     return response;

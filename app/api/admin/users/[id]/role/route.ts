@@ -2,23 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { canChangeRole, isRole } from "@/lib/auth/roles";
+import { denyTarget } from "@/app/api/admin/_shared";
 
 type RouteParams = {
   params: Promise<{
     id: string;
   }>;
 };
-
-async function denied(actorUserId: string | null, targetUserId: string | null, reason: string) {
-  await prisma.auditLog.create({
-    data: {
-      actorUserId,
-      targetUserId,
-      action: "admin_action_denied",
-      metadata: { reason },
-    },
-  });
-}
 
 export async function PATCH(request: Request, context: RouteParams) {
   const actor = await getCurrentUser();
@@ -31,19 +21,19 @@ export async function PATCH(request: Request, context: RouteParams) {
   const body = (await request.json().catch(() => null)) as { role?: unknown } | null;
 
   if (!canChangeRole(actor.role)) {
-    await denied(actor.id, id, "change_role_forbidden");
+    await denyTarget(actor.id, id, "change_role_forbidden");
     return NextResponse.json({ error: "Sem permissao para alterar roles." }, { status: 403 });
   }
 
   if (!isRole(body?.role)) {
-    await denied(actor.id, id, "invalid_role");
+    await denyTarget(actor.id, id, "invalid_role");
     return NextResponse.json({ error: "Role invalida." }, { status: 400 });
   }
 
   const nextRole = body.role;
 
   if (actor.id === id) {
-    await denied(actor.id, id, "self_role_change");
+    await denyTarget(actor.id, id, "self_role_change");
     return NextResponse.json({ error: "Voce nao pode alterar sua propria role." }, { status: 400 });
   }
 
@@ -97,7 +87,7 @@ export async function PATCH(request: Request, context: RouteParams) {
     });
 
     if (!updatedUser) {
-      await denied(actor.id, id, "target_not_found");
+      await denyTarget(actor.id, id, "target_not_found");
       return NextResponse.json({ error: "Usuario nao encontrado." }, { status: 404 });
     }
 
@@ -113,7 +103,7 @@ export async function PATCH(request: Request, context: RouteParams) {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "last_superadmin_role_change") {
-      await denied(actor.id, id, "last_superadmin_role_change");
+      await denyTarget(actor.id, id, "last_superadmin_role_change");
       return NextResponse.json({ error: "O ultimo superadmin nao pode ser rebaixado." }, { status: 400 });
     }
 

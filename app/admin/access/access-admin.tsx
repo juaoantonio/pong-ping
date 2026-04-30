@@ -6,15 +6,12 @@ import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  InvitationSettingsControls,
+  type InvitationUseMode,
+} from "@/components/invitation-settings-controls";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -25,9 +22,9 @@ import {
 } from "@/components/ui/table";
 import {
   getInvitationExpiryLabel,
-  INVITATION_EXPIRY_PRESETS,
   type InvitationExpiryPreset,
 } from "@/lib/invitations";
+import { formatDateTime, readApiError } from "@/lib/client-utils";
 import { toast } from "sonner";
 
 type AccessAdminProps = {
@@ -51,19 +48,13 @@ type AccessAdminProps = {
   }[];
 };
 
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel concluir a acao.";
-}
-
 export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
   const router = useRouter();
   const [accessEmail, setAccessEmail] = useState("");
   const [inviteExpiresIn, setInviteExpiresIn] =
     useState<InvitationExpiryPreset>("15m");
-  const [inviteUseMode, setInviteUseMode] = useState("one-time");
+  const [inviteUseMode, setInviteUseMode] =
+    useState<InvitationUseMode>("one-time");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -153,43 +144,15 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
       </form>
 
       <div className="grid gap-3 md:grid-cols-[minmax(150px,180px)_minmax(150px,180px)_auto_minmax(0,1fr)_auto] md:items-end">
-        <div className="grid gap-2">
-          <Label htmlFor="invite-expires-in">Validade</Label>
-          <Select
-            disabled={isPending}
-            onValueChange={(value: InvitationExpiryPreset) =>
-              setInviteExpiresIn(value)
-            }
-            value={inviteExpiresIn}
-          >
-            <SelectTrigger id="invite-expires-in">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {INVITATION_EXPIRY_PRESETS.map((preset) => (
-                <SelectItem key={preset.value} value={preset.value}>
-                  {preset.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="invite-use-mode">Uso</Label>
-          <Select
-            disabled={isPending}
-            onValueChange={setInviteUseMode}
-            value={inviteUseMode}
-          >
-            <SelectTrigger id="invite-use-mode">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="one-time">Uso unico</SelectItem>
-              <SelectItem value="reusable">Reutilizavel</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <InvitationSettingsControls
+          disabled={isPending}
+          expiresIn={inviteExpiresIn}
+          expiresInId="invite-expires-in"
+          onExpiresInChange={setInviteExpiresIn}
+          onUseModeChange={setInviteUseMode}
+          useMode={inviteUseMode}
+          useModeId="invite-use-mode"
+        />
         <Button disabled={isPending} onClick={createInvite} variant="outline">
           <Link2 className="size-4" />
           Criar convite
@@ -235,10 +198,7 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
                     "Sistema"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {new Intl.DateTimeFormat("pt-BR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  }).format(new Date(allowedEmail.createdAt))}
+                  {formatDateTime(allowedEmail.createdAt)}
                 </TableCell>
               </TableRow>
             ))}
@@ -283,10 +243,7 @@ export function AccessAdmin({ allowedEmails, invitations }: AccessAdminProps) {
                   {invitation.usedByEmail ?? "-"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {new Intl.DateTimeFormat("pt-BR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  }).format(new Date(invitation.expiresAt))}
+                  {formatDateTime(invitation.expiresAt)}
                 </TableCell>
               </TableRow>
             ))}

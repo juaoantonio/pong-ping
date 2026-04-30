@@ -13,28 +13,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
-import type { RoomListItem, UserIdentityLike } from "@/components/rooms/types";
+import type { RoomListItem } from "@/components/rooms/types";
 import { Fragment, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-function userLabel(user: UserIdentityLike) {
-  return user.name ?? user.email ?? "Usuario";
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel processar a requisicao.";
-}
+import { formatDateTime, readApiError, userLabel } from "@/lib/client-utils";
 
 export function RoomList({ rooms }: { rooms: RoomListItem[] }) {
   const router = useRouter();
@@ -53,7 +36,12 @@ export function RoomList({ rooms }: { rooms: RoomListItem[] }) {
       });
 
       if (!response.ok) {
-        toast.error(await readApiError(response));
+        toast.error(
+          await readApiError(
+            response,
+            "Nao foi possivel processar a requisicao.",
+          ),
+        );
         return;
       }
 

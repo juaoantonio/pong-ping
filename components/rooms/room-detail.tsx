@@ -50,9 +50,13 @@ import {
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import {
-  INVITATION_EXPIRY_PRESETS,
+  InvitationSettingsControls,
+  type InvitationUseMode,
+} from "@/components/invitation-settings-controls";
+import {
   type InvitationExpiryPreset,
 } from "@/lib/invitations";
+import { formatDateTime, readApiError, userLabel } from "@/lib/client-utils";
 import type {
   RoomParticipant,
   RoomSummary,
@@ -65,24 +69,6 @@ type RoomDetailProps = {
   room: RoomSummary;
   users: UserOption[];
 };
-
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel concluir a acao.";
-}
-
-function userLabel(user: UserIdentityLike) {
-  return user.name ?? user.email ?? "Usuario";
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 function buildInvitationLink(token: string) {
   if (typeof window === "undefined") {
@@ -147,7 +133,8 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
   const [selectedUser, setSelectedUser] = useState("");
   const [inviteExpiresIn, setInviteExpiresIn] =
     useState<InvitationExpiryPreset>("7d");
-  const [inviteUseMode, setInviteUseMode] = useState("reusable");
+  const [inviteUseMode, setInviteUseMode] =
+    useState<InvitationUseMode>("reusable");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -501,43 +488,15 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
                   Qualquer usuario autenticado com o link entra no fim da fila.
                 </p>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="room-invite-expires-in">Validade</Label>
-                <Select
-                  disabled={isPending}
-                  onValueChange={(value: InvitationExpiryPreset) =>
-                    setInviteExpiresIn(value)
-                  }
-                  value={inviteExpiresIn}
-                >
-                  <SelectTrigger id="room-invite-expires-in">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INVITATION_EXPIRY_PRESETS.map((preset) => (
-                      <SelectItem key={preset.value} value={preset.value}>
-                        {preset.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="room-invite-use-mode">Uso</Label>
-                <Select
-                  disabled={isPending}
-                  onValueChange={setInviteUseMode}
-                  value={inviteUseMode}
-                >
-                  <SelectTrigger id="room-invite-use-mode">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="one-time">Uso unico</SelectItem>
-                    <SelectItem value="reusable">Reutilizavel</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <InvitationSettingsControls
+                disabled={isPending}
+                expiresIn={inviteExpiresIn}
+                expiresInId="room-invite-expires-in"
+                onExpiresInChange={setInviteExpiresIn}
+                onUseModeChange={setInviteUseMode}
+                useMode={inviteUseMode}
+                useModeId="room-invite-use-mode"
+              />
               <Button
                 disabled={isPending}
                 onClick={createInvitation}

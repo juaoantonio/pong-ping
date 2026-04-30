@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { canAccessAdmin } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
-import { deny } from "@/app/api/admin/rooms/route";
+import { requireAdmin } from "@/app/api/admin/_shared";
 
 type RouteContext = {
   params: Promise<{
@@ -10,17 +8,13 @@ type RouteContext = {
   }>;
 };
 
-export async function DELETE(request: Request, context: RouteContext) {
-  const actor = await getCurrentUser();
+export async function DELETE(_request: Request, context: RouteContext) {
+  const { actor, response } = await requireAdmin("delete_room_forbidden");
 
   if (!actor) {
-    return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+    return response;
   }
 
-  if (!canAccessAdmin(actor.role)) {
-    await deny(actor.id, "delete_room_forbidden");
-    return NextResponse.json({ error: "Sem permissao." }, { status: 403 });
-  }
   const { roomId } = await context.params;
 
   await prisma.$transaction(async (tx) => {

@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth/session";
-import { canAccessAdmin } from "@/lib/auth/roles";
 import {
   getInvitationExpiry,
   isInvitationExpiryPreset,
 } from "@/lib/invitations";
 import { createRoomInvitationToken } from "@/lib/rooms/invitations";
-import { deny } from "@/app/api/admin/rooms/route";
+import { requireAdmin } from "@/app/api/admin/_shared";
 
 type RoomInvitationRequestBody = {
   expiresIn?: unknown;
@@ -21,15 +19,10 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, context: RouteContext) {
-  const actor = await getCurrentUser();
+  const { actor, response } = await requireAdmin("create_room_invite_forbidden");
 
   if (!actor) {
-    return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
-  }
-
-  if (!canAccessAdmin(actor.role)) {
-    await deny(actor.id, "create_room_invite_forbidden");
-    return NextResponse.json({ error: "Sem permissao." }, { status: 403 });
+    return response;
   }
 
   const { roomId } = await context.params;

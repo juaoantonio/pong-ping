@@ -6,18 +6,12 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { readApiError } from "@/lib/client-utils";
 import { toast } from "sonner";
 
 type InviteFormProps = {
   token: string;
 };
-
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel usar este convite.";
-}
 
 export function InviteForm({ token }: InviteFormProps) {
   const [email, setEmail] = useState("");
@@ -34,7 +28,9 @@ export function InviteForm({ token }: InviteFormProps) {
       });
 
       if (!response.ok) {
-        toast.error(await readApiError(response));
+        toast.error(
+          await readApiError(response, "Nao foi possivel usar este convite."),
+        );
         return;
       }
 

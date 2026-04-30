@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDateTime, readApiError, userLabel } from "@/lib/client-utils";
 
 export type RoundAdminFilters = {
   q: string;
@@ -64,24 +65,6 @@ type RoundsAdminProps = {
   filters: RoundAdminFilters;
   rounds: RoundAdminItem[];
 };
-
-async function readApiError(response: Response) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error ?? "Nao foi possivel concluir a acao.";
-}
-
-function userLabel(user: UserLabel) {
-  return user.name ?? user.email ?? "Usuario";
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 function diffLabel(value: number) {
   return `${value > 0 ? "+" : ""}${value}`;

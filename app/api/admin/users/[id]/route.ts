@@ -2,23 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { canAccessAdmin, canDeleteUser } from "@/lib/auth/roles";
+import { denyTarget } from "@/app/api/admin/_shared";
 
 type RouteParams = {
   params: Promise<{
     id: string;
   }>;
 };
-
-async function denied(actorUserId: string | null, targetUserId: string | null, reason: string) {
-  await prisma.auditLog.create({
-    data: {
-      actorUserId,
-      targetUserId,
-      action: "admin_action_denied",
-      metadata: { reason },
-    },
-  });
-}
 
 export async function DELETE(_request: Request, context: RouteParams) {
   const actor = await getCurrentUser();
@@ -30,12 +20,12 @@ export async function DELETE(_request: Request, context: RouteParams) {
   const { id } = await context.params;
 
   if (!canAccessAdmin(actor.role)) {
-    await denied(actor.id, id, "delete_user_forbidden");
+    await denyTarget(actor.id, id, "delete_user_forbidden");
     return NextResponse.json({ error: "Sem permissao." }, { status: 403 });
   }
 
   if (actor.id === id) {
-    await denied(actor.id, id, "self_delete");
+    await denyTarget(actor.id, id, "self_delete");
     return NextResponse.json({ error: "Voce nao pode remover sua propria conta." }, { status: 400 });
   }
 
@@ -80,19 +70,19 @@ export async function DELETE(_request: Request, context: RouteParams) {
     });
 
     if (!deletedUser) {
-      await denied(actor.id, id, "target_not_found");
+      await denyTarget(actor.id, id, "target_not_found");
       return NextResponse.json({ error: "Usuario nao encontrado." }, { status: 404 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof Error && error.message === "last_superadmin_delete") {
-      await denied(actor.id, id, "last_superadmin_delete");
+      await denyTarget(actor.id, id, "last_superadmin_delete");
       return NextResponse.json({ error: "O ultimo superadmin nao pode ser removido." }, { status: 400 });
     }
 
     if (error instanceof Error && error.message === "delete_target_forbidden") {
-      await denied(actor.id, id, "delete_target_forbidden");
+      await denyTarget(actor.id, id, "delete_target_forbidden");
       return NextResponse.json({ error: "Voce nao pode remover este usuario." }, { status: 403 });
     }
 

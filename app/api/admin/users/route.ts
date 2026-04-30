@@ -1,28 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth/session";
-import { canAccessAdmin, isSuperAdmin } from "@/lib/auth/roles";
+import { isSuperAdmin } from "@/lib/auth/roles";
+import { requireAdmin } from "@/app/api/admin/_shared";
 
 export async function GET() {
-  const actor = await getCurrentUser();
+  const { actor, response } = await requireAdmin("list_users_forbidden");
 
   if (!actor) {
-    return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
-  }
-
-  if (!canAccessAdmin(actor.role)) {
-    await prisma.auditLog.create({
-      data: {
-        actorUserId: actor.id,
-        action: "admin_action_denied",
-        metadata: {
-          reason: "list_users_forbidden",
-          actorRole: actor.role,
-        },
-      },
-    });
-
-    return NextResponse.json({ error: "Sem permissao." }, { status: 403 });
+    return response;
   }
 
   const users = await prisma.user.findMany({

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isSuperAdmin } from "@/lib/auth/roles";
 import { getCurrentUser } from "@/lib/auth/session";
 import { rollbackRoomMatch } from "@/lib/rooms/service";
-import { deny } from "@/app/api/admin/rooms/route";
+import { deny, getRollbackErrorResponse } from "@/app/api/admin/_shared";
 
 type RouteContext = {
   params: Promise<{
@@ -50,38 +50,11 @@ export async function POST(_request: Request, context: RouteContext) {
 
     return NextResponse.json({ rollback });
   } catch (error) {
-    if (!(error instanceof Error)) {
-      throw error;
-    }
+    const errorResponse = getRollbackErrorResponse(error);
 
-    if (error.message === "match_not_found") {
-      return NextResponse.json(
-        { error: "Rodada nao encontrada." },
-        { status: 404 },
-      );
+    if (errorResponse) {
+      return errorResponse;
     }
-
-    if (error.message === "cannot_rollback_rollback") {
-      return NextResponse.json(
-        { error: "Um rollback nao pode ser revertido." },
-        { status: 400 },
-      );
-    }
-
-    if (error.message === "match_already_rolled_back") {
-      return NextResponse.json(
-        { error: "Esta rodada ja foi revertida." },
-        { status: 409 },
-      );
-    }
-
-    if (error.message === "ranking_not_found") {
-      return NextResponse.json(
-        { error: "Ranking da rodada nao encontrado." },
-        { status: 409 },
-      );
-    }
-
     throw error;
   }
 }
