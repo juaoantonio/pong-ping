@@ -21,10 +21,12 @@ generated
 
 # next.js
 /.next/
+/apps/*/.next/
 /out/
 
 # production
 /build
+/apps/*/dist/
 
 # misc
 .DS_Store
