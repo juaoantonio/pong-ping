@@ -1,13 +1,15 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { hasRole, type Role } from "@/lib/auth/roles";
+import type { ClientAuthenticatedUser } from "@/lib/auth/shared";
 
 export type AuthenticatedUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -26,6 +28,21 @@ export async function getCurrentUser() {
       createdAt: true,
     },
   });
+});
+
+export function toClientAuthenticatedUser(
+  user: Pick<
+    AuthenticatedUser,
+    "id" | "name" | "email" | "avatarUrl" | "image" | "role"
+  >,
+): ClientAuthenticatedUser {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl ?? user.image,
+    role: user.role,
+  };
 }
 
 export async function requireAuth() {

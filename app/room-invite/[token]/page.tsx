@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
@@ -13,11 +14,13 @@ type RoomInvitePageProps = {
 };
 
 export default async function RoomInvitePage({ params }: RoomInvitePageProps) {
-  const currentUser = await requireAuth();
+  const currentUserPromise = requireAuth();
   const { token } = await params;
   const now = new Date();
 
-  const invitation = await prisma.pingPongRoomInvitation.findUnique({
+  await connection();
+
+  const invitationPromise = prisma.pingPongRoomInvitation.findUnique({
     where: { token },
     select: {
       expiresAt: true,
@@ -37,6 +40,10 @@ export default async function RoomInvitePage({ params }: RoomInvitePageProps) {
       },
     },
   });
+  const [currentUser, invitation] = await Promise.all([
+    currentUserPromise,
+    invitationPromise,
+  ]);
 
   if (
     !invitation ||

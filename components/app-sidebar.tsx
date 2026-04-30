@@ -11,6 +11,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { useAuthenticatedUser } from "@/components/auth/authenticated-user-provider";
 import { LogoutButton } from "@/components/logout-button";
 import { UserAvatar } from "@/components/user-avatar";
 import {
@@ -28,24 +29,15 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { canAccessAdmin, isSuperAdmin, type Role } from "@/lib/auth/roles";
-
-type AppSidebarProps = {
-  user: {
-    name: string | null;
-    email: string | null;
-    avatarUrl: string | null;
-    image: string | null;
-    role: Role;
-  };
-};
+import { canAccessAdmin, isSuperAdmin } from "@/lib/auth/roles";
 
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppSidebar({ user }: AppSidebarProps) {
+export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useAuthenticatedUser();
   const userName = user.name ?? user.email ?? "Usuario";
   const canUseAdmin = canAccessAdmin(user.role);
   const canUseRoundManagement = isSuperAdmin(user);
@@ -173,7 +165,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
               <UserAvatar
                 className="size-8"
                 name={userName}
-                src={user.avatarUrl ?? user.image}
+                src={user.avatarUrl}
               />
               <span className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{userName}</span>

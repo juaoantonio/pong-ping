@@ -11,8 +11,10 @@ type RoomPageProps = {
 };
 
 export default async function RoomPage({ params }: RoomPageProps) {
-  const user = await requireAuth();
-  const { roomId } = await params;
+  const userPromise = requireAuth();
+  const paramsPromise = params;
+
+  const [user, { roomId }] = await Promise.all([userPromise, paramsPromise]);
   const room = await getRoomDetail(roomId);
 
   if (!room) {

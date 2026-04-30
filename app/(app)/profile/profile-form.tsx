@@ -3,10 +3,12 @@
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SubmitEvent, useState, useTransition } from "react";
+import { useAuthenticatedUser } from "@/components/auth/authenticated-user-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readApiError } from "@/lib/client-utils";
+import type { AuthenticatedUserResponse } from "@/lib/auth/shared";
 import { toast } from "sonner";
 
 type ProfileFormProps = {
@@ -15,6 +17,7 @@ type ProfileFormProps = {
 
 export function ProfileForm({ initialName }: ProfileFormProps) {
   const router = useRouter();
+  const { mutateUser } = useAuthenticatedUser();
   const [name, setName] = useState(initialName);
   const [isPending, startTransition] = useTransition();
   const normalizedName = name.trim();
@@ -37,6 +40,10 @@ export function ProfileForm({ initialName }: ProfileFormProps) {
         return;
       }
 
+      const body = (await response.json()) as AuthenticatedUserResponse;
+      if (body.user) {
+        await mutateUser(body.user);
+      }
       setName(normalizedName);
       toast.success("Perfil atualizado.");
       router.refresh();

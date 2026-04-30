@@ -1,8 +1,12 @@
 import "server-only";
 
+import { cache } from "react";
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function getRoomListItems() {
+export const getRoomListItems = cache(async () => {
+  await connection();
+
   const rooms = await prisma.pingPongRoom.findMany({
     orderBy: { createdAt: "desc" },
     where: {
@@ -115,9 +119,11 @@ export async function getRoomListItems() {
         }
       : null,
   }));
-}
+});
 
-export async function getRoomDetail(roomId: string) {
+export const getRoomDetail = cache(async (roomId: string) => {
+  await connection();
+
   const room = await prisma.pingPongRoom.findUnique({
     where: { id: roomId },
     select: {
@@ -261,9 +267,11 @@ export async function getRoomDetail(roomId: string) {
       },
     })),
   };
-}
+});
 
-export async function getRoomUserOptions() {
+export const getRoomUserOptions = cache(async () => {
+  await connection();
+
   const users = await prisma.user.findMany({
     orderBy: [{ name: "asc" }, { email: "asc" }],
     select: {
@@ -281,4 +289,4 @@ export async function getRoomUserOptions() {
     email: user.email,
     avatarUrl: user.avatarUrl ?? user.image,
   }));
-}
+});

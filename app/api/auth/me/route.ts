@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, requireAuth } from "@/lib/auth/session";
+import {
+  getCurrentUser,
+  requireAuth,
+  toClientAuthenticatedUser,
+} from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -9,15 +13,7 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  return NextResponse.json({
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatarUrl: user.avatarUrl ?? user.image,
-      role: user.role,
-    },
-  });
+  return NextResponse.json({ user: toClientAuthenticatedUser(user) });
 }
 
 export async function PATCH(request: Request) {
@@ -52,13 +48,5 @@ export async function PATCH(request: Request) {
     },
   });
 
-  return NextResponse.json({
-    user: {
-      id: updatedUser.id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      avatarUrl: updatedUser.avatarUrl ?? updatedUser.image,
-      role: updatedUser.role,
-    },
-  });
+  return NextResponse.json({ user: toClientAuthenticatedUser(updatedUser) });
 }

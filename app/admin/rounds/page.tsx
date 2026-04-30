@@ -1,4 +1,6 @@
 import { Prisma } from "@prisma/client";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import {
   Card,
   CardContent,
@@ -10,6 +12,7 @@ import {
   RoundsAdmin,
   type RoundAdminFilters,
 } from "@/app/admin/rounds/rounds-admin";
+import { CardTableSkeleton } from "@/components/page-skeletons";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
@@ -37,22 +40,8 @@ function textContains(value: string): Prisma.StringFilter {
   return { contains: value, mode: "insensitive" };
 }
 
-export default async function AdminRoundsPage({
-  searchParams,
-}: AdminRoundsPageProps) {
-  await requireRole("superadmin");
-
-  const params = await searchParams;
-  const filters: RoundAdminFilters = {
-    q: firstParam(params.q)?.trim() ?? "",
-    roomId: firstParam(params.roomId)?.trim() ?? "",
-    player: firstParam(params.player)?.trim() ?? "",
-    createdBy: firstParam(params.createdBy)?.trim() ?? "",
-    kind: firstParam(params.kind) ?? "all",
-    status: firstParam(params.status) ?? "all",
-    from: firstParam(params.from) ?? "",
-    to: firstParam(params.to) ?? "",
-  };
+async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
+  await connection();
 
   const and: Prisma.MatchHistoryWhereInput[] = [];
 
@@ -181,43 +170,68 @@ export default async function AdminRoundsPage({
   });
 
   return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Historico auditavel</CardTitle>
+        <CardDescription>
+          Todas as rodadas e rollbacks, incluindo o room id de origem.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <RoundsAdmin
+          filters={filters}
+          rounds={rounds.map((round) => ({
+            id: round.id,
+            roomId: round.roomId,
+            rollbackOfId: round.rollbackOfId,
+            rolledBack: round.rollbacks.length > 0,
+            kind: round.kind,
+            winnerOldElo: round.winnerOldElo,
+            winnerNewElo: round.winnerNewElo,
+            winnerDiffPoints: round.winnerDiffPoints,
+            loserOldElo: round.loserOldElo,
+            loserNewElo: round.loserNewElo,
+            loserDiffPoints: round.loserDiffPoints,
+            createdAt: round.createdAt.toISOString(),
+            roomName: round.room?.name ?? null,
+            winner: round.winner,
+            loser: round.loser,
+            createdBy: round.createdBy,
+          }))}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+export default async function AdminRoundsPage({
+  searchParams,
+}: AdminRoundsPageProps) {
+  const [, params] = await Promise.all([
+    requireRole("superadmin"),
+    searchParams,
+  ]);
+  const filters: RoundAdminFilters = {
+    q: firstParam(params.q)?.trim() ?? "",
+    roomId: firstParam(params.roomId)?.trim() ?? "",
+    player: firstParam(params.player)?.trim() ?? "",
+    createdBy: firstParam(params.createdBy)?.trim() ?? "",
+    kind: firstParam(params.kind) ?? "all",
+    status: firstParam(params.status) ?? "all",
+    from: firstParam(params.from) ?? "",
+    to: firstParam(params.to) ?? "",
+  };
+
+  return (
     <div className="mx-auto grid w-full max-w-7xl gap-6">
       <div>
         <p className="text-sm text-muted-foreground">Painel superadmin</p>
         <h1 className="text-2xl font-semibold">Rodadas</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Historico auditavel</CardTitle>
-          <CardDescription>
-            Todas as rodadas e rollbacks, incluindo o room id de origem.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RoundsAdmin
-            filters={filters}
-            rounds={rounds.map((round) => ({
-              id: round.id,
-              roomId: round.roomId,
-              rollbackOfId: round.rollbackOfId,
-              rolledBack: round.rollbacks.length > 0,
-              kind: round.kind,
-              winnerOldElo: round.winnerOldElo,
-              winnerNewElo: round.winnerNewElo,
-              winnerDiffPoints: round.winnerDiffPoints,
-              loserOldElo: round.loserOldElo,
-              loserNewElo: round.loserNewElo,
-              loserDiffPoints: round.loserDiffPoints,
-              createdAt: round.createdAt.toISOString(),
-              roomName: round.room?.name ?? null,
-              winner: round.winner,
-              loser: round.loser,
-              createdBy: round.createdBy,
-            }))}
-          />
-        </CardContent>
-      </Card>
+      <Suspense fallback={<CardTableSkeleton rows={8} />}>
+        <RoundsAdminPanel filters={filters} />
+      </Suspense>
     </div>
   );
 }
