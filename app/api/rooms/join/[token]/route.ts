@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
-import { addUserToRoom } from "@/lib/rooms/service";
+import { ensureRoomMembership } from "@/lib/rooms/service";
 
 type RouteContext = {
   params: Promise<{
@@ -52,7 +52,7 @@ export async function POST(_: Request, context: RouteContext) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      await addUserToRoom(tx, invitation.roomId, actor.id);
+      await ensureRoomMembership(tx, invitation.roomId, actor.id);
       const usedAt = new Date();
 
       const claimed = await tx.pingPongRoomInvitation.updateMany({
@@ -88,13 +88,6 @@ export async function POST(_: Request, context: RouteContext) {
       throw error;
     }
 
-    if (error.message === "user_already_joined") {
-      return NextResponse.json(
-        { error: "Voce ja entrou nesta sala." },
-        { status: 400 },
-      );
-    }
-
     if (error.message === "room_not_found") {
       return NextResponse.json(
         { error: "Sala nao encontrada." },
@@ -112,5 +105,5 @@ export async function POST(_: Request, context: RouteContext) {
     throw error;
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, roomId: invitation.roomId });
 }

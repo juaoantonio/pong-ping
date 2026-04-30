@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { SubmitEvent } from "react";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export function RoomInviteForm({
   roomName,
   token,
 }: RoomInviteFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function joinRoom(event: SubmitEvent<HTMLFormElement>) {
@@ -35,17 +37,19 @@ export function RoomInviteForm({
         return;
       }
 
-      toast.success(
-        `Voce entrou na sala ${roomName}. Aguarde sua vez na fila.`,
-      );
+      const body = (await response.json()) as { roomId: string };
+
+      toast.success(`Voce entrou na sala ${roomName}.`);
+      router.push(`/rooms/${body.roomId}`);
+      router.refresh();
     });
   }
 
   return (
     <form className="grid gap-4" onSubmit={joinRoom}>
       <div className="rounded-md border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-        Ao entrar, seu nome sera adicionado ao fim da fila atual da sala.
-        Convite valido ate {formatDateTime(expiresAt)}.
+        Ao entrar, voce sera incluido na sala e podera entrar na fila quando
+        estiver pronto. Convite valido ate {formatDateTime(expiresAt)}.
       </div>
 
       <Button disabled={isPending} type="submit">

@@ -41,17 +41,21 @@ async function reorderRoomQueue(tx: Tx, participantIds: string[]) {
   );
 }
 
-export async function addUserToRoom(tx: Tx, roomId: string, userId: string) {
-  const [room, user, existingParticipant] = await Promise.all([
-    tx.pingPongRoom.findUnique({
-      where: { id: roomId },
+export async function ensureRoomMembership(
+  tx: Tx,
+  roomId: string,
+  userId: string,
+) {
+  const [room, user, existingMember] = await Promise.all([
+    tx.pingPongRoom.findFirst({
+      where: { id: roomId, deletedAt: null },
       select: { id: true },
     }),
     tx.user.findUnique({
       where: { id: userId },
       select: { id: true },
     }),
-    tx.pingPongRoomParticipant.findUnique({
+    tx.pingPongRoomMember.findUnique({
       where: {
         roomId_userId: { roomId, userId },
       },
@@ -67,8 +71,52 @@ export async function addUserToRoom(tx: Tx, roomId: string, userId: string) {
     throw new Error("user_not_found");
   }
 
+  if (existingMember) {
+    return existingMember;
+  }
+
+  return tx.pingPongRoomMember.create({
+    data: {
+      roomId,
+      userId,
+    },
+  });
+}
+
+export async function enqueueUserInRoom(
+  tx: Tx,
+  roomId: string,
+  userId: string,
+) {
+  const [room, membership, existingParticipant] = await Promise.all([
+    tx.pingPongRoom.findFirst({
+      where: { id: roomId, deletedAt: null },
+      select: { id: true },
+    }),
+    tx.pingPongRoomMember.findUnique({
+      where: {
+        roomId_userId: { roomId, userId },
+      },
+      select: { id: true },
+    }),
+    tx.pingPongRoomParticipant.findUnique({
+      where: {
+        roomId_userId: { roomId, userId },
+      },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!room) {
+    throw new Error("room_not_found");
+  }
+
+  if (!membership) {
+    throw new Error("user_not_in_room");
+  }
+
   if (existingParticipant) {
-    throw new Error("user_already_joined");
+    throw new Error("user_already_queued");
   }
 
   return tx.pingPongRoomParticipant.create({
@@ -107,6 +155,44 @@ export async function removeParticipantFromRoom(
     tx,
     nextQueue.map((participant) => participant.id),
   );
+}
+
+export async function removeUserFromRoomQueue(
+  tx: Tx,
+  roomId: string,
+  userId: string,
+) {
+  const [room, participant, queueCount] = await Promise.all([
+    tx.pingPongRoom.findFirst({
+      where: { id: roomId, deletedAt: null },
+      select: { id: true },
+    }),
+    tx.pingPongRoomParticipant.findUnique({
+      where: {
+        roomId_userId: { roomId, userId },
+      },
+      select: { id: true, queuePosition: true },
+    }),
+    tx.pingPongRoomParticipant.count({
+      where: { roomId },
+    }),
+  ]);
+
+  if (!room) {
+    throw new Error("room_not_found");
+  }
+
+  if (!participant) {
+    throw new Error("user_not_queued");
+  }
+
+  if (participant.queuePosition < 2 && queueCount >= 2) {
+    throw new Error("current_player_cannot_leave_queue");
+  }
+
+  await removeParticipantFromRoom(tx, roomId, participant.id);
+
+  return participant;
 }
 
 export async function finishRoomMatch(

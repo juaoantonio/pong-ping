@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { addUserToRoom } from "@/lib/rooms/service";
+import { ensureRoomMembership } from "@/lib/rooms/service";
 import { requireAdmin } from "@/app/api/admin/_shared";
 
 type AddParticipantBody = {
@@ -37,13 +37,13 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      await addUserToRoom(tx, roomId, userId);
+      await ensureRoomMembership(tx, roomId, userId);
 
       await tx.auditLog.create({
         data: {
           actorUserId: actor.id,
           targetUserId: userId,
-          action: "room_participant_added",
+          action: "room_member_added",
           metadata: { roomId },
         },
       });
@@ -63,13 +63,6 @@ export async function POST(request: Request, context: RouteContext) {
     if (error.message === "user_not_found") {
       return NextResponse.json(
         { error: "Usuario nao encontrado." },
-        { status: 400 },
-      );
-    }
-
-    if (error.message === "user_already_joined") {
-      return NextResponse.json(
-        { error: "Este usuario ja esta na sala." },
         { status: 400 },
       );
     }

@@ -37,7 +37,8 @@ model User {
   matchHistoriesCreated  MatchHistory[]            @relation("MatchHistoryCreator")
   matchHistoriesWon      MatchHistory[]            @relation("MatchHistoryWinner")
   matchHistoriesLost     MatchHistory[]            @relation("MatchHistoryLoser")
-  roomMemberships        PingPongRoomParticipant[]
+  roomMemberships        PingPongRoomMember[]
+  roomQueueEntries       PingPongRoomParticipant[]
   roomInvitationsCreated PingPongRoomInvitation[]  @relation("RoomInvitationCreator")
   roomsCreated           PingPongRoom[]            @relation("RoomCreator")
 }
@@ -190,10 +191,24 @@ model PingPongRoom {
   createdBy      User                      @relation("RoomCreator", fields: [createdById], references: [id], onDelete: Restrict)
   invitations    PingPongRoomInvitation[]
   matchHistories MatchHistory[]
+  members        PingPongRoomMember[]
   participants   PingPongRoomParticipant[]
 
   @@index([createdById])
   @@index([createdAt])
+}
+
+model PingPongRoomMember {
+  id       String       @id @default(cuid())
+  roomId   String
+  userId   String
+  joinedAt DateTime     @default(now())
+  room     PingPongRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
 }
 
 model PingPongRoomParticipant {

@@ -29,6 +29,11 @@ export type RoomParticipant = {
   };
 };
 
+export type RoomMember = {
+  joinedAt: string;
+  user: UserOption;
+};
+
 export type RoomMatch = {
   id: string;
   kind: "match" | "rollback";
@@ -57,6 +62,11 @@ export type RoomSummary = {
     oneTimeUse: boolean;
   } | null;
   participants: RoomParticipant[];
+  members: RoomMember[];
+  viewerIsMember: boolean;
+  viewerIsQueued: boolean;
+  viewerIsPlaying: boolean;
+  viewerQueuePosition: number | null;
   recentMatches: RoomMatch[];
 };
 

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import {
   Copy,
+  LogOut,
   Loader2,
   Plus,
   RotateCcw,
@@ -142,7 +143,7 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
   const queuedParticipants = room.participants.slice(2);
   const availableUsers = users.filter(
     (user) =>
-      !room.participants.some((participant) => participant.user.id === user.id),
+      !room.members.some((member) => member.user.id === user.id),
   );
 
   function runAction(actionKey: string, callback: () => Promise<void>) {
@@ -176,7 +177,39 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
       }
 
       setSelectedUser("");
-      toast.success("Jogador adicionado ao fim da fila.");
+      toast.success("Usuario adicionado a sala.");
+      router.refresh();
+    });
+  }
+
+  function joinQueue() {
+    runAction("join-queue", async () => {
+      const response = await fetch(`/api/rooms/${room.id}/queue`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        toast.error(await readApiError(response));
+        return;
+      }
+
+      toast.success("Voce entrou na fila.");
+      router.refresh();
+    });
+  }
+
+  function leaveQueue() {
+    runAction("leave-queue", async () => {
+      const response = await fetch(`/api/rooms/${room.id}/queue`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        toast.error(await readApiError(response));
+        return;
+      }
+
+      toast.success("Voce saiu da fila.");
       router.refresh();
     });
   }
@@ -227,7 +260,7 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
         return;
       }
 
-      toast.success("Jogador removido da sala.");
+      toast.success("Jogador removido da fila.");
       router.refresh();
     });
   }
@@ -437,18 +470,83 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
         </CardContent>
       </Card>
 
+      {room.viewerIsMember ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sua participacao</CardTitle>
+            <CardDescription>
+              Entre na fila quando estiver pronto para jogar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="grid gap-1 text-sm">
+              {room.viewerIsPlaying ? (
+                <>
+                  <p className="font-medium">Sua rodada esta ativa.</p>
+                  <p className="text-muted-foreground">
+                    Aguarde o encerramento da partida para a fila girar.
+                  </p>
+                </>
+              ) : room.viewerIsQueued ? (
+                <>
+                  <p className="font-medium">Voce esta na fila.</p>
+                  <p className="text-muted-foreground">
+                    Posicao #{(room.viewerQueuePosition ?? 0) + 1}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium">Voce esta nesta sala.</p>
+                  <p className="text-muted-foreground">
+                    Entre na fila para aguardar sua vez.
+                  </p>
+                </>
+              )}
+            </div>
+            {!room.viewerIsQueued ? (
+              <Button
+                disabled={isPending}
+                onClick={joinQueue}
+                className="sm:self-start"
+              >
+                {busyKey === "join-queue" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <UserPlus className="size-4" />
+                )}
+                Entrar na fila
+              </Button>
+            ) : !room.viewerIsPlaying ? (
+              <Button
+                className="sm:self-start"
+                disabled={isPending}
+                onClick={leaveQueue}
+                variant="outline"
+              >
+                {busyKey === "leave-queue" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <LogOut className="size-4" />
+                )}
+                Sair da fila
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {canManage ? (
         <Card>
           <CardHeader>
             <CardTitle>Gerenciar entrada</CardTitle>
             <CardDescription>
-              Adicione jogadores manualmente ou gere um convite para a sala.
+              Adicione membros manualmente ou gere um convite para a sala.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
               <div className="grid gap-2">
-                <Label>Adicionar manualmente</Label>
+                <Label>Adicionar membro</Label>
                 <Select
                   disabled={isPending || availableUsers.length === 0}
                   onValueChange={setSelectedUser}
@@ -485,7 +583,7 @@ export function RoomDetail({ canManage, room, users }: RoomDetailProps) {
               <div>
                 <p className="text-sm font-medium">Convite por link</p>
                 <p className="text-sm text-muted-foreground">
-                  Qualquer usuario autenticado com o link entra no fim da fila.
+                  Qualquer usuario autenticado com o link entra na sala.
                 </p>
               </div>
               <InvitationSettingsControls

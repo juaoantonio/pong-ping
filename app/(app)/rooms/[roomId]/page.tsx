@@ -15,7 +15,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const paramsPromise = params;
 
   const [user, { roomId }] = await Promise.all([userPromise, paramsPromise]);
-  const room = await getRoomDetail(roomId);
+  const room = await getRoomDetail(roomId, user.id);
 
   if (!room) {
     notFound();

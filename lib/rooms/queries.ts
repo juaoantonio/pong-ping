@@ -121,7 +121,7 @@ export const getRoomListItems = cache(async () => {
   }));
 });
 
-export const getRoomDetail = cache(async (roomId: string) => {
+export const getRoomDetail = cache(async (roomId: string, viewerUserId: string) => {
   await connection();
 
   const room = await prisma.pingPongRoom.findUnique({
@@ -177,6 +177,20 @@ export const getRoomDetail = cache(async (roomId: string) => {
           },
         },
       },
+      members: {
+        select: {
+          joinedAt: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatarUrl: true,
+              image: true,
+            },
+          },
+        },
+      },
       matchHistories: {
         orderBy: { createdAt: "desc" },
         take: 10,
@@ -220,6 +234,17 @@ export const getRoomDetail = cache(async (roomId: string) => {
     return null;
   }
 
+  const currentPlayers = room.participants.slice(0, 2);
+  const viewerMember = room.members.find(
+    (member) => member.user.id === viewerUserId,
+  );
+  const viewerParticipant = room.participants.find(
+    (participant) => participant.user.id === viewerUserId,
+  );
+  const viewerIsPlaying =
+    currentPlayers.length === 2 &&
+    currentPlayers.some((participant) => participant.user.id === viewerUserId);
+
   return {
     id: room.id,
     name: room.name,
@@ -245,6 +270,19 @@ export const getRoomDetail = cache(async (roomId: string) => {
         playerRanking: participant.user.playerRanking,
       },
     })),
+    members: room.members.map((member) => ({
+      joinedAt: member.joinedAt.toISOString(),
+      user: {
+        id: member.user.id,
+        name: member.user.name,
+        email: member.user.email,
+        avatarUrl: member.user.avatarUrl ?? member.user.image,
+      },
+    })),
+    viewerIsMember: Boolean(viewerMember),
+    viewerIsQueued: Boolean(viewerParticipant),
+    viewerIsPlaying,
+    viewerQueuePosition: viewerParticipant?.queuePosition ?? null,
     recentMatches: room.matchHistories.map((match) => ({
       id: match.id,
       kind: match.kind,
