@@ -12,8 +12,15 @@ import {
   RoundsAdmin,
   type RoundAdminFilters,
 } from "@/app/admin/rounds/rounds-admin";
+import { PaginationControls } from "@/components/pagination-controls";
 import { CardTableSkeleton } from "@/components/page-skeletons";
 import { requireRole } from "@/lib/auth/session";
+import {
+  getPageInfo,
+  getPaginationOffset,
+  parseServerPaginationParams,
+  type PaginationInput,
+} from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
 type AdminRoundsPageProps = {
@@ -40,7 +47,15 @@ function textContains(value: string): Prisma.StringFilter {
   return { contains: value, mode: "insensitive" };
 }
 
-async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
+async function RoundsAdminPanel({
+  filters,
+  pagination,
+  searchParams,
+}: {
+  filters: RoundAdminFilters;
+  pagination: PaginationInput;
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   await connection();
 
   const and: Prisma.MatchHistoryWhereInput[] = [];
@@ -121,10 +136,14 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
     and.push({ createdAt });
   }
 
+  const where = and.length > 0 ? { AND: and } : undefined;
+  const totalCount = await prisma.matchHistory.count({ where });
+  const pageInfo = getPageInfo(pagination, totalCount);
   const rounds = await prisma.matchHistory.findMany({
-    where: and.length > 0 ? { AND: and } : undefined,
-    orderBy: { createdAt: "desc" },
-    take: 200,
+    where,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: getPaginationOffset(pageInfo),
+    take: pageInfo.pageSize,
     select: {
       id: true,
       tableId: true,
@@ -177,9 +196,10 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
           Todas as rodadas e rollbacks, incluindo o table id de origem.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="grid gap-4">
         <RoundsAdmin
           filters={filters}
+          pageSize={pageInfo.pageSize}
           rounds={rounds.map((round) => ({
             id: round.id,
             tableId: round.tableId,
@@ -198,6 +218,12 @@ async function RoundsAdminPanel({ filters }: { filters: RoundAdminFilters }) {
             loser: round.loser,
             createdBy: round.createdBy,
           }))}
+        />
+        <PaginationControls
+          itemLabel="rodadas"
+          pageInfo={pageInfo}
+          pathname="/admin/rounds"
+          searchParams={searchParams}
         />
       </CardContent>
     </Card>
@@ -221,6 +247,7 @@ export default async function AdminRoundsPage({
     from: firstParam(params.from) ?? "",
     to: firstParam(params.to) ?? "",
   };
+  const pagination = parseServerPaginationParams(params);
 
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-6">
@@ -230,7 +257,11 @@ export default async function AdminRoundsPage({
       </div>
 
       <Suspense fallback={<CardTableSkeleton rows={8} />}>
-        <RoundsAdminPanel filters={filters} />
+        <RoundsAdminPanel
+          filters={filters}
+          pagination={pagination}
+          searchParams={params}
+        />
       </Suspense>
     </div>
   );

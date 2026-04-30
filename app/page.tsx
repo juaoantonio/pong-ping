@@ -23,8 +23,17 @@ import {
   HeaderActionSkeleton,
   RankingTableSkeleton,
 } from "@/components/page-skeletons";
+import { PaginationControls } from "@/components/pagination-controls";
+import {
+  getPaginationOffset,
+  parseServerPaginationParams,
+} from "@/lib/pagination";
 import { getPublicRankings } from "@/lib/rankings/queries";
 import { cn } from "@/lib/utils";
+
+type HomeProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 async function HomeAction() {
   const session = await auth();
@@ -39,8 +48,15 @@ async function HomeAction() {
   );
 }
 
-async function RankingTable() {
-  const rankings = await getPublicRankings();
+async function RankingTable({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  const result = await getPublicRankings(
+    parseServerPaginationParams(searchParams),
+  );
+  const rankingOffset = getPaginationOffset(result.pageInfo);
 
   return (
     <Card>
@@ -50,7 +66,7 @@ async function RankingTable() {
           Ranking publico por Elo, vitorias e aproveitamento.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="grid gap-4">
         <Table>
           <TableHeader>
             <TableRow>
@@ -64,9 +80,11 @@ async function RankingTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rankings.map((user, index) => (
+            {result.rankings.map((user, index) => (
               <TableRow key={user.id}>
-                <TableCell className="font-semibold">{index + 1}</TableCell>
+                <TableCell className="font-semibold">
+                  {rankingOffset + index + 1}
+                </TableCell>
                 <TableCell>
                   <div className="min-w-44">
                     <p className="truncate font-medium">
@@ -112,17 +130,26 @@ async function RankingTable() {
           </TableBody>
         </Table>
 
-        {rankings.length === 0 ? (
+        {result.rankings.length === 0 ? (
           <div className="rounded-md border border-border px-4 py-8 text-center text-sm text-muted-foreground">
             Nenhum jogador cadastrado.
           </div>
         ) : null}
+
+        <PaginationControls
+          itemLabel="jogadores"
+          pageInfo={result.pageInfo}
+          pathname="/"
+          searchParams={searchParams}
+        />
       </CardContent>
     </Card>
   );
 }
 
-export default function Home() {
+export default async function Home({ searchParams }: HomeProps) {
+  const params = await searchParams;
+
   return (
     <main className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -137,7 +164,7 @@ export default function Home() {
         </header>
 
         <Suspense fallback={<RankingTableSkeleton />}>
-          <RankingTable />
+          <RankingTable searchParams={params} />
         </Suspense>
       </div>
     </main>

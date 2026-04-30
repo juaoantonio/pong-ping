@@ -1,19 +1,41 @@
 import { Suspense } from "react";
 import { CreateTableForm } from "@/components/tables/create-table-form";
 import { TableList } from "@/components/tables/table-list";
+import { PaginationControls } from "@/components/pagination-controls";
 import { TablesGridSkeleton } from "@/components/page-skeletons";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { requireAuth } from "@/lib/auth/session";
+import { parseServerPaginationParams } from "@/lib/pagination";
 import { getTableListItems } from "@/lib/tables/queries";
 
-async function TablesListContent() {
-  const tables = await getTableListItems();
+type TablesPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-  return <TableList tables={tables} />;
+async function TablesListContent({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  const result = await getTableListItems(
+    parseServerPaginationParams(searchParams),
+  );
+
+  return (
+    <div className="grid gap-4">
+      <TableList tables={result.tables} />
+      <PaginationControls
+        itemLabel="mesas"
+        pageInfo={result.pageInfo}
+        pathname="/tables"
+        searchParams={searchParams}
+      />
+    </div>
+  );
 }
 
-export default async function TablesPage() {
-  const user = await requireAuth();
+export default async function TablesPage({ searchParams }: TablesPageProps) {
+  const [user, params] = await Promise.all([requireAuth(), searchParams]);
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-6">
@@ -25,7 +47,7 @@ export default async function TablesPage() {
       </div>
 
       <Suspense fallback={<TablesGridSkeleton />}>
-        <TablesListContent />
+        <TablesListContent searchParams={params} />
       </Suspense>
     </div>
   );

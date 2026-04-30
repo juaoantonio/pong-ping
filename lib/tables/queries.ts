@@ -2,16 +2,24 @@ import "server-only";
 
 import { cache } from "react";
 import { connection } from "next/server";
+import {
+  getPageInfo,
+  getPaginationOffset,
+  type PaginationInput,
+} from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
-export const getTableListItems = cache(async () => {
+export const getTableListItems = cache(async (pagination: PaginationInput) => {
   await connection();
 
+  const where = { deletedAt: null };
+  const totalCount = await prisma.pingPongTable.count({ where });
+  const pageInfo = getPageInfo(pagination, totalCount);
   const tables = await prisma.pingPongTable.findMany({
-    orderBy: { createdAt: "desc" },
-    where: {
-      deletedAt: null,
-    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    where,
+    skip: getPaginationOffset(pageInfo),
+    take: pageInfo.pageSize,
     select: {
       id: true,
       name: true,
@@ -76,49 +84,52 @@ export const getTableListItems = cache(async () => {
     },
   });
 
-  return tables.map((table) => ({
-    id: table.id,
-    name: table.name,
-    createdAt: table.createdAt.toISOString(),
-    createdBy: {
-      name: table.createdBy.name,
-      email: table.createdBy.email,
-      avatarUrl: table.createdBy.avatarUrl ?? table.createdBy.image,
-    },
-    participantCount: table.participants.length,
-    currentPlayers: table.participants.slice(0, 2).map((participant) => ({
-      name: participant.user.name,
-      email: participant.user.email,
-      avatarUrl: participant.user.avatarUrl ?? participant.user.image,
+  return {
+    pageInfo,
+    tables: tables.map((table) => ({
+      id: table.id,
+      name: table.name,
+      createdAt: table.createdAt.toISOString(),
+      createdBy: {
+        name: table.createdBy.name,
+        email: table.createdBy.email,
+        avatarUrl: table.createdBy.avatarUrl ?? table.createdBy.image,
+      },
+      participantCount: table.participants.length,
+      currentPlayers: table.participants.slice(0, 2).map((participant) => ({
+        name: participant.user.name,
+        email: participant.user.email,
+        avatarUrl: participant.user.avatarUrl ?? participant.user.image,
+      })),
+      latestMatch: table.matchHistories[0]
+        ? {
+            id: table.matchHistories[0].id,
+            kind: table.matchHistories[0].kind,
+            rollbackOfId: table.matchHistories[0].rollbackOfId,
+            rolledBack: table.matchHistories[0].rollbacks.length > 0,
+            createdAt: table.matchHistories[0].createdAt.toISOString(),
+            winnerOldElo: table.matchHistories[0].winnerOldElo,
+            winnerNewElo: table.matchHistories[0].winnerNewElo,
+            winnerDiffPoints: table.matchHistories[0].winnerDiffPoints,
+            loserOldElo: table.matchHistories[0].loserOldElo,
+            loserNewElo: table.matchHistories[0].loserNewElo,
+            loserDiffPoints: table.matchHistories[0].loserDiffPoints,
+            winner: {
+              ...table.matchHistories[0].winner,
+              avatarUrl:
+                table.matchHistories[0].winner.avatarUrl ??
+                table.matchHistories[0].winner.image,
+            },
+            loser: {
+              ...table.matchHistories[0].loser,
+              avatarUrl:
+                table.matchHistories[0].loser.avatarUrl ??
+                table.matchHistories[0].loser.image,
+            },
+          }
+        : null,
     })),
-    latestMatch: table.matchHistories[0]
-      ? {
-          id: table.matchHistories[0].id,
-          kind: table.matchHistories[0].kind,
-          rollbackOfId: table.matchHistories[0].rollbackOfId,
-          rolledBack: table.matchHistories[0].rollbacks.length > 0,
-          createdAt: table.matchHistories[0].createdAt.toISOString(),
-          winnerOldElo: table.matchHistories[0].winnerOldElo,
-          winnerNewElo: table.matchHistories[0].winnerNewElo,
-          winnerDiffPoints: table.matchHistories[0].winnerDiffPoints,
-          loserOldElo: table.matchHistories[0].loserOldElo,
-          loserNewElo: table.matchHistories[0].loserNewElo,
-          loserDiffPoints: table.matchHistories[0].loserDiffPoints,
-          winner: {
-            ...table.matchHistories[0].winner,
-            avatarUrl:
-              table.matchHistories[0].winner.avatarUrl ??
-              table.matchHistories[0].winner.image,
-          },
-          loser: {
-            ...table.matchHistories[0].loser,
-            avatarUrl:
-              table.matchHistories[0].loser.avatarUrl ??
-              table.matchHistories[0].loser.image,
-          },
-        }
-      : null,
-  }));
+  };
 });
 
 export const getTableDetail = cache(

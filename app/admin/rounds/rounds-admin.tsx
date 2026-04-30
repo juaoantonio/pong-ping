@@ -63,6 +63,7 @@ type RoundAdminItem = {
 
 type RoundsAdminProps = {
   filters: RoundAdminFilters;
+  pageSize: number;
   rounds: RoundAdminItem[];
 };
 
@@ -70,7 +71,7 @@ function diffLabel(value: number) {
   return `${value > 0 ? "+" : ""}${value}`;
 }
 
-export function RoundsAdmin({ filters, rounds }: RoundsAdminProps) {
+export function RoundsAdmin({ filters, pageSize, rounds }: RoundsAdminProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [busyRoundId, setBusyRoundId] = useState<string | null>(null);
@@ -97,6 +98,8 @@ export function RoundsAdmin({ filters, rounds }: RoundsAdminProps) {
   return (
     <div className="grid gap-6">
       <form action="/admin/rounds" className="grid gap-4 rounded-lg border p-4">
+        <Input name="page" type="hidden" value="1" />
+        <Input name="pageSize" type="hidden" value={pageSize} />
         <div className="grid gap-3 md:grid-cols-[minmax(220px,2fr)_repeat(2,minmax(160px,1fr))]">
           <div className="grid gap-2">
             <Label htmlFor="round-q">Busca geral</Label>

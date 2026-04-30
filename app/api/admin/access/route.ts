@@ -12,6 +12,11 @@ import {
   getInvitationExpiry,
   isInvitationExpiryPreset,
 } from "@/lib/invitations";
+import {
+  getPageInfo,
+  getPaginationOffset,
+  parseApiPaginationParams,
+} from "@/lib/pagination";
 
 type AccessRequestBody = {
   email?: unknown;
@@ -20,16 +25,31 @@ type AccessRequestBody = {
   type?: unknown;
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   const { actor, response } = await requireAdmin("access_management_forbidden");
 
   if (!actor) {
     return response;
   }
 
+  const parsedPagination = parseApiPaginationParams(
+    new URL(request.url).searchParams,
+  );
+
+  if (!parsedPagination.ok) {
+    return NextResponse.json(
+      { error: parsedPagination.error },
+      { status: 400 },
+    );
+  }
+
+  const totalCount = await prisma.allowedEmail.count();
+  const pageInfo = getPageInfo(parsedPagination.pagination, totalCount);
   const [allowedEmails, invitations] = await Promise.all([
     prisma.allowedEmail.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: getPaginationOffset(pageInfo),
+      take: pageInfo.pageSize,
       select: {
         id: true,
         email: true,
@@ -53,7 +73,7 @@ export async function GET() {
     }),
   ]);
 
-  return NextResponse.json({ allowedEmails, invitations });
+  return NextResponse.json({ allowedEmails, invitations, pageInfo });
 }
 
 export async function POST(request: Request) {
