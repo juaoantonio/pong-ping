@@ -8,9 +8,12 @@ export const roleHierarchy: Record<Role, number> = {
   superadmin: 3,
 };
 
-type UserLike = {
-  role?: Role | null;
-} | null | undefined;
+type UserLike =
+  | {
+      role?: Role | null;
+    }
+  | null
+  | undefined;
 
 export function isRole(value: unknown): value is Role {
   return typeof value === "string" && roles.includes(value as Role);

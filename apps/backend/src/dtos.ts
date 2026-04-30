@@ -1,4 +1,11 @@
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Length } from "class-validator";
+import {
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Length,
+} from "class-validator";
 import { INVITATION_EXPIRY_PRESETS, roles } from "@pong-ping/shared";
 
 const expiryValues = INVITATION_EXPIRY_PRESETS.map((preset) => preset.value);

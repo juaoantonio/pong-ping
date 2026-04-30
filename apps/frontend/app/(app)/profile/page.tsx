@@ -17,11 +17,7 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto grid w-full max-w-4xl gap-6">
       <div className="flex items-center gap-4">
-        <UserAvatar
-          className="size-12"
-          name={userName}
-          src={user.avatarUrl}
-        />
+        <UserAvatar className="size-12" name={userName} src={user.avatarUrl} />
         <div>
           <p className="text-sm text-muted-foreground">Sessao ativa</p>
           <h1 className="text-2xl font-semibold">{userName}</h1>

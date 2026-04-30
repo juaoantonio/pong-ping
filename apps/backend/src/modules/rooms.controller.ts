@@ -1,8 +1,21 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser, type RequestUser } from "../auth/current-user";
 import { RequireRole, RolesGuard } from "../auth/roles.guard";
-import { AddParticipantDto, CreateInvitationDto, CreateRoomDto, FinishMatchDto } from "../dtos";
+import {
+  AddParticipantDto,
+  CreateInvitationDto,
+  CreateRoomDto,
+  FinishMatchDto,
+} from "../dtos";
 import { RoomsService } from "../services/rooms.service";
 
 @Controller()
@@ -61,14 +74,22 @@ export class RoomsController {
   @Post("admin/rooms/:roomId/invites")
   @UseGuards(RolesGuard)
   @RequireRole("admin")
-  createInvite(@Param("roomId") roomId: string, @Body() body: CreateInvitationDto, @CurrentUser() user: RequestUser) {
+  createInvite(
+    @Param("roomId") roomId: string,
+    @Body() body: CreateInvitationDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.rooms.createRoomInvitation(roomId, user.id, body);
   }
 
   @Post("admin/rooms/:roomId/participants")
   @UseGuards(RolesGuard)
   @RequireRole("admin")
-  addParticipant(@Param("roomId") roomId: string, @Body() body: AddParticipantDto, @CurrentUser() user: RequestUser) {
+  addParticipant(
+    @Param("roomId") roomId: string,
+    @Body() body: AddParticipantDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.rooms.addParticipant(roomId, body.userId, user.id);
   }
 
@@ -86,7 +107,11 @@ export class RoomsController {
   @Post("admin/rooms/:roomId/matches")
   @UseGuards(RolesGuard)
   @RequireRole("admin")
-  finishMatch(@Param("roomId") roomId: string, @Body() body: FinishMatchDto, @CurrentUser() user: RequestUser) {
+  finishMatch(
+    @Param("roomId") roomId: string,
+    @Body() body: FinishMatchDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.rooms.finishMatch(roomId, body.winnerParticipantId, user.id);
   }
 

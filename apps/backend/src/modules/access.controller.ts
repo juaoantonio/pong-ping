@@ -2,7 +2,12 @@ import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser, type RequestUser } from "../auth/current-user";
 import { RequireRole, RolesGuard } from "../auth/roles.guard";
-import { AllowEmailDto, ClaimInvitationDto, CreateInvitationDto, LegacyAccessDto } from "../dtos";
+import {
+  AllowEmailDto,
+  ClaimInvitationDto,
+  CreateInvitationDto,
+  LegacyAccessDto,
+} from "../dtos";
 import { AccessService } from "../services/access.service";
 import { badRequest } from "../shared/http-error";
 
@@ -20,7 +25,10 @@ export class AccessController {
   @Post("admin/access")
   @UseGuards(AuthGuard, RolesGuard)
   @RequireRole("admin")
-  legacyCreate(@CurrentUser() user: RequestUser, @Body() body: LegacyAccessDto) {
+  legacyCreate(
+    @CurrentUser() user: RequestUser,
+    @Body() body: LegacyAccessDto,
+  ) {
     if (body.type === "invite") {
       return this.access.createInvitation(body, user.id);
     }
@@ -40,7 +48,10 @@ export class AccessController {
   @Post("admin/access/invitations")
   @UseGuards(AuthGuard, RolesGuard)
   @RequireRole("admin")
-  createInvitation(@CurrentUser() user: RequestUser, @Body() body: CreateInvitationDto) {
+  createInvitation(
+    @CurrentUser() user: RequestUser,
+    @Body() body: CreateInvitationDto,
+  ) {
     return this.access.createInvitation(body, user.id);
   }
 

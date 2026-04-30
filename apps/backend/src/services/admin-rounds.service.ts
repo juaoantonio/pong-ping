@@ -16,7 +16,10 @@ export type RoundFilters = {
 
 @Injectable()
 export class AdminRoundsService {
-  constructor(@InjectRepository(MatchHistory) private readonly matches: Repository<MatchHistory>) {}
+  constructor(
+    @InjectRepository(MatchHistory)
+    private readonly matches: Repository<MatchHistory>,
+  ) {}
 
   async list(filters: RoundFilters) {
     const qb = this.matches
@@ -39,7 +42,9 @@ export class AdminRoundsService {
       );
     }
     if (filters.roomId?.trim()) {
-      qb.andWhere("round.roomId ILIKE :roomId", { roomId: like(filters.roomId.trim()) });
+      qb.andWhere("round.roomId ILIKE :roomId", {
+        roomId: like(filters.roomId.trim()),
+      });
     }
     if (filters.kind === "match" || filters.kind === "rollback") {
       qb.andWhere("round.kind = :kind", { kind: filters.kind });
@@ -55,13 +60,19 @@ export class AdminRoundsService {
     }
     if (filters.player?.trim()) {
       const player = like(filters.player.trim());
-      qb.andWhere("(winner.name ILIKE :player OR winner.email ILIKE :player OR loser.name ILIKE :player OR loser.email ILIKE :player)", {
-        player,
-      });
+      qb.andWhere(
+        "(winner.name ILIKE :player OR winner.email ILIKE :player OR loser.name ILIKE :player OR loser.email ILIKE :player)",
+        {
+          player,
+        },
+      );
     }
     if (filters.createdBy?.trim()) {
       const createdBy = like(filters.createdBy.trim());
-      qb.andWhere("(createdBy.name ILIKE :createdBy OR createdBy.email ILIKE :createdBy)", { createdBy });
+      qb.andWhere(
+        "(createdBy.name ILIKE :createdBy OR createdBy.email ILIKE :createdBy)",
+        { createdBy },
+      );
     }
 
     const from = this.dateFromInput(filters.from);
@@ -101,7 +112,9 @@ export class AdminRoundsService {
       return undefined;
     }
 
-    const date = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
+    const date = new Date(
+      `${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`,
+    );
     return Number.isNaN(date.getTime()) ? undefined : date;
   }
 }

@@ -10,6 +10,9 @@
     "build:be": "pnpm --filter @pong-ping/backend build",
     "build:fe": "pnpm --filter @pong-ping/frontend build",
     "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "pnpm -r format",
+    "format:check": "pnpm -r format:check",
     "test": "pnpm -r test",
     "test:be": "pnpm --filter @pong-ping/backend test",
     "test:fe": "pnpm --filter @pong-ping/frontend test",
@@ -18,7 +21,6 @@
     "migration:generate": "pnpm --filter @pong-ping/backend migration:generate"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
     "typescript": "^5.9.3"
   }
 }

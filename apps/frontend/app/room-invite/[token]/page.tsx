@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { requireAuth } from "@/lib/auth/session";
 import { RoomInviteForm } from "@/app/room-invite/[token]/room-invite-form";
@@ -30,7 +36,9 @@ export default async function RoomInvitePage({ params }: RoomInvitePageProps) {
   }
 
   const creatorName =
-    invitation.room.createdBy.name ?? invitation.room.createdBy.email ?? "Criador da sala";
+    invitation.room.createdBy.name ??
+    invitation.room.createdBy.email ??
+    "Criador da sala";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
@@ -38,8 +46,9 @@ export default async function RoomInvitePage({ params }: RoomInvitePageProps) {
         <CardHeader>
           <CardTitle>Entrar na sala</CardTitle>
           <CardDescription>
-            {currentUser.name ?? currentUser.email ?? "Usuario"}, voce foi convidado para a sala{" "}
-            <strong>{invitation.room.name}</strong> criada por {creatorName}.
+            {currentUser.name ?? currentUser.email ?? "Usuario"}, voce foi
+            convidado para a sala <strong>{invitation.room.name}</strong> criada
+            por {creatorName}.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

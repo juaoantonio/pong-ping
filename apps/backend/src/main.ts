@@ -11,7 +11,8 @@ import { SuccessEnvelopeInterceptor } from "./shared/success-envelope.intercepto
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
-  const frontendUrl = config.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
+  const frontendUrl =
+    config.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
 
   app.setGlobalPrefix("api/v1");
   app.enableCors({
@@ -33,7 +34,9 @@ async function bootstrap() {
     app,
     new DocumentBuilder()
       .setTitle("Pong Ping API")
-      .setDescription("NestJS API for Pong Ping rankings, rooms, invitations, and admin workflows.")
+      .setDescription(
+        "NestJS API for Pong Ping rankings, rooms, invitations, and admin workflows.",
+      )
       .setVersion("1.0")
       .addBearerAuth()
       .build(),
@@ -46,7 +49,10 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(config.get<number>("PORT") ?? 4000, config.get<string>("HOST") ?? "0.0.0.0");
+  await app.listen(
+    config.get<number>("PORT") ?? 4000,
+    config.get<string>("HOST") ?? "0.0.0.0",
+  );
 }
 
 bootstrap().catch((error) => {

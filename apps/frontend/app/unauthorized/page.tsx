@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function UnauthorizedPage() {
@@ -13,7 +19,9 @@ export default function UnauthorizedPage() {
             <ShieldAlert className="size-5" />
           </div>
           <CardTitle>Acesso negado</CardTitle>
-          <CardDescription>Seu usuario nao tem permissao para acessar esta area.</CardDescription>
+          <CardDescription>
+            Seu usuario nao tem permissao para acessar esta area.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Link className={cn(buttonVariants())} href="/rooms">

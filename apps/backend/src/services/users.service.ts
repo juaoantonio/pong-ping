@@ -3,12 +3,19 @@ import { InjectRepository } from "@nestjs/typeorm";
 import type { Role } from "@pong-ping/shared";
 import { Repository } from "typeorm";
 import { AuditLog, User } from "../entities";
-import { canChangeRole, canDeleteUser, createId, isRole } from "../domain/rules";
+import {
+  canChangeRole,
+  canDeleteUser,
+  createId,
+  isRole,
+} from "../domain/rules";
 import { badRequest, forbidden, notFound } from "../shared/http-error";
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly users: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly users: Repository<User>,
+  ) {}
 
   async list(actor: { id: string; role: Role }) {
     const users = await this.users.find({
@@ -23,7 +30,10 @@ export class UsersService {
 
   async delete(actor: { id: string; role: Role }, id: string) {
     if (actor.id === id) {
-      throw badRequest("Voce nao pode remover sua propria conta.", "self_delete");
+      throw badRequest(
+        "Voce nao pode remover sua propria conta.",
+        "self_delete",
+      );
     }
 
     await this.users.manager.transaction(async (manager) => {
@@ -32,9 +42,14 @@ export class UsersService {
         throw notFound("Usuario nao encontrado.", "target_not_found");
       }
       if (target.role === "superadmin") {
-        const superAdminCount = await manager.count(User, { where: { role: "superadmin" } });
+        const superAdminCount = await manager.count(User, {
+          where: { role: "superadmin" },
+        });
         if (superAdminCount <= 1) {
-          throw badRequest("O ultimo superadmin nao pode ser removido.", "last_superadmin_delete");
+          throw badRequest(
+            "O ultimo superadmin nao pode ser removido.",
+            "last_superadmin_delete",
+          );
         }
       }
       if (!canDeleteUser(actor.role, target.role)) {
@@ -57,7 +72,11 @@ export class UsersService {
     return { ok: true };
   }
 
-  async updateRole(actor: { id: string; role: Role }, id: string, role: unknown) {
+  async updateRole(
+    actor: { id: string; role: Role },
+    id: string,
+    role: unknown,
+  ) {
     if (!canChangeRole(actor.role)) {
       throw forbidden("Sem permissao para alterar roles.");
     }
@@ -65,7 +84,10 @@ export class UsersService {
       throw badRequest("Role invalida.", "invalid_role");
     }
     if (actor.id === id) {
-      throw badRequest("Voce nao pode alterar sua propria role.", "self_role_change");
+      throw badRequest(
+        "Voce nao pode alterar sua propria role.",
+        "self_role_change",
+      );
     }
 
     const user = await this.users.manager.transaction(async (manager) => {
@@ -74,9 +96,14 @@ export class UsersService {
         throw notFound("Usuario nao encontrado.", "target_not_found");
       }
       if (target.role === "superadmin" && role !== "superadmin") {
-        const superAdminCount = await manager.count(User, { where: { role: "superadmin" } });
+        const superAdminCount = await manager.count(User, {
+          where: { role: "superadmin" },
+        });
         if (superAdminCount <= 1) {
-          throw badRequest("O ultimo superadmin nao pode ser rebaixado.", "last_superadmin_role_change");
+          throw badRequest(
+            "O ultimo superadmin nao pode ser rebaixado.",
+            "last_superadmin_role_change",
+          );
         }
       }
 

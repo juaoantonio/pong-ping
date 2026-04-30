@@ -18,7 +18,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const body =
       exception instanceof HttpException ? exception.getResponse() : undefined;
 
-    if (typeof body === "object" && body && "code" in body && "message" in body) {
+    if (
+      typeof body === "object" &&
+      body &&
+      "code" in body &&
+      "message" in body
+    ) {
       response.status(status).json({ ok: false, error: body });
       return;
     }

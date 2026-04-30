@@ -46,17 +46,17 @@ export default async function Home() {
   ]);
 
   const rankings = rankingData.rankings.map((rankedUser) => {
-      const rankLevel = rankedUser.rankLevel;
-      const rankIconExists = rankLevel
-        ? existsSync(join(process.cwd(), "public", rankLevel.iconImgKey))
-        : false;
+    const rankLevel = rankedUser.rankLevel;
+    const rankIconExists = rankLevel
+      ? existsSync(join(process.cwd(), "public", rankLevel.iconImgKey))
+      : false;
 
-      return {
-        ...rankedUser,
-        rankLevel,
-        rankIconExists,
-      };
-    });
+    return {
+      ...rankedUser,
+      rankLevel,
+      rankIconExists,
+    };
+  });
 
   return (
     <main className="min-h-screen bg-background px-4 py-8">

@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  UseGuards,
+} from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser, type RequestUser } from "../auth/current-user";
 import { RequireRole, RolesGuard } from "../auth/roles.guard";
@@ -22,7 +30,11 @@ export class UsersController {
   }
 
   @Patch(":id/role")
-  updateRole(@CurrentUser() user: RequestUser, @Param("id") id: string, @Body() body: UpdateRoleDto) {
+  updateRole(
+    @CurrentUser() user: RequestUser,
+    @Param("id") id: string,
+    @Body() body: UpdateRoleDto,
+  ) {
     return this.users.updateRole(user, id, body.role);
   }
 }

@@ -19,7 +19,11 @@ export function GoogleLoginButton() {
       }}
       size="lg"
     >
-      {loading ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+      {loading ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <KeyRound className="size-4" />
+      )}
       Entrar com Google
     </Button>
   );

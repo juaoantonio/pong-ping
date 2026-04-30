@@ -68,6 +68,13 @@ import { entities } from "./entities";
     UsersController,
     AdminRoundsController,
   ],
-  providers: [AuthService, AccessService, RankingsService, RoomsService, UsersService, AdminRoundsService],
+  providers: [
+    AuthService,
+    AccessService,
+    RankingsService,
+    RoomsService,
+    UsersService,
+    AdminRoundsService,
+  ],
 })
 export class AppModule {}

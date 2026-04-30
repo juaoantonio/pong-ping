@@ -16,7 +16,9 @@ async function readApiError(response: Response) {
   const body = (await response.json().catch(() => null)) as {
     error?: string | { message?: string };
   } | null;
-  return typeof body?.error === "string" ? body.error : body?.error?.message ?? "Nao foi possivel usar este convite.";
+  return typeof body?.error === "string"
+    ? body.error
+    : (body?.error?.message ?? "Nao foi possivel usar este convite.");
 }
 
 export function InviteForm({ token }: InviteFormProps) {

@@ -3,6 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
+  },
   "main": "./src/index.ts",
-  "types": "./src/index.ts"
+  "types": "./src/index.ts",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.2.1",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.5.0",
+    "prettier": "3.8.3",
+    "typescript-eslint": "8.59.1"
+  }
 }

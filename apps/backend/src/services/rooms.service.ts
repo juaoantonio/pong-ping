@@ -26,10 +26,14 @@ import { badRequest, conflict, notFound } from "../shared/http-error";
 @Injectable()
 export class RoomsService {
   constructor(
-    @InjectRepository(PingPongRoom) private readonly rooms: Repository<PingPongRoom>,
-    @InjectRepository(PingPongRoomParticipant) private readonly participants: Repository<PingPongRoomParticipant>,
-    @InjectRepository(PingPongRoomInvitation) private readonly invitations: Repository<PingPongRoomInvitation>,
-    @InjectRepository(MatchHistory) private readonly matches: Repository<MatchHistory>,
+    @InjectRepository(PingPongRoom)
+    private readonly rooms: Repository<PingPongRoom>,
+    @InjectRepository(PingPongRoomParticipant)
+    private readonly participants: Repository<PingPongRoomParticipant>,
+    @InjectRepository(PingPongRoomInvitation)
+    private readonly invitations: Repository<PingPongRoomInvitation>,
+    @InjectRepository(MatchHistory)
+    private readonly matches: Repository<MatchHistory>,
     @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
 
@@ -57,7 +61,9 @@ export class RoomsService {
           createdAt: room.createdAt.toISOString(),
           createdBy: this.userIdentity(room.createdBy),
           participantCount: participants.length,
-          currentPlayers: participants.slice(0, 2).map((participant) => this.userIdentity(participant.user)),
+          currentPlayers: participants
+            .slice(0, 2)
+            .map((participant) => this.userIdentity(participant.user)),
           latestMatch,
         };
       }),
@@ -80,7 +86,10 @@ export class RoomsService {
         order: { queuePosition: "ASC" },
       }),
       this.invitations.findOne({
-        where: [{ roomId, expiresAt: MoreThan(new Date()), oneTimeUse: false }, { roomId, expiresAt: MoreThan(new Date()), usedAt: IsNull() }],
+        where: [
+          { roomId, expiresAt: MoreThan(new Date()), oneTimeUse: false },
+          { roomId, expiresAt: MoreThan(new Date()), usedAt: IsNull() },
+        ],
         order: { createdAt: "DESC" },
       }),
       this.recentMatches(roomId),
@@ -116,7 +125,9 @@ export class RoomsService {
   }
 
   async userOptions() {
-    const users = await this.users.find({ order: { name: "ASC", email: "ASC" } });
+    const users = await this.users.find({
+      order: { name: "ASC", email: "ASC" },
+    });
     return users.map((user) => ({
       id: user.id,
       name: user.name,
@@ -131,7 +142,11 @@ export class RoomsService {
       relations: { room: { createdBy: true } },
     });
 
-    if (!invitation || invitation.expiresAt < new Date() || (invitation.oneTimeUse && invitation.usedAt)) {
+    if (
+      !invitation ||
+      invitation.expiresAt < new Date() ||
+      (invitation.oneTimeUse && invitation.usedAt)
+    ) {
       throw notFound("Convite de sala invalido.", "room_invitation_not_found");
     }
 
@@ -175,15 +190,24 @@ export class RoomsService {
   }
 
   async deleteRoom(roomId: string, actorUserId: string) {
-    const result = await this.rooms.update({ id: roomId }, { deletedAt: new Date() });
+    const result = await this.rooms.update(
+      { id: roomId },
+      { deletedAt: new Date() },
+    );
     if (!result.affected) {
       throw notFound("Sala nao encontrada.", "room_not_found");
     }
-    await this.audit(this.rooms.manager, actorUserId, "room_deleted", { roomId });
+    await this.audit(this.rooms.manager, actorUserId, "room_deleted", {
+      roomId,
+    });
     return { message: "Sala deletada com sucesso." };
   }
 
-  async createRoomInvitation(roomId: string, actorUserId: string, input: { expiresIn?: unknown; oneTimeUse?: boolean }) {
+  async createRoomInvitation(
+    roomId: string,
+    actorUserId: string,
+    input: { expiresIn?: unknown; oneTimeUse?: boolean },
+  ) {
     const room = await this.rooms.findOneBy({ id: roomId });
     if (!room) {
       throw notFound("Sala nao encontrada.", "room_not_found");
@@ -195,26 +219,29 @@ export class RoomsService {
     }
 
     const token = createRoomInvitationToken();
-    const invite = await this.invitations.manager.transaction(async (manager) => {
-      const createdInvite = await manager.save(
-        PingPongRoomInvitation,
-        manager.create(PingPongRoomInvitation, {
-          id: createId(),
+    const invite = await this.invitations.manager.transaction(
+      async (manager) => {
+        const createdInvite = await manager.save(
+          PingPongRoomInvitation,
+          manager.create(PingPongRoomInvitation, {
+            id: createId(),
+            roomId,
+            token,
+            createdById: actorUserId,
+            expiresAt: getInvitationExpiry(expiresIn),
+            oneTimeUse:
+              typeof input.oneTimeUse === "boolean" ? input.oneTimeUse : false,
+          }),
+        );
+        await this.audit(manager, actorUserId, "room_invitation_created", {
           roomId,
-          token,
-          createdById: actorUserId,
-          expiresAt: getInvitationExpiry(expiresIn),
-          oneTimeUse: typeof input.oneTimeUse === "boolean" ? input.oneTimeUse : false,
-        }),
-      );
-      await this.audit(manager, actorUserId, "room_invitation_created", {
-        roomId,
-        invitationId: createdInvite.id,
-        expiresAt: createdInvite.expiresAt.toISOString(),
-        oneTimeUse: createdInvite.oneTimeUse,
-      });
-      return createdInvite;
-    });
+          invitationId: createdInvite.id,
+          expiresAt: createdInvite.expiresAt.toISOString(),
+          oneTimeUse: createdInvite.oneTimeUse,
+        });
+        return createdInvite;
+      },
+    );
 
     return {
       invite: {
@@ -230,18 +257,36 @@ export class RoomsService {
     await this.participants.manager.transaction(async (manager) => {
       await this.addUserToRoom(manager, roomId, userId);
       if (actorUserId) {
-        await this.audit(manager, actorUserId, "room_participant_added", { roomId }, userId);
+        await this.audit(
+          manager,
+          actorUserId,
+          "room_participant_added",
+          { roomId },
+          userId,
+        );
       }
     });
 
     return { ok: true };
   }
 
-  async removeParticipant(roomId: string, participantId: string, actorUserId: string) {
+  async removeParticipant(
+    roomId: string,
+    participantId: string,
+    actorUserId: string,
+  ) {
     await this.participants.manager.transaction(async (manager) => {
-      const participant = await manager.findOne(PingPongRoomParticipant, { where: { id: participantId } });
+      const participant = await manager.findOne(PingPongRoomParticipant, {
+        where: { id: participantId },
+      });
       await this.removeParticipantFromRoom(manager, roomId, participantId);
-      await this.audit(manager, actorUserId, "room_participant_removed", { roomId, participantId }, participant?.userId);
+      await this.audit(
+        manager,
+        actorUserId,
+        "room_participant_removed",
+        { roomId, participantId },
+        participant?.userId,
+      );
     });
 
     return { ok: true };
@@ -262,8 +307,13 @@ export class RoomsService {
     await this.invitations.manager.transaction(async (manager) => {
       await this.addUserToRoom(manager, invitation.roomId, actorUserId);
       const usedAt = new Date();
-      const current = await manager.findOneByOrFail(PingPongRoomInvitation, { id: invitation.id });
-      if (current.expiresAt <= usedAt || (current.oneTimeUse && current.usedAt)) {
+      const current = await manager.findOneByOrFail(PingPongRoomInvitation, {
+        id: invitation.id,
+      });
+      if (
+        current.expiresAt <= usedAt ||
+        (current.oneTimeUse && current.usedAt)
+      ) {
         throw badRequest("Convite de sala invalido, expirado ou ja utilizado.");
       }
       current.usedAt = usedAt;
@@ -279,7 +329,11 @@ export class RoomsService {
     return { ok: true };
   }
 
-  async finishMatch(roomId: string, winnerParticipantId: string, actorUserId: string) {
+  async finishMatch(
+    roomId: string,
+    winnerParticipantId: string,
+    actorUserId: string,
+  ) {
     const match = await this.matches.manager.transaction((manager) =>
       this.finishRoomMatch(manager, roomId, winnerParticipantId, actorUserId),
     );
@@ -371,21 +425,36 @@ export class RoomsService {
     );
   }
 
-  private async removeParticipantFromRoom(manager: any, roomId: string, participantId: string) {
+  private async removeParticipantFromRoom(
+    manager: any,
+    roomId: string,
+    participantId: string,
+  ) {
     const participants = await manager.find(PingPongRoomParticipant, {
       where: { roomId },
       order: { queuePosition: "ASC" },
     });
-    const nextQueue = participants.filter((participant: PingPongRoomParticipant) => participant.id !== participantId);
+    const nextQueue = participants.filter(
+      (participant: PingPongRoomParticipant) =>
+        participant.id !== participantId,
+    );
     if (nextQueue.length === participants.length) {
       throw notFound("Participante nao encontrado.", "participant_not_found");
     }
 
     await manager.delete(PingPongRoomParticipant, { id: participantId });
-    await this.reorderRoomQueue(manager, nextQueue.map((participant: PingPongRoomParticipant) => participant.id));
+    await this.reorderRoomQueue(
+      manager,
+      nextQueue.map((participant: PingPongRoomParticipant) => participant.id),
+    );
   }
 
-  private async finishRoomMatch(manager: any, roomId: string, winnerParticipantId: string, actorUserId: string) {
+  private async finishRoomMatch(
+    manager: any,
+    roomId: string,
+    winnerParticipantId: string,
+    actorUserId: string,
+  ) {
     const room = await manager.findOne(PingPongRoom, { where: { id: roomId } });
     if (!room) {
       throw notFound("Sala nao encontrada.", "room_not_found");
@@ -396,7 +465,10 @@ export class RoomsService {
       order: { queuePosition: "ASC" },
     });
     if (queue.length < 2) {
-      throw badRequest("A fila precisa de pelo menos dois jogadores.", "not_enough_players");
+      throw badRequest(
+        "A fila precisa de pelo menos dois jogadores.",
+        "not_enough_players",
+      );
     }
 
     let reorderedQueueIds: string[];
@@ -406,22 +478,47 @@ export class RoomsService {
         winnerParticipantId,
       );
     } catch (error) {
-      if (error instanceof Error && error.message === "winner_not_in_current_match") {
-        throw badRequest("O vencedor precisa estar na mesa atual.", "winner_not_in_current_match");
+      if (
+        error instanceof Error &&
+        error.message === "winner_not_in_current_match"
+      ) {
+        throw badRequest(
+          "O vencedor precisa estar na mesa atual.",
+          "winner_not_in_current_match",
+        );
       }
       throw error;
     }
 
     const currentPlayers = queue.slice(0, 2);
-    const winnerParticipant = currentPlayers.find((participant: PingPongRoomParticipant) => participant.id === winnerParticipantId);
-    const loserParticipant = currentPlayers.find((participant: PingPongRoomParticipant) => participant.id !== winnerParticipantId);
+    const winnerParticipant = currentPlayers.find(
+      (participant: PingPongRoomParticipant) =>
+        participant.id === winnerParticipantId,
+    );
+    const loserParticipant = currentPlayers.find(
+      (participant: PingPongRoomParticipant) =>
+        participant.id !== winnerParticipantId,
+    );
     if (!winnerParticipant || !loserParticipant) {
-      throw badRequest("O vencedor precisa estar na mesa atual.", "winner_not_in_current_match");
+      throw badRequest(
+        "O vencedor precisa estar na mesa atual.",
+        "winner_not_in_current_match",
+      );
     }
 
-    const winnerRanking = await this.upsertRanking(manager, winnerParticipant.userId);
-    const loserRanking = await this.upsertRanking(manager, loserParticipant.userId);
-    const nextElo = calculateElo(winnerRanking.elo, loserRanking.elo, MATCH_ELO_K);
+    const winnerRanking = await this.upsertRanking(
+      manager,
+      winnerParticipant.userId,
+    );
+    const loserRanking = await this.upsertRanking(
+      manager,
+      loserParticipant.userId,
+    );
+    const nextElo = calculateElo(
+      winnerRanking.elo,
+      loserRanking.elo,
+      MATCH_ELO_K,
+    );
     const winnerWins = winnerRanking.wins + 1;
     const winnerTotalMatches = winnerRanking.total_matches + 1;
     const loserTotalMatches = loserRanking.total_matches + 1;
@@ -447,17 +544,25 @@ export class RoomsService {
       }),
     );
 
-    await manager.update(PlayerRanking, { userId: winnerParticipant.userId }, {
-      elo: nextElo.winnerElo,
-      wins: winnerWins,
-      total_matches: winnerTotalMatches,
-      winRate: calculateWinRate(winnerWins, winnerTotalMatches),
-    });
-    await manager.update(PlayerRanking, { userId: loserParticipant.userId }, {
-      elo: nextElo.loserElo,
-      total_matches: loserTotalMatches,
-      winRate: calculateWinRate(loserRanking.wins, loserTotalMatches),
-    });
+    await manager.update(
+      PlayerRanking,
+      { userId: winnerParticipant.userId },
+      {
+        elo: nextElo.winnerElo,
+        wins: winnerWins,
+        total_matches: winnerTotalMatches,
+        winRate: calculateWinRate(winnerWins, winnerTotalMatches),
+      },
+    );
+    await manager.update(
+      PlayerRanking,
+      { userId: loserParticipant.userId },
+      {
+        elo: nextElo.loserElo,
+        total_matches: loserTotalMatches,
+        winRate: calculateWinRate(loserRanking.wins, loserTotalMatches),
+      },
+    );
     await this.audit(manager, actorUserId, "room_match_finished", {
       roomId,
       winnerId: winnerParticipant.userId,
@@ -475,7 +580,12 @@ export class RoomsService {
     };
   }
 
-  private async rollbackRoomMatch(manager: any, roomId: string, matchHistoryId: string, actorUserId: string) {
+  private async rollbackRoomMatch(
+    manager: any,
+    roomId: string,
+    matchHistoryId: string,
+    actorUserId: string,
+  ) {
     const match = await manager.findOne(MatchHistory, {
       where: { id: matchHistoryId, roomId },
       relations: { rollbacks: true },
@@ -484,10 +594,16 @@ export class RoomsService {
       throw notFound("Rodada nao encontrada.", "match_not_found");
     }
     if (match.kind === "rollback") {
-      throw badRequest("Um rollback nao pode ser revertido.", "cannot_rollback_rollback");
+      throw badRequest(
+        "Um rollback nao pode ser revertido.",
+        "cannot_rollback_rollback",
+      );
     }
     if (match.rollbacks.length > 0) {
-      throw conflict("Esta rodada ja foi revertida.", "match_already_rolled_back");
+      throw conflict(
+        "Esta rodada ja foi revertida.",
+        "match_already_rolled_back",
+      );
     }
 
     const [winnerRanking, loserRanking] = await Promise.all([
@@ -524,17 +640,25 @@ export class RoomsService {
       }),
     );
 
-    await manager.update(PlayerRanking, { userId: match.winnerId }, {
-      elo: nextWinnerElo,
-      wins: nextWinnerWins,
-      total_matches: nextWinnerTotalMatches,
-      winRate: calculateWinRate(nextWinnerWins, nextWinnerTotalMatches),
-    });
-    await manager.update(PlayerRanking, { userId: match.loserId }, {
-      elo: nextLoserElo,
-      total_matches: nextLoserTotalMatches,
-      winRate: calculateWinRate(loserRanking.wins, nextLoserTotalMatches),
-    });
+    await manager.update(
+      PlayerRanking,
+      { userId: match.winnerId },
+      {
+        elo: nextWinnerElo,
+        wins: nextWinnerWins,
+        total_matches: nextWinnerTotalMatches,
+        winRate: calculateWinRate(nextWinnerWins, nextWinnerTotalMatches),
+      },
+    );
+    await manager.update(
+      PlayerRanking,
+      { userId: match.loserId },
+      {
+        elo: nextLoserElo,
+        total_matches: nextLoserTotalMatches,
+        winRate: calculateWinRate(loserRanking.wins, nextLoserTotalMatches),
+      },
+    );
     await this.audit(manager, actorUserId, "room_match_rolled_back", {
       roomId,
       matchHistoryId,
@@ -556,12 +680,20 @@ export class RoomsService {
     const temporaryOffset = participantIds.length + 1000;
     await Promise.all(
       participantIds.map((participantId, index) =>
-        manager.update(PingPongRoomParticipant, { id: participantId }, { queuePosition: temporaryOffset + index }),
+        manager.update(
+          PingPongRoomParticipant,
+          { id: participantId },
+          { queuePosition: temporaryOffset + index },
+        ),
       ),
     );
     await Promise.all(
       participantIds.map((participantId, index) =>
-        manager.update(PingPongRoomParticipant, { id: participantId }, { queuePosition: index }),
+        manager.update(
+          PingPongRoomParticipant,
+          { id: participantId },
+          { queuePosition: index },
+        ),
       ),
     );
   }
@@ -581,7 +713,13 @@ export class RoomsService {
     return ranking;
   }
 
-  private async audit(manager: any, actorUserId: string | null, action: string, metadata: unknown, targetUserId?: string | null) {
+  private async audit(
+    manager: any,
+    actorUserId: string | null,
+    action: string,
+    metadata: unknown,
+    targetUserId?: string | null,
+  ) {
     await manager.save(
       AuditLog,
       manager.create(AuditLog, {

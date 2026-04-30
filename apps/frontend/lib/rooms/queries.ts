@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { RoomListItem, RoomSummary, UserOption } from "@/components/rooms/types";
+import type {
+  RoomListItem,
+  RoomSummary,
+  UserOption,
+} from "@/components/rooms/types";
 import { apiGet } from "@/lib/api/server";
 
 export async function getRoomListItems() {

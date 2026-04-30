@@ -69,7 +69,9 @@ async function readApiError(response: Response) {
   const body = (await response.json().catch(() => null)) as {
     error?: string | { message?: string };
   } | null;
-  return typeof body?.error === "string" ? body.error : body?.error?.message ?? "Nao foi possivel concluir a acao.";
+  return typeof body?.error === "string"
+    ? body.error
+    : (body?.error?.message ?? "Nao foi possivel concluir a acao.");
 }
 
 function userLabel(user: UserLabel) {

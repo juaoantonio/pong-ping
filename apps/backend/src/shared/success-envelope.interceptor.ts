@@ -8,7 +8,10 @@ import { map, Observable } from "rxjs";
 
 @Injectable()
 export class SuccessEnvelopeInterceptor implements NestInterceptor {
-  intercept(_context: ExecutionContext, next: CallHandler): Observable<unknown> {
+  intercept(
+    _context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<unknown> {
     return next.handle().pipe(
       map((value) => {
         if (value && typeof value === "object" && "ok" in value) {

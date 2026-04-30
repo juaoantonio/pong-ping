@@ -17,8 +17,10 @@ import { badRequest } from "../shared/http-error";
 @Injectable()
 export class AccessService {
   constructor(
-    @InjectRepository(AllowedEmail) private readonly allowedEmails: Repository<AllowedEmail>,
-    @InjectRepository(AuthInvitation) private readonly invitations: Repository<AuthInvitation>,
+    @InjectRepository(AllowedEmail)
+    private readonly allowedEmails: Repository<AllowedEmail>,
+    @InjectRepository(AuthInvitation)
+    private readonly invitations: Repository<AuthInvitation>,
     private readonly config: ConfigService,
   ) {}
 
@@ -41,7 +43,10 @@ export class AccessService {
         email: allowedEmail.email,
         createdAt: allowedEmail.createdAt.toISOString(),
         createdBy: allowedEmail.createdBy
-          ? { name: allowedEmail.createdBy.name, email: allowedEmail.createdBy.email }
+          ? {
+              name: allowedEmail.createdBy.name,
+              email: allowedEmail.createdBy.email,
+            }
           : null,
       })),
       invitations: invitations.map((invitation) => ({
@@ -69,65 +74,75 @@ export class AccessService {
       throw badRequest("Informe um email valido.");
     }
 
-    const allowedEmail = await this.allowedEmails.manager.transaction(async (manager) => {
-      const existing = await manager.findOne(AllowedEmail, { where: { email } });
-      const allowed =
-        existing ??
-        manager.create(AllowedEmail, {
-          id: createId(),
-          email,
-          createdByUserId: actorUserId,
+    const allowedEmail = await this.allowedEmails.manager.transaction(
+      async (manager) => {
+        const existing = await manager.findOne(AllowedEmail, {
+          where: { email },
         });
-      const saved = await manager.save(AllowedEmail, allowed);
-      await manager.save(
-        AuditLog,
-        manager.create(AuditLog, {
-          id: createId(),
-          actorUserId,
-          action: "email_allowed",
-          metadata: { email },
-        }),
-      );
-      return saved;
-    });
+        const allowed =
+          existing ??
+          manager.create(AllowedEmail, {
+            id: createId(),
+            email,
+            createdByUserId: actorUserId,
+          });
+        const saved = await manager.save(AllowedEmail, allowed);
+        await manager.save(
+          AuditLog,
+          manager.create(AuditLog, {
+            id: createId(),
+            actorUserId,
+            action: "email_allowed",
+            metadata: { email },
+          }),
+        );
+        return saved;
+      },
+    );
 
     return { allowedEmail };
   }
 
-  async createInvitation(input: { expiresIn?: unknown; oneTimeUse?: boolean }, actorUserId: string) {
+  async createInvitation(
+    input: { expiresIn?: unknown; oneTimeUse?: boolean },
+    actorUserId: string,
+  ) {
     const expiresIn = input.expiresIn ?? "15m";
     if (!isInvitationExpiryPreset(expiresIn)) {
       throw badRequest("Informe uma validade valida para o convite.");
     }
 
     const token = createInvitationToken();
-    const oneTimeUse = typeof input.oneTimeUse === "boolean" ? input.oneTimeUse : true;
-    const invitation = await this.invitations.manager.transaction(async (manager) => {
-      const created = await manager.save(
-        AuthInvitation,
-        manager.create(AuthInvitation, {
-          id: createId(),
-          tokenHash: hashInvitationToken(token),
-          expiresAt: getInvitationExpiry(expiresIn),
-          oneTimeUse,
-          createdByUserId: actorUserId,
-        }),
-      );
-      await manager.save(
-        AuditLog,
-        manager.create(AuditLog, {
-          id: createId(),
-          actorUserId,
-          action: "invitation_created",
-          metadata: {
-            invitationId: created.id,
-            expiresAt: created.expiresAt.toISOString(),
-            oneTimeUse: created.oneTimeUse,
-          },
-        }),
-      );
-      return created;
-    });
+    const oneTimeUse =
+      typeof input.oneTimeUse === "boolean" ? input.oneTimeUse : true;
+    const invitation = await this.invitations.manager.transaction(
+      async (manager) => {
+        const created = await manager.save(
+          AuthInvitation,
+          manager.create(AuthInvitation, {
+            id: createId(),
+            tokenHash: hashInvitationToken(token),
+            expiresAt: getInvitationExpiry(expiresIn),
+            oneTimeUse,
+            createdByUserId: actorUserId,
+          }),
+        );
+        await manager.save(
+          AuditLog,
+          manager.create(AuditLog, {
+            id: createId(),
+            actorUserId,
+            action: "invitation_created",
+            metadata: {
+              invitationId: created.id,
+              expiresAt: created.expiresAt.toISOString(),
+              oneTimeUse: created.oneTimeUse,
+            },
+          }),
+        );
+        return created;
+      },
+    );
 
     return {
       invitation: {
@@ -151,44 +166,54 @@ export class AccessService {
     const tokenHash = hashInvitationToken(token);
     const now = new Date();
 
-    const result = await this.invitations.manager.transaction(async (manager) => {
-      const invitation = await manager.findOne(AuthInvitation, { where: { tokenHash } });
-      if (!invitation || invitation.expiresAt <= now) {
-        return null;
-      }
+    const result = await this.invitations.manager.transaction(
+      async (manager) => {
+        const invitation = await manager.findOne(AuthInvitation, {
+          where: { tokenHash },
+        });
+        if (!invitation || invitation.expiresAt <= now) {
+          return null;
+        }
 
-      if (invitation.oneTimeUse && invitation.usedAt) {
-        return null;
-      }
+        if (invitation.oneTimeUse && invitation.usedAt) {
+          return null;
+        }
 
-      invitation.usedAt = now;
-      invitation.usedByEmail = email;
-      await manager.save(AuthInvitation, invitation);
+        invitation.usedAt = now;
+        invitation.usedByEmail = email;
+        await manager.save(AuthInvitation, invitation);
 
-      const existing = await manager.findOne(AllowedEmail, { where: { email } });
-      if (!existing) {
+        const existing = await manager.findOne(AllowedEmail, {
+          where: { email },
+        });
+        if (!existing) {
+          await manager.save(
+            AllowedEmail,
+            manager.create(AllowedEmail, {
+              id: createId(),
+              email,
+              createdByUserId: invitation.createdByUserId,
+            }),
+          );
+        }
+
         await manager.save(
-          AllowedEmail,
-          manager.create(AllowedEmail, {
+          AuditLog,
+          manager.create(AuditLog, {
             id: createId(),
-            email,
-            createdByUserId: invitation.createdByUserId,
+            actorUserId: invitation.createdByUserId,
+            action: "invitation_used",
+            metadata: {
+              invitationId: invitation.id,
+              email,
+              oneTimeUse: invitation.oneTimeUse,
+            },
           }),
         );
-      }
 
-      await manager.save(
-        AuditLog,
-        manager.create(AuditLog, {
-          id: createId(),
-          actorUserId: invitation.createdByUserId,
-          action: "invitation_used",
-          metadata: { invitationId: invitation.id, email, oneTimeUse: invitation.oneTimeUse },
-        }),
-      );
-
-      return true;
-    });
+        return true;
+      },
+    );
 
     if (!result) {
       throw badRequest("Convite invalido, expirado ou ja utilizado.");

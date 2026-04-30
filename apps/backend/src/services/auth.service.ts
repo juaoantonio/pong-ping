@@ -32,9 +32,11 @@ type GoogleProfile = {
 export class AuthService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
-    @InjectRepository(OAuthAccount) private readonly accounts: Repository<OAuthAccount>,
+    @InjectRepository(OAuthAccount)
+    private readonly accounts: Repository<OAuthAccount>,
     @InjectRepository(Session) private readonly sessions: Repository<Session>,
-    @InjectRepository(AllowedEmail) private readonly allowedEmails: Repository<AllowedEmail>,
+    @InjectRepository(AllowedEmail)
+    private readonly allowedEmails: Repository<AllowedEmail>,
     private readonly config: ConfigService,
     private readonly jwt: JwtService,
   ) {}
@@ -42,7 +44,10 @@ export class AuthService {
   googleAuthUrl() {
     const clientId = this.googleClientId();
     if (!clientId) {
-      throw badRequest("Google OAuth nao esta configurado.", "google_oauth_not_configured");
+      throw badRequest(
+        "Google OAuth nao esta configurado.",
+        "google_oauth_not_configured",
+      );
     }
 
     const redirectUri = this.googleRedirectUri();
@@ -88,7 +93,10 @@ export class AuthService {
     return { ok: true };
   }
 
-  private async signInGoogleUser(profile: GoogleProfile, token: GoogleTokenResponse) {
+  private async signInGoogleUser(
+    profile: GoogleProfile,
+    token: GoogleTokenResponse,
+  ) {
     const email = normalizeEmail(profile.email ?? "");
     if (!email || profile.email_verified !== true) {
       throw forbidden("Email Google nao verificado.");
@@ -96,7 +104,9 @@ export class AuthService {
 
     const superadminEmail = this.config.get<string>("SUPERADMIN_EMAIL");
     const initialSuperadmin = isInitialSuperAdminEmail(email, superadminEmail);
-    const allowed = initialSuperadmin || (await this.allowedEmails.exist({ where: { email } }));
+    const allowed =
+      initialSuperadmin ||
+      (await this.allowedEmails.exist({ where: { email } }));
     if (!allowed) {
       throw forbidden("Email nao autorizado.");
     }
@@ -146,7 +156,9 @@ export class AuthService {
           provider: "google",
           providerAccountId: profile.sub,
           access_token: token.access_token,
-          expires_at: token.expires_in ? Math.floor(Date.now() / 1000) + token.expires_in : null,
+          expires_at: token.expires_in
+            ? Math.floor(Date.now() / 1000) + token.expires_in
+            : null,
           token_type: token.token_type ?? null,
           scope: token.scope ?? null,
           id_token: token.id_token ?? null,
@@ -174,7 +186,10 @@ export class AuthService {
       }),
     );
 
-    const accessToken = await this.jwt.signAsync({ sub: user.id, role: user.role });
+    const accessToken = await this.jwt.signAsync({
+      sub: user.id,
+      role: user.role,
+    });
     const cookieOptions = {
       httpOnly: true,
       sameSite: "lax" as const,
@@ -218,30 +233,49 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      throw badRequest("Nao foi possivel concluir login com Google.", "google_token_exchange_failed");
+      throw badRequest(
+        "Nao foi possivel concluir login com Google.",
+        "google_token_exchange_failed",
+      );
     }
 
     return response.json() as Promise<GoogleTokenResponse>;
   }
 
-  private async fetchGoogleProfile(accessToken: string): Promise<GoogleProfile> {
-    const response = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+  private async fetchGoogleProfile(
+    accessToken: string,
+  ): Promise<GoogleProfile> {
+    const response = await fetch(
+      "https://openidconnect.googleapis.com/v1/userinfo",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
 
     if (!response.ok) {
-      throw badRequest("Nao foi possivel carregar perfil Google.", "google_profile_failed");
+      throw badRequest(
+        "Nao foi possivel carregar perfil Google.",
+        "google_profile_failed",
+      );
     }
 
     return response.json() as Promise<GoogleProfile>;
   }
 
   private googleClientId() {
-    return this.config.get<string>("GOOGLE_CLIENT_ID") || this.config.get<string>("AUTH_GOOGLE_ID") || "";
+    return (
+      this.config.get<string>("GOOGLE_CLIENT_ID") ||
+      this.config.get<string>("AUTH_GOOGLE_ID") ||
+      ""
+    );
   }
 
   private googleClientSecret() {
-    return this.config.get<string>("GOOGLE_CLIENT_SECRET") || this.config.get<string>("AUTH_GOOGLE_SECRET") || "";
+    return (
+      this.config.get<string>("GOOGLE_CLIENT_SECRET") ||
+      this.config.get<string>("AUTH_GOOGLE_SECRET") ||
+      ""
+    );
   }
 
   private toAuthUser(user: User) {

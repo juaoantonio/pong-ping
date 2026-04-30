@@ -39,7 +39,12 @@ export class User {
   @Column("text", { nullable: true })
   avatarUrl!: string | null;
 
-  @Column({ type: "enum", enumName: "Role", enum: ["superadmin", "admin", "user"], default: "user" })
+  @Column({
+    type: "enum",
+    enumName: "Role",
+    enum: ["superadmin", "admin", "user"],
+    default: "user",
+  })
   role!: Role;
 
   @CreateDateColumn({ type: "timestamp" })

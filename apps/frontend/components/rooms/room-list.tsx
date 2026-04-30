@@ -33,7 +33,9 @@ async function readApiError(response: Response) {
   const body = (await response.json().catch(() => null)) as {
     error?: string | { message?: string };
   } | null;
-  return typeof body?.error === "string" ? body.error : body?.error?.message ?? "Nao foi possivel processar a requisicao.";
+  return typeof body?.error === "string"
+    ? body.error
+    : (body?.error?.message ?? "Nao foi possivel processar a requisicao.");
 }
 
 export function RoomList({ rooms }: { rooms: RoomListItem[] }) {

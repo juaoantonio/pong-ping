@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { InviteForm } from "@/app/invite/[token]/invite-form";
 
@@ -17,7 +23,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Autorizar acesso</CardTitle>
-          <CardDescription>Use este convite para liberar um email para login.</CardDescription>
+          <CardDescription>
+            Use este convite para liberar um email para login.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <InviteForm token={token} />

@@ -59,10 +59,7 @@ export default async function AdminRoundsPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <RoundsAdmin
-            filters={filters}
-            rounds={rounds}
-          />
+          <RoundsAdmin filters={filters} rounds={rounds} />
         </CardContent>
       </Card>
     </div>

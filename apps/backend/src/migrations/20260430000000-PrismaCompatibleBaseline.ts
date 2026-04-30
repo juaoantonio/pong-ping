@@ -188,11 +188,21 @@ export class PrismaCompatibleBaseline20260430000000 implements MigrationInterfac
   }
 
   private async addCompatibilityColumns(queryRunner: QueryRunner) {
-    await queryRunner.query(`ALTER TABLE "AuthInvitation" ADD COLUMN IF NOT EXISTS "oneTimeUse" BOOLEAN NOT NULL DEFAULT true;`);
-    await queryRunner.query(`ALTER TABLE "PingPongRoomInvitation" ADD COLUMN IF NOT EXISTS "oneTimeUse" BOOLEAN NOT NULL DEFAULT false;`);
-    await queryRunner.query(`ALTER TABLE "PingPongRoomInvitation" ADD COLUMN IF NOT EXISTS "usedAt" TIMESTAMP(3);`);
-    await queryRunner.query(`ALTER TABLE "PingPongRoomInvitation" ADD COLUMN IF NOT EXISTS "usedByUserId" TEXT;`);
-    await queryRunner.query(`ALTER TABLE "PingPongRoom" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3);`);
+    await queryRunner.query(
+      `ALTER TABLE "AuthInvitation" ADD COLUMN IF NOT EXISTS "oneTimeUse" BOOLEAN NOT NULL DEFAULT true;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "PingPongRoomInvitation" ADD COLUMN IF NOT EXISTS "oneTimeUse" BOOLEAN NOT NULL DEFAULT false;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "PingPongRoomInvitation" ADD COLUMN IF NOT EXISTS "usedAt" TIMESTAMP(3);`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "PingPongRoomInvitation" ADD COLUMN IF NOT EXISTS "usedByUserId" TEXT;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "PingPongRoom" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3);`,
+    );
   }
 
   private async addIndexes(queryRunner: QueryRunner) {
@@ -246,22 +256,70 @@ export class PrismaCompatibleBaseline20260430000000 implements MigrationInterfac
 
   private async addForeignKeys(queryRunner: QueryRunner) {
     const constraints = [
-      [`Account_userId_fkey`, `ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`],
-      [`Session_userId_fkey`, `ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`],
-      [`AuditLog_actorUserId_fkey`, `ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`],
-      [`AllowedEmail_createdByUserId_fkey`, `ALTER TABLE "AllowedEmail" ADD CONSTRAINT "AllowedEmail_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`],
-      [`AuthInvitation_createdByUserId_fkey`, `ALTER TABLE "AuthInvitation" ADD CONSTRAINT "AuthInvitation_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`],
-      [`PlayerRanking_userId_fkey`, `ALTER TABLE "PlayerRanking" ADD CONSTRAINT "PlayerRanking_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`],
-      [`MatchHistory_roomId_fkey`, `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "PingPongRoom"("id") ON DELETE SET NULL ON UPDATE CASCADE`],
-      [`MatchHistory_winnerId_fkey`, `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_winnerId_fkey" FOREIGN KEY ("winnerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`],
-      [`MatchHistory_loserId_fkey`, `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_loserId_fkey" FOREIGN KEY ("loserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`],
-      [`MatchHistory_createdById_fkey`, `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`],
-      [`MatchHistory_rollbackOfId_fkey`, `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_rollbackOfId_fkey" FOREIGN KEY ("rollbackOfId") REFERENCES "MatchHistory"("id") ON DELETE RESTRICT ON UPDATE CASCADE`],
-      [`PingPongRoom_createdById_fkey`, `ALTER TABLE "PingPongRoom" ADD CONSTRAINT "PingPongRoom_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`],
-      [`PingPongRoomParticipant_roomId_fkey`, `ALTER TABLE "PingPongRoomParticipant" ADD CONSTRAINT "PingPongRoomParticipant_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "PingPongRoom"("id") ON DELETE CASCADE ON UPDATE CASCADE`],
-      [`PingPongRoomParticipant_userId_fkey`, `ALTER TABLE "PingPongRoomParticipant" ADD CONSTRAINT "PingPongRoomParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`],
-      [`PingPongRoomInvitation_roomId_fkey`, `ALTER TABLE "PingPongRoomInvitation" ADD CONSTRAINT "PingPongRoomInvitation_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "PingPongRoom"("id") ON DELETE CASCADE ON UPDATE CASCADE`],
-      [`PingPongRoomInvitation_createdById_fkey`, `ALTER TABLE "PingPongRoomInvitation" ADD CONSTRAINT "PingPongRoomInvitation_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`],
+      [
+        `Account_userId_fkey`,
+        `ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      ],
+      [
+        `Session_userId_fkey`,
+        `ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      ],
+      [
+        `AuditLog_actorUserId_fkey`,
+        `ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+      ],
+      [
+        `AllowedEmail_createdByUserId_fkey`,
+        `ALTER TABLE "AllowedEmail" ADD CONSTRAINT "AllowedEmail_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+      ],
+      [
+        `AuthInvitation_createdByUserId_fkey`,
+        `ALTER TABLE "AuthInvitation" ADD CONSTRAINT "AuthInvitation_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+      ],
+      [
+        `PlayerRanking_userId_fkey`,
+        `ALTER TABLE "PlayerRanking" ADD CONSTRAINT "PlayerRanking_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      ],
+      [
+        `MatchHistory_roomId_fkey`,
+        `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "PingPongRoom"("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+      ],
+      [
+        `MatchHistory_winnerId_fkey`,
+        `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_winnerId_fkey" FOREIGN KEY ("winnerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`,
+      ],
+      [
+        `MatchHistory_loserId_fkey`,
+        `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_loserId_fkey" FOREIGN KEY ("loserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`,
+      ],
+      [
+        `MatchHistory_createdById_fkey`,
+        `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`,
+      ],
+      [
+        `MatchHistory_rollbackOfId_fkey`,
+        `ALTER TABLE "MatchHistory" ADD CONSTRAINT "MatchHistory_rollbackOfId_fkey" FOREIGN KEY ("rollbackOfId") REFERENCES "MatchHistory"("id") ON DELETE RESTRICT ON UPDATE CASCADE`,
+      ],
+      [
+        `PingPongRoom_createdById_fkey`,
+        `ALTER TABLE "PingPongRoom" ADD CONSTRAINT "PingPongRoom_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`,
+      ],
+      [
+        `PingPongRoomParticipant_roomId_fkey`,
+        `ALTER TABLE "PingPongRoomParticipant" ADD CONSTRAINT "PingPongRoomParticipant_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "PingPongRoom"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      ],
+      [
+        `PingPongRoomParticipant_userId_fkey`,
+        `ALTER TABLE "PingPongRoomParticipant" ADD CONSTRAINT "PingPongRoomParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      ],
+      [
+        `PingPongRoomInvitation_roomId_fkey`,
+        `ALTER TABLE "PingPongRoomInvitation" ADD CONSTRAINT "PingPongRoomInvitation_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "PingPongRoom"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+      ],
+      [
+        `PingPongRoomInvitation_createdById_fkey`,
+        `ALTER TABLE "PingPongRoomInvitation" ADD CONSTRAINT "PingPongRoomInvitation_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`,
+      ],
     ];
 
     for (const [name, sql] of constraints) {

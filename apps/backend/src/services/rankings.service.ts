@@ -8,7 +8,8 @@ import { DEFAULT_PLAYER_ELO } from "../domain/rules";
 export class RankingsService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
-    @InjectRepository(RankLevel) private readonly rankLevels: Repository<RankLevel>,
+    @InjectRepository(RankLevel)
+    private readonly rankLevels: Repository<RankLevel>,
   ) {}
 
   async list() {
@@ -25,7 +26,8 @@ export class RankingsService {
           total_matches: 0,
           winRate: 0,
         };
-        const rankLevel = rankLevels.find((level) => ranking.elo >= level.minElo) ?? null;
+        const rankLevel =
+          rankLevels.find((level) => ranking.elo >= level.minElo) ?? null;
 
         return {
           id: user.id,
@@ -48,7 +50,9 @@ export class RankingsService {
         if (second.ranking.wins !== first.ranking.wins) {
           return second.ranking.wins - first.ranking.wins;
         }
-        return (first.name ?? first.email ?? "").localeCompare(second.name ?? second.email ?? "");
+        return (first.name ?? first.email ?? "").localeCompare(
+          second.name ?? second.email ?? "",
+        );
       });
   }
 }

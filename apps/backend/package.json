@@ -6,7 +6,10 @@
     "build": "nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
-    "lint": "biome lint src test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d ./data-source.ts",
@@ -34,6 +37,7 @@
     "typeorm": "^0.3.27"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@nestjs/cli": "^11.0.10",
     "@nestjs/testing": "^11.1.8",
     "@swc/core": "^1.15.1",
@@ -43,12 +47,17 @@
     "@types/node": "^24.10.0",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.8",
+    "eslint": "10.2.1",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.5.0",
+    "prettier": "3.8.3",
     "supertest": "^7.1.4",
     "testcontainers": "^11.13.0",
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "8.59.1",
     "unplugin-swc": "^1.5.8",
     "vitest": "^4.0.8"
   }

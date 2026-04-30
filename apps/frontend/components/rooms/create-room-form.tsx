@@ -21,7 +21,9 @@ async function readApiError(response: Response) {
   const body = (await response.json().catch(() => null)) as {
     error?: string | { message?: string };
   } | null;
-  return typeof body?.error === "string" ? body.error : body?.error?.message ?? "Nao foi possivel criar a sala.";
+  return typeof body?.error === "string"
+    ? body.error
+    : (body?.error?.message ?? "Nao foi possivel criar a sala.");
 }
 
 export function CreateRoomForm() {

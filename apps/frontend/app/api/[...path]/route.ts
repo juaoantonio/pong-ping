@@ -34,13 +34,17 @@ async function proxy(request: NextRequest, context: RouteContext) {
       "Content-Type": request.headers.get("content-type") ?? "application/json",
       Cookie: request.headers.get("cookie") ?? "",
     },
-    body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.text(),
+    body:
+      request.method === "GET" || request.method === "HEAD"
+        ? undefined
+        : await request.text(),
     cache: "no-store",
   });
 
   const responseText = await response.text();
   let body = responseText;
-  const contentType = response.headers.get("content-type") ?? "application/json";
+  const contentType =
+    response.headers.get("content-type") ?? "application/json";
 
   if (contentType.includes("application/json")) {
     const parsed = JSON.parse(responseText || "null") as
@@ -50,7 +54,9 @@ async function proxy(request: NextRequest, context: RouteContext) {
     if (parsed?.ok === true) {
       body = JSON.stringify(parsed.data);
     } else if (parsed?.ok === false) {
-      body = JSON.stringify({ error: parsed.error.message ?? "Nao foi possivel concluir a acao." });
+      body = JSON.stringify({
+        error: parsed.error.message ?? "Nao foi possivel concluir a acao.",
+      });
     }
   }
 
