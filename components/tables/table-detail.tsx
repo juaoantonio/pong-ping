@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Copy,
   LogOut,
   Loader2,
+  MonitorUp,
   Plus,
   RotateCcw,
   Swords,
@@ -380,7 +382,23 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
             )}
           </CardContent>
 
-          <CardFooter>
+          <CardFooter className="flex flex-wrap gap-2">
+            {currentMatch.length === 2 ? (
+              <Button asChild size="lg" variant="outline">
+                <Link href={`/tables/${table.id}/scoreboard`}>
+                  <MonitorUp className="size-4" />
+                  Abrir placar
+                </Link>
+              </Button>
+            ) : null}
+            {table.viewerIsPlaying ? (
+              <Button asChild size="lg" variant="secondary">
+                <Link href={`/tables/${table.id}/scoreboard/controls`}>
+                  <Plus className="size-4" />
+                  Controles
+                </Link>
+              </Button>
+            ) : null}
             {canManage && currentMatch.length === 2 ? (
               <Dialog>
                 <DialogTrigger asChild>

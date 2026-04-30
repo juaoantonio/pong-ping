@@ -343,3 +343,55 @@ export const getTableUserOptions = cache(async () => {
     avatarUrl: user.avatarUrl ?? user.image,
   }));
 });
+
+export const getTableScoreboard = cache(
+  async (tableId: string, viewerUserId: string) => {
+    await connection();
+
+    const table = await prisma.pingPongTable.findFirst({
+      where: { id: tableId, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        participants: {
+          orderBy: { queuePosition: "asc" },
+          take: 2,
+          select: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+                image: true,
+              },
+            },
+          },
+        },
+        members: {
+          where: { userId: viewerUserId },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+
+    if (!table) {
+      return null;
+    }
+
+    return {
+      id: table.id,
+      name: table.name,
+      currentPlayers: table.participants.map((participant) => ({
+        id: participant.user.id,
+        name: participant.user.name ?? participant.user.email,
+        avatarUrl: participant.user.avatarUrl ?? participant.user.image,
+      })),
+      viewerCurrentPlayerIndex: table.participants.findIndex(
+        (participant) => participant.user.id === viewerUserId,
+      ),
+      viewerIsMember: table.members.length > 0,
+    };
+  },
+);
