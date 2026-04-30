@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FirebaseAnalytics } from "@/components/firebase-analytics";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -18,6 +19,7 @@ export default function RootLayout({
     <html lang="pt-br" className="h-full antialiased">
       <body className="min-h-full">
         <TooltipProvider>{children}</TooltipProvider>
+        <FirebaseAnalytics />
         <Toaster richColors />
       </body>
     </html>
