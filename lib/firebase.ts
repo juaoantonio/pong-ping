@@ -2,27 +2,15 @@ import { getApp, getApps, initializeApp } from "firebase/app";
 import type { Analytics } from "firebase/analytics";
 import { getDatabase } from "firebase/database";
 
-function requirePublicEnv(name: string) {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
-
 const firebaseConfig = {
-  apiKey: requirePublicEnv("NEXT_PUBLIC_FIREBASE_API_KEY"),
-  authDomain: requirePublicEnv("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"),
-  databaseURL: requirePublicEnv("NEXT_PUBLIC_FIREBASE_DATABASE_URL"),
-  projectId: requirePublicEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID"),
-  storageBucket: requirePublicEnv("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET"),
-  messagingSenderId: requirePublicEnv(
-    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
-  ),
-  appId: requirePublicEnv("NEXT_PUBLIC_FIREBASE_APP_ID"),
-  measurementId: requirePublicEnv("NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID"),
+  apiKey: "AIzaSyBUsg3n2yXoyrdpFB8bmT3P4eHb_2ga5PM",
+  authDomain: "pong-ping-f53bf.firebaseapp.com",
+  databaseURL: "https://pong-ping-f53bf-default-rtdb.firebaseio.com",
+  projectId: "pong-ping-f53bf",
+  storageBucket: "pong-ping-f53bf.firebasestorage.app",
+  messagingSenderId: "644026686433",
+  appId: "1:644026686433:web:dfd7104a489f97d471d0a0",
+  measurementId: "G-KYDQMWLPFH",
 };
 
 export const firebaseApp = getApps().length
