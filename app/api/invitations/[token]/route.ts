@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  hashInvitationToken,
-  isValidEmail,
-  normalizeEmail,
-} from "@/lib/auth/access";
+import { isValidEmail, normalizeEmail } from "@/lib/auth/access";
+import { claimAccessInvitation } from "@/lib/contexts/invitations";
 
 type RouteParams = {
   params: Promise<{
@@ -38,65 +35,12 @@ export async function POST(request: Request, context: RouteParams) {
     );
   }
 
-  const tokenHash = hashInvitationToken(token);
-  const now = new Date();
-
-  const result = await prisma.$transaction(async (tx) => {
-    const invitation = await tx.authInvitation.findUnique({
-      where: { tokenHash },
-      select: {
-        id: true,
-        createdByUserId: true,
-        expiresAt: true,
-        oneTimeUse: true,
-      },
-    });
-
-    if (!invitation || invitation.expiresAt <= now) {
-      return null;
-    }
-
-    const claimed = await tx.authInvitation.updateMany({
-      where: {
-        tokenHash,
-        expiresAt: { gt: now },
-        ...(invitation.oneTimeUse ? { usedAt: null } : {}),
-      },
-      data: {
-        usedAt: now,
-        usedByEmail: email,
-      },
-    });
-
-    if (claimed.count === 0) {
-      return null;
-    }
-
-    const allowedEmail = await tx.allowedEmail.upsert({
-      where: { email },
-      create: {
-        email,
-        createdByUserId: invitation.createdByUserId,
-      },
-      update: {},
-    });
-
-    await tx.auditLog.create({
-      data: {
-        actorUserId: invitation.createdByUserId,
-        action: "invitation_used",
-        metadata: {
-          invitationId: invitation.id,
-          email,
-          oneTimeUse: invitation.oneTimeUse,
-        },
-      },
-    });
-
-    return allowedEmail;
+  const result = await claimAccessInvitation(prisma, {
+    email,
+    token,
   });
 
-  if (!result) {
+  if (!result.ok) {
     return NextResponse.json(
       { error: "Convite invalido, expirado ou ja utilizado." },
       { status: 400 },

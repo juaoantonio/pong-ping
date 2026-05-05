@@ -3,15 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/app/api/admin/_shared";
 import {
   allowEmail,
-  createInvitationToken,
-  hashInvitationToken,
   isValidEmail,
   normalizeEmail,
 } from "@/lib/auth/access";
-import {
-  getInvitationExpiry,
-  isInvitationExpiryPreset,
-} from "@/lib/invitations";
+import { isInvitationExpiryPreset } from "@/lib/invitations";
+import { createAccessInvitation } from "@/lib/contexts/invitations";
+import { recordAuditEvent } from "@/lib/contexts/audit";
 import {
   getPageInfo,
   getPaginationOffset,
@@ -97,35 +94,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = createInvitationToken();
     const oneTimeUse =
       typeof body.oneTimeUse === "boolean" ? body.oneTimeUse : true;
-    const invitation = await prisma.authInvitation.create({
-      data: {
-        tokenHash: hashInvitationToken(token),
-        expiresAt: getInvitationExpiry(expiresIn),
-        oneTimeUse,
-        createdByUserId: actor.id,
-      },
-      select: {
-        id: true,
-        expiresAt: true,
-        oneTimeUse: true,
-        createdAt: true,
-      },
+    const result = await createAccessInvitation(prisma, {
+      actorUserId: actor.id,
+      expiresIn,
+      oneTimeUse,
     });
 
-    await prisma.auditLog.create({
-      data: {
-        actorUserId: actor.id,
-        action: "invitation_created",
-        metadata: {
-          invitationId: invitation.id,
-          expiresAt: invitation.expiresAt,
-          oneTimeUse: invitation.oneTimeUse,
-        },
-      },
-    });
+    if (!result.ok) {
+      throw new Error(result.error.code);
+    }
+
+    const { token, ...invitation } = result.value;
 
     return NextResponse.json({
       invitation: {
@@ -155,12 +136,10 @@ export async function POST(request: Request) {
 
   const allowedEmail = await allowEmail(email, actor.id);
 
-  await prisma.auditLog.create({
-    data: {
-      actorUserId: actor.id,
-      action: "email_allowed",
-      metadata: { email },
-    },
+  await recordAuditEvent(prisma, {
+    actorUserId: actor.id,
+    action: "email_allowed",
+    metadata: { email },
   });
 
   return NextResponse.json({ allowedEmail });
