@@ -78,14 +78,14 @@ export function RealtimeScoreboard({
 
           setBoard(freshState);
           set(boardRef, freshState).catch(() => {
-            toast.error("Nao foi possivel iniciar o placar.");
+            toast.error("Não foi possível iniciar o placar.");
           });
         } else {
           setBoard(liveState);
         }
       },
       () => {
-        toast.error("Nao foi possivel acompanhar o placar em tempo real.");
+        toast.error("Não foi possível acompanhar o placar em tempo real.");
       },
     );
   }, [boardPath, roundPlayers, tableId]);
@@ -102,15 +102,15 @@ export function RealtimeScoreboard({
 
   if (!roundPlayers) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-50">
+      <main className="flex min-h-screen items-center justify-center bg-scoreboard-background px-6 text-scoreboard-foreground [color-scheme:dark]">
         <div className="max-w-xl text-center">
-          <p className="text-sm uppercase tracking-normal text-red-300">
+          <p className="text-sm uppercase tracking-normal text-scoreboard-muted">
             {tableName}
           </p>
           <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">
             Aguardando jogadores
           </h1>
-          <p className="mt-4 text-zinc-300">
+          <p className="mt-4 text-scoreboard-muted">
             A mesa precisa de dois jogadores na fila para abrir o placar.
           </p>
         </div>
@@ -141,7 +141,7 @@ export function RealtimeScoreboard({
 
       return mutation(baseState);
     }).catch(() => {
-      toast.error("Nao foi possivel atualizar o placar.");
+      toast.error("Não foi possível atualizar o placar.");
     });
   }
 
@@ -151,7 +151,7 @@ export function RealtimeScoreboard({
     }
 
     set(ref(realtimeDatabase, boardPath), nextState).catch(() => {
-      toast.error("Nao foi possivel redefinir o placar.");
+      toast.error("Não foi possível redefinir o placar.");
     });
   }
 
@@ -165,11 +165,11 @@ export function RealtimeScoreboard({
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,color-mix(in_oklch,var(--scoreboard-accent)_20%,transparent),transparent_34rem),var(--scoreboard-background)] text-scoreboard-foreground [color-scheme:dark]">
       <div className="flex min-h-screen flex-col px-4 py-4 sm:px-6 lg:px-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium uppercase tracking-normal text-red-300">
+            <p className="truncate text-sm font-medium uppercase tracking-normal text-scoreboard-muted">
               {tableName}
             </p>
             <h1 className="truncate text-2xl font-semibold sm:text-4xl">
@@ -177,7 +177,7 @@ export function RealtimeScoreboard({
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <div className="border border-zinc-700 px-3 py-2 text-sm text-zinc-300">
+            <div className="rounded-md border border-scoreboard-border bg-scoreboard-panel px-3 py-2 text-sm text-scoreboard-muted tabular-nums">
               Set {visibleBoard.setNumber}
             </div>
             <Button
@@ -212,7 +212,7 @@ export function RealtimeScoreboard({
             side="Jogador 1"
           />
           <div className="flex items-center justify-center">
-            <div className="border border-zinc-700 px-5 py-3 text-2xl font-semibold text-zinc-300">
+            <div className="rounded-md border border-scoreboard-border bg-scoreboard-panel px-5 py-3 text-2xl font-semibold text-scoreboard-muted">
               vs
             </div>
           </div>
@@ -233,8 +233,8 @@ export function RealtimeScoreboard({
           />
         </section>
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-4">
-          <p className="text-sm text-zinc-400">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-scoreboard-border pt-4">
+          <p className="text-sm text-scoreboard-subtle">
             {viewerCanControl
               ? "Controles liberados para membros da mesa."
               : "Modo espectador."}
@@ -296,12 +296,12 @@ function ScoreboardPlayerPanel({
   const name = userLabel(player);
 
   return (
-    <article className="grid min-h-[34rem] grid-rows-[auto_1fr_auto] border border-zinc-800 bg-zinc-900/60 p-4 sm:p-6">
+    <article className="grid min-h-[34rem] grid-rows-[auto_1fr_auto] rounded-lg border border-scoreboard-border bg-scoreboard-panel/70 p-4 shadow-2xl sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium uppercase tracking-normal text-zinc-400">
+        <span className="text-sm font-medium uppercase tracking-normal text-scoreboard-subtle">
           {side}
         </span>
-        <span className="border border-zinc-700 px-3 py-1 text-sm">
+        <span className="rounded-md border border-scoreboard-border bg-scoreboard-panel-strong px-3 py-1 text-sm tabular-nums">
           Sets {sets}
         </span>
       </div>

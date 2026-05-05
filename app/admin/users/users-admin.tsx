@@ -121,10 +121,10 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Usuario</TableHead>
+            <TableHead>Usuário</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Criado em</TableHead>
-            <TableHead className="w-[220px] text-right">Acoes</TableHead>
+            <TableHead className="w-[220px] text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -178,25 +178,25 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
-                          aria-label="Remover usuario"
+                          aria-label="Remover usuário"
                           disabled={!canDelete || busy}
                           size="icon"
                           title={
                             !canDelete
-                              ? "Acao indisponivel para esta role"
-                              : "Remover usuario"
+                              ? "Ação indisponível para esta role"
+                              : "Remover usuário"
                           }
-                          variant="outline"
+                          variant="destructive"
                         >
                           <Trash2 className="size-4" />
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Remover usuario</DialogTitle>
+                          <DialogTitle>Remover usuário</DialogTitle>
                           <DialogDescription>
-                            Esta acao remove{" "}
-                            {user.email ?? user.name ?? "este usuario"}.
+                            Esta ação remove{" "}
+                            {user.email ?? user.name ?? "este usuário"}.
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
@@ -224,7 +224,7 @@ export function UsersAdmin({ currentUser, users }: UsersAdminProps) {
       {users.length === 0 ? (
         <div className="flex items-center gap-2 rounded-lg border px-4 py-6 text-sm text-muted-foreground">
           <ShieldCheck className="size-4" />
-          Nenhum usuario disponivel para o seu nivel de acesso.
+          Nenhum usuário disponível para o seu nível de acesso.
         </div>
       ) : null}
     </div>

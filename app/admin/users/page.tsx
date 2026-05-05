@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { PageShell } from "@/components/page-shell";
 import {
   Card,
   CardContent,
@@ -64,7 +65,7 @@ async function UsersAdminPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gerenciamento de usuarios</CardTitle>
+        <CardTitle>Gerenciamento de usuários</CardTitle>
         <CardDescription>
           Admins visualizam apenas users. Superadmins visualizam todos e podem
           alterar roles.
@@ -83,7 +84,7 @@ async function UsersAdminPanel({
           }))}
         />
         <PaginationControls
-          itemLabel="usuarios"
+          itemLabel="usuários"
           pageInfo={pageInfo}
           pathname="/admin/users"
           searchParams={searchParams}
@@ -93,7 +94,10 @@ async function UsersAdminPanel({
   );
 }
 
-async function getActorTenantId(actor: { id: string; tenantId?: string | null }) {
+async function getActorTenantId(actor: {
+  id: string;
+  tenantId?: string | null;
+}) {
   if (actor.tenantId) {
     return actor.tenantId;
   }
@@ -122,12 +126,11 @@ export default async function AdminUsersPage({
   const pagination = parseServerPaginationParams(params);
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6">
-      <div>
-        <p className="text-sm text-muted-foreground">Painel administrativo</p>
-        <h1 className="text-2xl font-semibold">Usuarios</h1>
-      </div>
-
+    <PageShell
+      description="Gerencie papéis, remoções e visibilidade por tenant com estado pendente por linha."
+      eyebrow="Painel administrativo"
+      title="Usuários"
+    >
       <Suspense fallback={<CardTableSkeleton rows={6} />}>
         <UsersAdminPanel
           currentUser={currentUser}
@@ -136,6 +139,6 @@ export default async function AdminUsersPage({
           tenantId={tenantId}
         />
       </Suspense>
-    </div>
+    </PageShell>
   );
 }

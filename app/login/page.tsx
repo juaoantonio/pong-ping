@@ -15,13 +15,13 @@ import { Input } from "@/components/ui/input";
 import { buildTenantUrlFromRequest } from "@/lib/tenants/request";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  oauth_failed: "Nao foi possivel concluir o login com Google.",
-  oauth_state_invalid: "A sessao de login expirou. Tente novamente.",
+  oauth_failed: "Não foi possível concluir o login com Google.",
+  oauth_state_invalid: "A sessão de login expirou. Tente novamente.",
   access_denied: "O acesso pelo Google foi cancelado.",
-  email_not_allowed: "Este email ainda nao foi autorizado por um admin.",
+  email_not_allowed: "Este email ainda não foi autorizado por um admin.",
   tenant_required: "Informe o tenant antes de entrar.",
-  tenant_not_found: "Tenant nao encontrado.",
-  tenant_context_required: "A sessao de tenant expirou. Tente novamente.",
+  tenant_not_found: "Tenant não encontrado.",
+  tenant_context_required: "A sessão de tenant expirou. Tente novamente.",
 };
 
 type LoginPageProps = {
@@ -49,17 +49,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const tenantSlug = typeof params.tenant === "string" ? params.tenant : "";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,var(--background)_0%,var(--muted)_52%,var(--accent)_100%)] px-4 py-10">
-      <Card className="w-full max-w-md">
+    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--accent)_24%,transparent),transparent_30rem),var(--background)] px-4 py-10">
+      <Card className="w-full max-w-md border-primary/20">
         <CardHeader>
-          <CardTitle>Pong Ping</CardTitle>
+          <CardTitle className="text-3xl">Pong Ping</CardTitle>
           <CardDescription>
-            Entre para acessar sua area autenticada.
+            Entre para acessar sua área autenticada.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           {error ? (
-            <Alert variant="destructive">
+            <Alert aria-live="polite" variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
@@ -75,8 +75,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 defaultValue={tenantSlug}
                 id="tenantSlug"
                 name="tenantSlug"
-                placeholder="default"
+                placeholder="default…"
                 required
+                spellCheck={false}
               />
             </div>
             <Button className="w-full" size="lg" type="submit">

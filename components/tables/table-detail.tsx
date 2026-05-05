@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,7 +106,7 @@ function RoundPlayer({
   const label = userLabel(participant.user);
 
   return (
-    <div className="flex min-h-72 flex-col items-center justify-between rounded-lg border bg-background p-5 text-center">
+    <div className="flex min-h-72 flex-col items-center justify-between rounded-lg bg-secondary/60 p-5 text-center">
       <Badge variant="secondary">{side}</Badge>
       <div className="grid justify-items-center gap-4">
         <UserAvatar
@@ -122,7 +123,7 @@ function RoundPlayer({
           ) : null}
         </div>
       </div>
-      <Badge className="text-sm">
+      <Badge className="text-sm tabular-nums">
         {participant.user.playerRanking?.elo ?? 1000} Elo
       </Badge>
     </div>
@@ -159,7 +160,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
 
   function addParticipant() {
     if (!selectedUser) {
-      toast.error("Selecione um usuario para adicionar na mesa.");
+      toast.error("Selecione um usuário para adicionar na mesa.");
       return;
     }
 
@@ -179,7 +180,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
       }
 
       setSelectedUser("");
-      toast.success("Usuario adicionado a mesa.");
+      toast.success("Usuário adicionado à mesa.");
       router.refresh();
     });
   }
@@ -195,7 +196,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
         return;
       }
 
-      toast.success("Voce entrou na fila.");
+      toast.success("Você entrou na fila.");
       router.refresh();
     });
   }
@@ -211,7 +212,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
         return;
       }
 
-      toast.success("Voce saiu da fila.");
+      toast.success("Você saiu da fila.");
       router.refresh();
     });
   }
@@ -306,8 +307,8 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-6 lg:grid-cols-[minmax(260px,3fr)_minmax(0,7fr)]">
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(260px,3fr)]">
+        <Card className="order-2 lg:order-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="size-4" />
@@ -349,14 +350,14 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 </div>
               ))
             ) : (
-              <div className="rounded-lg border border-dashed px-4 py-8 text-sm text-muted-foreground">
-                Nenhum jogador aguardando na fila.
-              </div>
+              <EmptyState className="px-4 py-6" title="Fila livre">
+                Convide jogadores ou entre na fila para formar a próxima rodada.
+              </EmptyState>
             )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="order-1 lg:order-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Swords className="size-4" />
@@ -375,10 +376,13 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 <RoundPlayer participant={currentMatch[1]} side="Jogador 2" />
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed px-4 py-16 text-center text-sm text-muted-foreground">
-                A mesa precisa de pelo menos dois jogadores na fila para abrir
-                uma rodada.
-              </div>
+              <EmptyState
+                className="justify-items-center py-14 text-center"
+                title="Rodada aguardando jogadores"
+              >
+                A mesa precisa de pelo menos 2 jogadores na fila para abrir uma
+                rodada.
+              </EmptyState>
             )}
           </CardContent>
 
@@ -411,8 +415,8 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                   <DialogHeader>
                     <DialogTitle>Confirmar vencedor</DialogTitle>
                     <DialogDescription>
-                      Escolha quem venceu a rodada. O Elo sera recalculado e a
-                      fila sera reorganizada.
+                      Escolha quem venceu a rodada. O Elo será recalculado e a
+                      fila será reorganizada.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -460,7 +464,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>{table.name}</CardTitle>
+          <CardTitle className="truncate text-2xl">{table.name}</CardTitle>
           <CardDescription>
             Criada por {userLabel(table.createdBy)} em{" "}
             {formatDateTime(table.createdAt)}
@@ -469,7 +473,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="rounded-lg border p-4">
             <p className="text-sm text-muted-foreground">Aguardando</p>
-            <p className="text-2xl font-semibold">
+            <p className="text-2xl font-semibold tabular-nums">
               {queuedParticipants.length}
             </p>
           </div>
@@ -481,7 +485,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
           </div>
           <div className="rounded-lg border p-4">
             <p className="text-sm text-muted-foreground">Rodadas recentes</p>
-            <p className="text-2xl font-semibold">
+            <p className="text-2xl font-semibold tabular-nums">
               {table.recentMatches.length}
             </p>
           </div>
@@ -491,7 +495,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
       {table.viewerIsMember ? (
         <Card>
           <CardHeader>
-            <CardTitle>Sua participacao</CardTitle>
+            <CardTitle>Sua participação</CardTitle>
             <CardDescription>
               Entre na fila quando estiver pronto para jogar.
             </CardDescription>
@@ -500,21 +504,21 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
             <div className="grid gap-1 text-sm">
               {table.viewerIsPlaying ? (
                 <>
-                  <p className="font-medium">Sua rodada esta ativa.</p>
+                  <p className="font-medium">Sua rodada está ativa.</p>
                   <p className="text-muted-foreground">
                     Aguarde o encerramento da partida para a fila girar.
                   </p>
                 </>
               ) : table.viewerIsQueued ? (
                 <>
-                  <p className="font-medium">Voce esta na fila.</p>
+                  <p className="font-medium">Você está na fila.</p>
                   <p className="text-muted-foreground">
-                    Posicao #{(table.viewerQueuePosition ?? 0) + 1}
+                    Posição #{(table.viewerQueuePosition ?? 0) + 1}
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="font-medium">Voce esta nesta mesa.</p>
+                  <p className="font-medium">Você está nesta mesa.</p>
                   <p className="text-muted-foreground">
                     Entre na fila para aguardar sua vez.
                   </p>
@@ -601,7 +605,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
               <div>
                 <p className="text-sm font-medium">Convite por link</p>
                 <p className="text-sm text-muted-foreground">
-                  Qualquer usuario autenticado com o link entra na mesa.
+                  Qualquer usuário autenticado com o link entra na mesa.
                 </p>
               </div>
               <InvitationSettingsControls
@@ -639,8 +643,8 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                   </span>
                   <span>
                     {table.currentInvitation.oneTimeUse
-                      ? "Uso unico"
-                      : "Reutilizavel"}
+                      ? "Uso único"
+                      : "Reutilizável"}
                   </span>
                   <Button
                     disabled={isPending}
@@ -662,9 +666,9 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Ultimas rodadas</CardTitle>
+          <CardTitle>Últimas rodadas</CardTitle>
           <CardDescription>
-            Historico recente e variacao de Elo da mesa.
+            Histórico recente e variação de Elo da mesa.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -678,7 +682,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                   <TableHead>Elo</TableHead>
                   <TableHead>Data</TableHead>
                   {canManage ? (
-                    <TableHead className="text-right">Acao</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
                   ) : null}
                 </TableRow>
               </TableHeader>
@@ -718,7 +722,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                             disabled={isPending}
                             onClick={() => rollbackMatch(match.id)}
                             size="sm"
-                            variant="ghost"
+                            variant="destructive"
                           >
                             {busyKey === `rollback-match:${match.id}` ? (
                               <Loader2 className="size-4 animate-spin" />
@@ -735,9 +739,10 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
               </TableBody>
             </Table>
           ) : (
-            <div className="rounded-lg border border-dashed px-4 py-8 text-sm text-muted-foreground">
-              Nenhuma rodada finalizada nesta mesa ainda.
-            </div>
+            <EmptyState title="Nenhuma rodada finalizada">
+              Assim que uma partida for encerrada, o histórico e a variação de
+              Elo aparecem aqui.
+            </EmptyState>
           )}
         </CardContent>
       </Card>

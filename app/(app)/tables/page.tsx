@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { PageShell } from "@/components/page-shell";
 import { CreateTableForm } from "@/components/tables/create-table-form";
 import { TableList } from "@/components/tables/table-list";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -52,14 +53,11 @@ export default async function TablesPage({ searchParams }: TablesPageProps) {
   const canManageTables = canAccessAdmin(user.role);
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Mesas</h1>
-        </div>
-        {canManageTables ? <CreateTableForm /> : null}
-      </div>
-
+    <PageShell
+      action={canManageTables ? <CreateTableForm /> : null}
+      description="Veja rodada atual, fila e última partida de cada mesa sem perder a ação principal."
+      title="Mesas"
+    >
       <Suspense fallback={<TablesGridSkeleton />}>
         <TablesListContent
           canRemoveTables={canManageTables}
@@ -67,6 +65,6 @@ export default async function TablesPage({ searchParams }: TablesPageProps) {
           tenantId={tenantId}
         />
       </Suspense>
-    </div>
+    </PageShell>
   );
 }

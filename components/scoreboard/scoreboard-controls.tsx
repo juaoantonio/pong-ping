@@ -30,10 +30,7 @@ export function ScoreboardControls({
   tableId,
   tableName,
 }: ScoreboardControlsProps) {
-  const roundPlayers = useMemo(
-    () => currentPlayers,
-    [currentPlayers],
-  );
+  const roundPlayers = useMemo(() => currentPlayers, [currentPlayers]);
   const [board, setBoard] = useState<ScoreboardState | null>(null);
   const boardPath = getCurrentScoreboardPath(tableId);
   const player = roundPlayers[playerIndex];
@@ -56,14 +53,14 @@ export function ScoreboardControls({
 
           setBoard(freshState);
           set(boardRef, freshState).catch(() => {
-            toast.error("Nao foi possivel iniciar o placar.");
+            toast.error("Não foi possível iniciar o placar.");
           });
         } else {
           setBoard(liveState);
         }
       },
       () => {
-        toast.error("Nao foi possivel acompanhar o placar em tempo real.");
+        toast.error("Não foi possível acompanhar o placar em tempo real.");
       },
     );
   }, [boardPath, roundPlayers, tableId]);
@@ -83,14 +80,14 @@ export function ScoreboardControls({
 
       return changePlayerPoint(baseState, playerIndex, delta);
     }).catch(() => {
-      toast.error("Nao foi possivel atualizar o placar.");
+      toast.error("Não foi possível atualizar o placar.");
     });
   }
 
   return (
-    <main className="min-h-dvh bg-black text-zinc-50">
-      <div className="grid min-h-dvh grid-rows-[auto_1fr] p-3">
-        <header className="grid gap-3 border border-zinc-800 p-4">
+    <main className="min-h-dvh bg-scoreboard-background text-scoreboard-foreground [color-scheme:dark]">
+      <div className="grid min-h-dvh grid-rows-[auto_1fr] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <header className="grid gap-3 rounded-lg border border-scoreboard-border bg-scoreboard-panel/80 p-4">
           <div className="flex min-w-0 items-center gap-3">
             <UserAvatar
               className="size-14 shrink-0 text-xl"
@@ -98,21 +95,21 @@ export function ScoreboardControls({
               src={player.avatarUrl}
             />
             <div className="min-w-0">
-              <p className="truncate text-xs font-medium uppercase tracking-normal text-zinc-500">
+              <p className="truncate text-xs font-medium uppercase tracking-normal text-scoreboard-subtle">
                 {tableName}
               </p>
               <h1 className="truncate text-2xl font-semibold">{playerName}</h1>
             </div>
           </div>
-          <div className="grid grid-cols-2 border border-zinc-800">
-            <div className="border-r border-zinc-800 p-3">
-              <p className="text-xs uppercase tracking-normal text-zinc-500">
+          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-scoreboard-border">
+            <div className="border-r border-scoreboard-border p-3">
+              <p className="text-xs uppercase tracking-normal text-scoreboard-subtle">
                 Pontos
               </p>
               <p className="text-5xl font-black tabular-nums">{points}</p>
             </div>
             <div className="p-3">
-              <p className="text-xs uppercase tracking-normal text-zinc-500">
+              <p className="text-xs uppercase tracking-normal text-scoreboard-subtle">
                 Set
               </p>
               <p className="text-5xl font-black tabular-nums">
@@ -125,26 +122,24 @@ export function ScoreboardControls({
         <section className="grid min-h-0 grid-rows-[2fr_1fr] gap-3 pt-3">
           <button
             aria-label={`Adicionar ponto para ${playerName}`}
-            className="grid min-h-0 touch-manipulation place-items-center border border-green-500 bg-green-500 text-black active:bg-green-300 disabled:opacity-50"
+            className="grid min-h-0 touch-manipulation place-items-center rounded-lg border border-scoreboard-accent bg-scoreboard-accent text-scoreboard-accent-foreground shadow-2xl transition-[background-color,border-color,box-shadow,opacity] active:bg-scoreboard-accent-active disabled:opacity-50 focus-visible:outline-none focus-visible:ring-[4px] focus-visible:ring-scoreboard-focus/70"
             disabled={!board}
             onClick={() => changePoint(1)}
             type="button"
           >
             <span className="flex items-center gap-4 text-[clamp(5rem,30vw,13rem)] font-black leading-none">
-              <Plus className="size-[0.65em]" />
-              1
+              <Plus className="size-[0.65em]" />1
             </span>
           </button>
           <button
             aria-label={`Remover ponto de ${playerName}`}
-            className="grid min-h-0 touch-manipulation place-items-center border border-zinc-700 bg-zinc-950 text-zinc-50 active:bg-zinc-800 disabled:opacity-50"
+            className="grid min-h-0 touch-manipulation place-items-center rounded-lg border border-scoreboard-border bg-scoreboard-panel-strong text-scoreboard-foreground transition-[background-color,border-color,box-shadow,opacity] active:bg-scoreboard-panel disabled:opacity-50 focus-visible:outline-none focus-visible:ring-[4px] focus-visible:ring-scoreboard-muted/40"
             disabled={!board}
             onClick={() => changePoint(-1)}
             type="button"
           >
             <span className="flex items-center gap-4 text-[clamp(3.75rem,22vw,8rem)] font-black leading-none">
-              <Minus className="size-[0.65em]" />
-              1
+              <Minus className="size-[0.65em]" />1
             </span>
           </button>
         </section>

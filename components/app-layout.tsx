@@ -29,6 +29,12 @@ export function AppLayout({ children, user }: AppLayoutProps) {
   return (
     <AuthenticatedUserProvider initialUser={toClientAuthenticatedUser(user)}>
       <SidebarProvider>
+        <a
+          className="fixed left-3 top-3 z-50 -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-md transition-transform focus-visible:translate-y-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          href="#main-content"
+        >
+          Ir para o conteúdo
+        </a>
         <AppSidebar />
         <SidebarInset>
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
@@ -36,22 +42,28 @@ export function AppLayout({ children, user }: AppLayoutProps) {
             <Separator className="mr-2 h-4" orientation="vertical" />
             <AppBreadcrumbs />
           </header>
-          <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+          <main
+            className="flex flex-1 flex-col gap-6 p-4 lg:p-6"
+            id="main-content"
+            tabIndex={-1}
+          >
             {children}
-          </div>
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </AuthenticatedUserProvider>
   );
 }
 
-export function AppLayoutSkeleton({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function AppLayoutSkeleton({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
+      <a
+        className="fixed left-3 top-3 z-50 -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-md transition-transform focus-visible:translate-y-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        href="#main-content"
+      >
+        Ir para o conteúdo
+      </a>
       <Sidebar collapsible="icon" variant="inset">
         <SidebarHeader>
           <SidebarMenu>
@@ -101,7 +113,13 @@ export function AppLayoutSkeleton({
           <Separator className="mr-2 h-4" orientation="vertical" />
           <Skeleton className="h-4 w-44" />
         </header>
-        <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">{children}</div>
+        <main
+          className="flex flex-1 flex-col gap-6 p-4 lg:p-6"
+          id="main-content"
+          tabIndex={-1}
+        >
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
