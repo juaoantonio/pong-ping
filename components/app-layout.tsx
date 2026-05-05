@@ -1,6 +1,7 @@
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthenticatedUserProvider } from "@/components/auth/authenticated-user-provider";
+import { CurrentTenantMemory } from "@/components/auth/current-tenant-memory";
 import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
@@ -28,6 +29,7 @@ type AppLayoutProps = {
 export function AppLayout({ children, user }: AppLayoutProps) {
   return (
     <AuthenticatedUserProvider initialUser={toClientAuthenticatedUser(user)}>
+      <CurrentTenantMemory tenantSlug={user.tenant?.slug} />
       <SidebarProvider>
         <a
           className="fixed left-3 top-3 z-50 -translate-y-20 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-md transition-transform focus-visible:translate-y-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"

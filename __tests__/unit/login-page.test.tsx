@@ -9,6 +9,10 @@ jest.mock("@/app/actions/auth", () => ({
   signInWithGoogle: jest.fn(),
 }));
 
+jest.mock("@/components/auth/login-tenant-memory", () => ({
+  LoginTenantMemory: () => null,
+}));
+
 jest.mock("@/lib/tenants/request", () => ({
   buildTenantUrlFromRequest: jest.fn(),
 }));

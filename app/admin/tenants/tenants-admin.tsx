@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Building2, Plus } from "lucide-react";
+import { Building2, Copy, ExternalLink, LogOut, Plus } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
+import { logout } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +62,29 @@ export function TenantsAdmin({ tenants }: TenantsAdminProps) {
     });
   }
 
+  function getTenantLoginPath(tenantSlug: string) {
+    return `/login?tenant=${encodeURIComponent(tenantSlug)}`;
+  }
+
+  function getTenantLoginUrl(tenantSlug: string) {
+    return `${window.location.origin}${getTenantLoginPath(tenantSlug)}`;
+  }
+
+  async function copyTenantLoginUrl(tenant: TenantRow) {
+    try {
+      await navigator.clipboard.writeText(getTenantLoginUrl(tenant.slug));
+      toast.success("Link de login do tenant copiado.");
+    } catch {
+      toast.error("Nao foi possivel copiar o link do tenant.");
+    }
+  }
+
+  function logoutToTenant(tenant: TenantRow) {
+    startTransition(async () => {
+      await logout(getTenantLoginPath(tenant.slug));
+    });
+  }
+
   return (
     <div className="grid gap-6">
       <form
@@ -103,6 +127,7 @@ export function TenantsAdmin({ tenants }: TenantsAdminProps) {
             <TableHead>Slug</TableHead>
             <TableHead>Usuarios</TableHead>
             <TableHead>Criado em</TableHead>
+            <TableHead className="text-right">Acoes</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -126,6 +151,39 @@ export function TenantsAdmin({ tenants }: TenantsAdminProps) {
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {formatDateTime(tenant.createdAt)}
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end gap-2">
+                  <Button asChild size="icon-sm" title="Abrir login do tenant" variant="ghost">
+                    <a href={getTenantLoginPath(tenant.slug)}>
+                      <ExternalLink className="size-4" aria-hidden="true" />
+                      <span className="sr-only">Abrir login de {tenant.name}</span>
+                    </a>
+                  </Button>
+                  <Button
+                    onClick={() => copyTenantLoginUrl(tenant)}
+                    size="icon-sm"
+                    title="Copiar link do tenant"
+                    type="button"
+                    variant="outline"
+                  >
+                    <Copy className="size-4" aria-hidden="true" />
+                    <span className="sr-only">Copiar link de {tenant.name}</span>
+                  </Button>
+                  <Button
+                    disabled={isPending}
+                    onClick={() => logoutToTenant(tenant)}
+                    size="icon-sm"
+                    title="Sair e abrir login do tenant"
+                    type="button"
+                    variant="outline"
+                  >
+                    <LogOut className="size-4" aria-hidden="true" />
+                    <span className="sr-only">
+                      Sair e abrir login de {tenant.name}
+                    </span>
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

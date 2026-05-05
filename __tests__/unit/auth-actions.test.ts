@@ -31,7 +31,7 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-import { signInWithGoogle } from "@/app/actions/auth";
+import { logout, signInWithGoogle } from "@/app/actions/auth";
 
 const { signIn: mockedSignIn } = jest.requireMock("@/auth") as {
   signIn: jest.Mock;
@@ -117,5 +117,35 @@ describe("signInWithGoogle", () => {
     expect(mockedSetPendingTenantCookie).not.toHaveBeenCalled();
     expect(mockedBuildTenantUrlFromRequest).not.toHaveBeenCalled();
     expect(mockedSignIn).not.toHaveBeenCalled();
+  });
+});
+
+describe("logout", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("allows redirecting to a tenant login path", async () => {
+    await logout("/login?tenant=alpha");
+
+    expect((jest.requireMock("@/auth") as { signOut: jest.Mock }).signOut).toHaveBeenCalledWith({
+      redirectTo: "/login?tenant=alpha",
+    });
+  });
+
+  it("falls back to login for unsafe redirects", async () => {
+    await logout("https://evil.example/login?tenant=alpha");
+
+    expect((jest.requireMock("@/auth") as { signOut: jest.Mock }).signOut).toHaveBeenCalledWith({
+      redirectTo: "/login",
+    });
+  });
+
+  it("does not allow lookalike login paths", async () => {
+    await logout("/login-redirect?tenant=alpha");
+
+    expect((jest.requireMock("@/auth") as { signOut: jest.Mock }).signOut).toHaveBeenCalledWith({
+      redirectTo: "/login",
+    });
   });
 });

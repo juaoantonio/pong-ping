@@ -45,6 +45,11 @@ export async function signInWithGoogle(
   });
 }
 
-export async function logout() {
-  await signOut({ redirectTo: "/login" });
+export async function logout(redirectTo = "/login") {
+  const safeRedirectTo =
+    redirectTo === "/login" || redirectTo.startsWith("/login?")
+      ? redirectTo
+      : "/login";
+
+  await signOut({ redirectTo: safeRedirectTo });
 }

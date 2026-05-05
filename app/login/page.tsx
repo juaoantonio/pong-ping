@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { KeyRound, ShieldCheck } from "lucide-react";
 import { auth } from "@/auth";
 import { signInWithGoogle } from "@/app/actions/auth";
+import { LoginTenantMemory } from "@/components/auth/login-tenant-memory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +62,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(135deg,color-mix(in_oklch,var(--accent)_34%,transparent),transparent_42%),var(--background)] px-4 py-8 text-foreground sm:px-6 lg:px-10">
+      <Suspense fallback={null}>
+        <LoginTenantMemory />
+      </Suspense>
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.12fr_0.88fr]">
         <section className="min-w-0 space-y-8">
           <div className="space-y-4">
