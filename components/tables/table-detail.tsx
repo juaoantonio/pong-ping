@@ -73,7 +73,7 @@ function CurrentRoundSlot({
 }) {
   if (!participant) {
     return (
-      <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+      <div className="grid min-h-40 content-between gap-4 py-4 sm:min-h-48 sm:gap-5 sm:py-5 md:px-5">
         <div className="flex items-center justify-between gap-3">
           <Badge variant="secondary">{slot}</Badge>
           <Badge variant="outline">Livre</Badge>
@@ -81,12 +81,12 @@ function CurrentRoundSlot({
         <div className="grid justify-items-center gap-3 text-center">
           <div
             aria-hidden="true"
-            className="grid size-20 place-items-center rounded-full border border-dashed border-border text-2xl text-muted-foreground"
+            className="grid size-16 place-items-center rounded-full border border-dashed border-border text-xl text-muted-foreground sm:size-20 sm:text-2xl"
           >
             ?
           </div>
           <div className="grid gap-1">
-            <p className="text-xl font-semibold text-muted-foreground">
+            <p className="text-lg font-semibold text-muted-foreground sm:text-xl">
               Aguardando jogador
             </p>
             <p className="text-sm text-muted-foreground">
@@ -102,7 +102,7 @@ function CurrentRoundSlot({
   const label = userLabel(participant.user);
 
   return (
-    <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+    <div className="grid min-h-40 content-between gap-4 py-4 sm:min-h-48 sm:gap-5 sm:py-5 md:px-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{slot}</Badge>
@@ -114,12 +114,14 @@ function CurrentRoundSlot({
       </div>
       <div className="grid min-w-0 justify-items-center gap-4 text-center">
         <UserAvatar
-          className="size-24 text-3xl"
+          className="size-20 text-2xl sm:size-24 sm:text-3xl"
           name={label}
           src={participant.user.avatarUrl}
         />
         <div className="grid min-w-0 gap-1">
-          <p className="max-w-full truncate text-2xl font-semibold">{label}</p>
+          <p className="max-w-full truncate text-xl font-semibold sm:text-2xl">
+            {label}
+          </p>
           {participant.user.email ? (
             <p className="max-w-full truncate text-sm text-muted-foreground">
               {participant.user.email}
@@ -279,7 +281,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
   }
 
   return (
-    <div className="grid gap-8">
+    <div className="grid min-w-0 gap-7 sm:gap-8">
       <Button asChild className="w-fit px-0" size="sm" variant="link">
         <Link href="/tables">
           <ArrowLeft aria-hidden="true" className="size-4" />
@@ -287,7 +289,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
         </Link>
       </Button>
 
-      <section className="border-y border-border py-5 md:py-6">
+      <section className="min-w-0 border-y border-border py-5 md:py-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
           <div className="grid min-w-0 gap-5">
             <header className="grid min-w-0 gap-3">
@@ -311,7 +313,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
               </div>
             </header>
 
-            <div className="grid border-y border-border md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:divide-x md:divide-y-0 md:divide-border">
+            <div className="grid min-w-0 border-y border-border md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:divide-x md:divide-y-0 md:divide-border">
               <CurrentRoundSlot
                 isViewer={currentMatch[0]?.user.id === table.viewerUserId}
                 participant={currentMatch[0]}
@@ -330,7 +332,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
             </div>
           </div>
 
-          <aside className="grid gap-4 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <aside className="grid min-w-0 gap-4 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
             <div className="grid gap-1">
               <p className="text-sm font-medium">Próxima ação</p>
               {table.viewerIsPlaying ? (
@@ -353,9 +355,9 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="grid gap-2 sm:flex sm:flex-wrap">
               {table.viewerIsPlaying ? (
-                <Button asChild size="lg">
+                <Button asChild className="w-full sm:w-auto" size="lg">
                   <Link href={`/tables/${table.id}/scoreboard/controls`}>
                     <Plus aria-hidden="true" className="size-4" />
                     Controles
@@ -364,6 +366,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
               ) : table.viewerIsQueued ? (
                 <Button
                   disabled={actionDisabled}
+                  className="w-full sm:w-auto"
                   onClick={leaveQueue}
                   size="lg"
                   variant="outline"
@@ -379,7 +382,12 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
                   Sair da fila
                 </Button>
               ) : (
-                <Button disabled={actionDisabled} onClick={joinQueue} size="lg">
+                <Button
+                  className="w-full sm:w-auto"
+                  disabled={actionDisabled}
+                  onClick={joinQueue}
+                  size="lg"
+                >
                   {busyKey === "join-queue" ? (
                     <Loader2
                       aria-hidden="true"
@@ -393,7 +401,12 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
               )}
 
               {roundIsActive ? (
-                <Button asChild size="lg" variant="outline">
+                <Button
+                  asChild
+                  className="w-full sm:w-auto"
+                  size="lg"
+                  variant="outline"
+                >
                   <Link href={`/tables/${table.id}/scoreboard`}>
                     <MonitorUp aria-hidden="true" className="size-4" />
                     Abrir placar
@@ -407,6 +420,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button
+                      className="w-full sm:w-auto"
                       disabled={actionDisabled}
                       size="sm"
                       variant="destructive"
@@ -484,20 +498,22 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
 
               return (
                 <li
-                  className="grid min-w-0 gap-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
+                  className="grid min-w-0 gap-2 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
                   key={participant.id}
                   value={participant.queuePosition + 1}
                 >
-                  <Badge className="w-fit tabular-nums" variant="outline">
-                    #{participant.queuePosition + 1}
-                  </Badge>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <UserIdentity user={participant.user} />
-                    {participant.user.id === table.viewerUserId ? (
-                      <Badge className="shrink-0">Você</Badge>
-                    ) : null}
+                  <div className="flex min-w-0 items-center gap-3 sm:contents">
+                    <Badge className="w-fit tabular-nums" variant="outline">
+                      #{participant.queuePosition + 1}
+                    </Badge>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <UserIdentity user={participant.user} />
+                      {participant.user.id === table.viewerUserId ? (
+                        <Badge className="shrink-0">Você</Badge>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground sm:justify-end">
+                  <div className="ml-12 flex flex-wrap items-center gap-2 text-xs text-muted-foreground sm:ml-0 sm:justify-end">
                     <span>{formatDateTime(participant.joinedAt)}</span>
                     <Badge className="tabular-nums" variant="secondary">
                       {participant.user.playerRanking?.elo ?? 1000} Elo
@@ -530,7 +546,67 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
           description="Resumo compacto das rodadas finalizadas nesta mesa."
           title="Resultados recentes"
         >
-          <div className="overflow-x-auto">
+          <div className="grid divide-y divide-border border-y border-border md:hidden">
+            {table.recentMatches.map((match) => (
+              <div className="grid gap-3 py-3" key={match.id}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Badge
+                    variant={
+                      match.kind === "rollback" ? "secondary" : "outline"
+                    }
+                  >
+                    {match.kind === "rollback"
+                      ? "Rollback"
+                      : match.rolledBack
+                        ? "Revertida"
+                        : "Rodada"}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDateTime(match.createdAt)}
+                  </span>
+                </div>
+                <div className="grid gap-3">
+                  <div className="grid gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Vencedor
+                    </p>
+                    <UserIdentity user={match.winner} />
+                  </div>
+                  <div className="grid gap-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Perdedor
+                    </p>
+                    <UserIdentity user={match.loser} />
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {match.winnerOldElo} -&gt; {match.winnerNewElo} /{" "}
+                    {match.loserOldElo} -&gt; {match.loserNewElo}
+                  </span>
+                  {canManage && match.kind === "match" && !match.rolledBack ? (
+                    <Button
+                      disabled={actionDisabled}
+                      onClick={() => rollbackMatch(match.id)}
+                      size="sm"
+                      variant="destructive"
+                    >
+                      {busyKey === `rollback-match:${match.id}` ? (
+                        <Loader2
+                          aria-hidden="true"
+                          className="size-4 animate-spin"
+                        />
+                      ) : (
+                        <RotateCcw aria-hidden="true" className="size-4" />
+                      )}
+                      Reverter
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>

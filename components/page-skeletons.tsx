@@ -77,7 +77,7 @@ export function TableDetailSkeleton() {
     <div className="grid gap-8">
       <Skeleton className="h-9 w-36" />
 
-      <section className="border-y border-border py-5 md:py-6">
+      <section className="min-w-0 border-y border-border py-5 md:py-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
           <div className="grid min-w-0 gap-5">
             <div className="grid gap-3">
@@ -91,16 +91,16 @@ export function TableDetailSkeleton() {
               </div>
             </div>
 
-            <div className="grid border-y border-border md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:divide-x md:divide-border">
-              <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+            <div className="grid min-w-0 border-y border-border md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:divide-x md:divide-border">
+              <div className="grid min-h-40 content-between gap-4 py-4 sm:min-h-48 sm:gap-5 sm:py-5 md:px-5">
                 <div className="flex items-center justify-between gap-3">
                   <Skeleton className="h-6 w-20" />
                   <Skeleton className="h-6 w-16" />
                 </div>
                 <div className="grid justify-items-center gap-4">
-                  <Skeleton className="size-24 rounded-full" />
+                  <Skeleton className="size-20 rounded-full sm:size-24" />
                   <div className="grid w-full justify-items-center gap-2">
-                    <Skeleton className="h-7 w-44 max-w-full" />
+                    <Skeleton className="h-6 w-40 max-w-full sm:h-7 sm:w-44" />
                     <Skeleton className="h-4 w-56 max-w-full" />
                   </div>
                 </div>
@@ -109,15 +109,15 @@ export function TableDetailSkeleton() {
               <div className="grid place-items-center border-y border-border py-3 md:border-y-0 md:px-4">
                 <Skeleton className="h-10 w-14" />
               </div>
-              <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+              <div className="grid min-h-40 content-between gap-4 py-4 sm:min-h-48 sm:gap-5 sm:py-5 md:px-5">
                 <div className="flex items-center justify-between gap-3">
                   <Skeleton className="h-6 w-20" />
                   <Skeleton className="h-6 w-16" />
                 </div>
                 <div className="grid justify-items-center gap-4">
-                  <Skeleton className="size-24 rounded-full" />
+                  <Skeleton className="size-20 rounded-full sm:size-24" />
                   <div className="grid w-full justify-items-center gap-2">
-                    <Skeleton className="h-7 w-44 max-w-full" />
+                    <Skeleton className="h-6 w-40 max-w-full sm:h-7 sm:w-44" />
                     <Skeleton className="h-4 w-56 max-w-full" />
                   </div>
                 </div>
@@ -126,15 +126,15 @@ export function TableDetailSkeleton() {
             </div>
           </div>
 
-          <div className="grid gap-4 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <div className="grid min-w-0 gap-4 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
             <div className="grid gap-2">
               <Skeleton className="h-5 w-28" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-48 max-w-full" />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Skeleton className="h-11 w-32" />
-              <Skeleton className="h-11 w-32" />
+            <div className="grid gap-2 sm:flex sm:flex-wrap">
+              <Skeleton className="h-11 w-full sm:w-32" />
+              <Skeleton className="h-11 w-full sm:w-32" />
             </div>
             <div className="border-t border-border pt-4">
               <Skeleton className="h-9 w-32" />
@@ -151,12 +151,14 @@ export function TableDetailSkeleton() {
         <div className="grid divide-y divide-border border-y border-border">
           {Array.from({ length: 3 }).map((_, index) => (
             <div
-              className="grid gap-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+              className="grid gap-2 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3"
               key={index}
             >
-              <Skeleton className="h-6 w-10" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-6 w-28" />
+              <div className="flex items-center gap-3 sm:contents">
+                <Skeleton className="h-6 w-10" />
+                <Skeleton className="h-10 flex-1 sm:w-full" />
+              </div>
+              <Skeleton className="ml-12 h-6 w-28 sm:ml-0" />
             </div>
           ))}
         </div>
