@@ -132,7 +132,7 @@ async function RankingTable({
       ) : null}
 
       <div className="grid gap-4">
-        <div className="grid gap-3 border-b border-border/80 pb-4 md:flex md:items-end md:justify-between">
+        <div className="grid gap-3 pb-4 md:flex md:items-end md:justify-between">
           <div>
             <h2 className="text-xl font-semibold">Classificação Geral</h2>
             <p className="text-sm text-muted-foreground">
@@ -175,7 +175,7 @@ async function RankingTable({
           ))}
         </div>
 
-        <div className="hidden overflow-x-auto border-y border-border/80 md:block">
+        <div className="hidden overflow-x-auto md:block">
           <Table>
             <TableHeader>
               <TableRow>
