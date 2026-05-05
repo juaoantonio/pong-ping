@@ -1,21 +1,23 @@
 "use server";
 
 import { signIn, signOut } from "@/auth";
+import { normalizeLoginTenantSlug } from "@/lib/auth/login-tenant";
 import { setPendingTenantCookie } from "@/lib/auth/pending-tenant";
 import { buildTenantUrlFromRequest } from "@/lib/tenants/request";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
-function normalizeTenantSlug(value: FormDataEntryValue | null) {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
+export async function signInWithGoogle(
+  boundTenantSlugOrFormData?: unknown,
+  _formData?: FormData,
+) {
+  void _formData;
 
-export async function signInWithGoogle(formData?: FormData) {
-  const slug = normalizeTenantSlug(formData?.get("tenantSlug") ?? null);
-
-  if (!slug) {
-    redirect("/login?error=tenant_required");
-  }
+  const slug = normalizeLoginTenantSlug(
+    boundTenantSlugOrFormData instanceof FormData
+      ? undefined
+      : boundTenantSlugOrFormData,
+  );
 
   const tenant = await prisma.tenant.findUnique({
     where: {
