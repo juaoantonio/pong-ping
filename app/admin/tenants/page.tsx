@@ -45,7 +45,7 @@ export default async function AdminTenantsPage() {
       eyebrow="Painel administrativo"
       title="Tenants"
     >
-      <section className="grid gap-5 border-t border-border pt-5">
+      <section className="grid gap-5 pt-5">
         <div className="grid gap-1">
           <h2 className="text-lg font-semibold">Gerenciamento de tenants</h2>
           <p className="text-sm leading-6 text-muted-foreground">
