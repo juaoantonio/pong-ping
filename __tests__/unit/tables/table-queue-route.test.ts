@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import {
   enqueueUserInTable,
   removeUserFromTableQueue,
-} from "@/lib/tables/service";
+} from "@/lib/contexts/table-play";
 
 jest.mock("@/lib/auth/session", () => ({
   getCurrentUser: jest.fn(),
@@ -20,7 +20,7 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
-jest.mock("@/lib/tables/service", () => ({
+jest.mock("@/lib/contexts/table-play", () => ({
   enqueueUserInTable: jest.fn(),
   removeUserFromTableQueue: jest.fn(),
 }));
@@ -33,6 +33,28 @@ const mockedRemoveUserFromTableQueue = jest.mocked(removeUserFromTableQueue);
 function routeContext(tableId = "table-1") {
   return {
     params: Promise.resolve({ tableId }),
+  };
+}
+
+function tablePlayError(code: string) {
+  return {
+    ok: false as const,
+    error: {
+      context: "table-play",
+      code,
+    },
+  };
+}
+
+function authenticatedUser() {
+  return {
+    id: "user-1",
+    role: "user" as const,
+    email: "user@example.com",
+    name: "User",
+    avatarUrl: null,
+    image: null,
+    createdAt: new Date("2026-04-30T12:00:00.000Z"),
   };
 }
 
@@ -56,20 +78,15 @@ describe("table queue route", () => {
   });
 
   it("rejects users who are not table members", async () => {
-    mockedGetCurrentUser.mockResolvedValue({
-      id: "user-1",
-      role: "user",
-      email: "user@example.com",
-      name: "User",
-      avatarUrl: null,
-      image: null,
-    });
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
         auditLog: { create: jest.fn() },
       } as never),
     );
-    mockedEnqueueUserInTable.mockRejectedValue(new Error("user_not_in_table"));
+    mockedEnqueueUserInTable.mockResolvedValue(
+      tablePlayError("user_not_in_table") as never,
+    );
 
     const response = await POST(
       new Request("http://test.local"),
@@ -80,25 +97,23 @@ describe("table queue route", () => {
     await expect(response.json()).resolves.toEqual({
       error: "Entre na mesa antes de entrar na fila.",
     });
+    expect(mockedEnqueueUserInTable).toHaveBeenCalledWith(
+      expect.anything(),
+      "table-1",
+      "user-1",
+    );
+    expect(mockedTransaction).toHaveBeenCalledTimes(1);
   });
 
   it("rejects users who are already queued", async () => {
-    mockedGetCurrentUser.mockResolvedValue({
-      id: "user-1",
-      role: "user",
-      email: "user@example.com",
-      name: "User",
-      avatarUrl: null,
-      image: null,
-      createdAt: new Date("2026-04-30T12:00:00.000Z"),
-    });
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
         auditLog: { create: jest.fn() },
       } as never),
     );
-    mockedEnqueueUserInTable.mockRejectedValue(
-      new Error("user_already_queued"),
+    mockedEnqueueUserInTable.mockResolvedValue(
+      tablePlayError("user_already_queued") as never,
     );
 
     const response = await POST(
@@ -122,20 +137,16 @@ describe("table queue route", () => {
       joinedAt: new Date("2026-04-30T12:00:00.000Z"),
     };
 
-    mockedGetCurrentUser.mockResolvedValue({
-      id: "user-1",
-      role: "user",
-      email: "user@example.com",
-      name: "User",
-      avatarUrl: null,
-      image: null,
-    });
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
         auditLog: { create: auditCreate },
       } as never),
     );
-    mockedEnqueueUserInTable.mockResolvedValue(participant);
+    mockedEnqueueUserInTable.mockResolvedValue({
+      ok: true,
+      value: participant,
+    });
 
     const response = await POST(
       new Request("http://test.local"),
@@ -180,21 +191,14 @@ describe("table queue route", () => {
   });
 
   it("rejects users who are not queued", async () => {
-    mockedGetCurrentUser.mockResolvedValue({
-      id: "user-1",
-      role: "user",
-      email: "user@example.com",
-      name: "User",
-      avatarUrl: null,
-      image: null,
-    });
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
         auditLog: { create: jest.fn() },
       } as never),
     );
-    mockedRemoveUserFromTableQueue.mockRejectedValue(
-      new Error("user_not_queued"),
+    mockedRemoveUserFromTableQueue.mockResolvedValue(
+      tablePlayError("user_not_queued") as never,
     );
 
     const response = await DELETE(
@@ -209,21 +213,14 @@ describe("table queue route", () => {
   });
 
   it("rejects current players leaving the queue", async () => {
-    mockedGetCurrentUser.mockResolvedValue({
-      id: "user-1",
-      role: "user",
-      email: "user@example.com",
-      name: "User",
-      avatarUrl: null,
-      image: null,
-    });
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
         auditLog: { create: jest.fn() },
       } as never),
     );
-    mockedRemoveUserFromTableQueue.mockRejectedValue(
-      new Error("current_player_cannot_leave_queue"),
+    mockedRemoveUserFromTableQueue.mockResolvedValue(
+      tablePlayError("current_player_cannot_leave_queue") as never,
     );
 
     const response = await DELETE(
@@ -240,22 +237,18 @@ describe("table queue route", () => {
   it("removes queued users and writes an audit log", async () => {
     const auditCreate = jest.fn();
 
-    mockedGetCurrentUser.mockResolvedValue({
-      id: "user-1",
-      role: "user",
-      email: "user@example.com",
-      name: "User",
-      avatarUrl: null,
-      image: null,
-    });
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
         auditLog: { create: auditCreate },
       } as never),
     );
     mockedRemoveUserFromTableQueue.mockResolvedValue({
-      id: "participant-1",
-      queuePosition: 2,
+      ok: true,
+      value: {
+        id: "participant-1",
+        queuePosition: 2,
+      },
     });
 
     const response = await DELETE(
