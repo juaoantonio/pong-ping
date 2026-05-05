@@ -76,7 +76,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
           </div>
 
-          <div className="grid max-w-xl gap-3 rounded-md border border-primary/20 bg-card/70 p-4 shadow-sm">
+          <div className="grid max-w-xl gap-3 border-l-2 border-primary bg-muted/30 py-4 pl-4 pr-3">
             <div className="flex min-w-0 items-start gap-3">
               <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <ShieldCheck className="size-4" aria-hidden="true" />
@@ -94,7 +94,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
         </section>
 
-        <section className="w-full rounded-md border border-border bg-card p-5 shadow-md sm:p-6">
+        <section className="w-full border-y border-border py-5 sm:py-6">
           <div className="mb-6 space-y-2">
             <p className="font-display text-2xl font-semibold">Acesso Seguro</p>
             <p className="text-sm leading-6 text-muted-foreground">

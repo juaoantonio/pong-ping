@@ -77,55 +77,62 @@ async function RankingTable({
   return (
     <section className="grid gap-5">
       {podium.length > 0 ? (
-        <div className="grid gap-3 md:grid-cols-3">
-          {podium.map((user, index) => (
-            <article
-              className="grid min-w-0 gap-4 rounded-lg border bg-card p-4 shadow-sm"
-              key={user.id}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <Badge variant={index === 0 ? "default" : "secondary"}>
-                  #{rankingOffset + index + 1}
-                </Badge>
-                <span className="text-2xl font-semibold tabular-nums">
-                  {integerFormatter.format(user.ranking.elo)}
-                </span>
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-lg font-semibold">
-                  {user.name ?? "Sem nome"}
-                </p>
-                <p className="truncate text-sm text-muted-foreground">
-                  {user.email ?? "Sem email"}
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Vitórias</p>
-                  <p className="font-semibold tabular-nums">
-                    {integerFormatter.format(user.ranking.wins)}
+        <div className="overflow-hidden border-y border-border/80 bg-[linear-gradient(135deg,color-mix(in_oklch,var(--accent)_14%,transparent),transparent_55%),linear-gradient(180deg,color-mix(in_oklch,var(--muted)_55%,transparent),transparent)]">
+          <div className="grid md:grid-cols-3">
+            {podium.map((user, index) => (
+              <article
+                className={cn(
+                  "grid min-w-0 gap-4 px-4 py-5 md:px-5",
+                  index === 0 && "bg-accent/10",
+                  index < podium.length - 1 &&
+                    "border-b border-border/70 md:border-r md:border-b-0",
+                )}
+                key={user.id}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <Badge variant={index === 0 ? "default" : "secondary"}>
+                    #{rankingOffset + index + 1}
+                  </Badge>
+                  <span className="text-2xl font-semibold tabular-nums">
+                    {integerFormatter.format(user.ranking.elo)}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-semibold">
+                    {user.name ?? "Sem nome"}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {user.email ?? "Sem email"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Partidas</p>
-                  <p className="font-semibold tabular-nums">
-                    {integerFormatter.format(user.ranking.total_matches)}
-                  </p>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Vitórias</p>
+                    <p className="font-semibold tabular-nums">
+                      {integerFormatter.format(user.ranking.wins)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Partidas</p>
+                    <p className="font-semibold tabular-nums">
+                      {integerFormatter.format(user.ranking.total_matches)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Aproveit.</p>
+                    <p className="font-semibold tabular-nums">
+                      {percentFormatter.format(user.ranking.winRate / 100)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Aproveit.</p>
-                  <p className="font-semibold tabular-nums">
-                    {percentFormatter.format(user.ranking.winRate / 100)}
-                  </p>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
         </div>
       ) : null}
 
-      <div className="rounded-lg border bg-card p-3 shadow-sm md:p-4">
-        <div className="mb-4 hidden items-end justify-between gap-4 md:flex">
+      <div className="grid gap-4">
+        <div className="grid gap-3 border-b border-border/80 pb-4 md:flex md:items-end md:justify-between">
           <div>
             <h2 className="text-xl font-semibold">Classificação Geral</h2>
             <p className="text-sm text-muted-foreground">
@@ -137,12 +144,9 @@ async function RankingTable({
           </Badge>
         </div>
 
-        <div className="grid gap-3 md:hidden">
+        <div className="divide-y border-y border-border/80 md:hidden">
           {result.rankings.map((user, index) => (
-            <article
-              className="grid min-w-0 gap-3 rounded-md border bg-background p-3"
-              key={user.id}
-            >
+            <article className="grid min-w-0 gap-3 px-1 py-4" key={user.id}>
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold">
@@ -171,7 +175,7 @@ async function RankingTable({
           ))}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden overflow-x-auto border-y border-border/80 md:block">
           <Table>
             <TableHeader>
               <TableRow>

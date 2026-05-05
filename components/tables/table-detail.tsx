@@ -14,19 +14,11 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -127,6 +119,42 @@ function RoundPlayer({
         {participant.user.playerRanking?.elo ?? 1000} Elo
       </Badge>
     </div>
+  );
+}
+
+function WorkflowSection({
+  action,
+  children,
+  className,
+  description,
+  icon,
+  title,
+}: {
+  action?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+  description?: ReactNode;
+  icon?: ReactNode;
+  title: ReactNode;
+}) {
+  return (
+    <section className={className}>
+      <header className="flex flex-col gap-3 border-b border-border/80 pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-xl font-semibold">
+            {icon}
+            <span className="min-w-0 truncate">{title}</span>
+          </h2>
+          {description ? (
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </header>
+      {children ? <div className="pt-4">{children}</div> : null}
+    </section>
   );
 }
 
@@ -308,23 +336,16 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
   return (
     <div className="grid gap-6">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(260px,3fr)]">
-        <Card className="order-2 lg:order-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="size-4" />
-              Fila
-            </CardTitle>
-            <CardDescription>
-              Vencedor permanece na mesa, perdedor volta para o fim.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3">
+        <WorkflowSection
+          className="order-2 lg:order-2"
+          description="Vencedor permanece na mesa, perdedor volta para o fim."
+          icon={<Users className="size-4" />}
+          title="Fila"
+        >
+          <div className="grid gap-0 divide-y divide-border border-y border-border">
             {queuedParticipants.length > 0 ? (
               queuedParticipants.map((participant) => (
-                <div
-                  className="grid gap-3 rounded-lg border p-3"
-                  key={participant.id}
-                >
+                <div className="grid gap-3 py-4" key={participant.id}>
                   <div className="flex items-center justify-between gap-3">
                     <Badge variant="outline">
                       #{participant.queuePosition + 1}
@@ -350,21 +371,22 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 </div>
               ))
             ) : (
-              <EmptyState className="px-4 py-6" title="Fila livre">
+              <EmptyState
+                className="border-0 bg-transparent px-0 py-6"
+                title="Fila livre"
+              >
                 Convide jogadores ou entre na fila para formar a próxima rodada.
               </EmptyState>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </WorkflowSection>
 
-        <Card className="order-1 lg:order-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Swords className="size-4" />
-              Rodada atual
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-5">
+        <WorkflowSection
+          className="order-1 lg:order-1"
+          icon={<Swords className="size-4" />}
+          title="Rodada atual"
+        >
+          <div className="grid gap-5">
             {currentMatch.length === 2 ? (
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-stretch">
                 <RoundPlayer participant={currentMatch[0]} side="Jogador 1" />
@@ -384,9 +406,9 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 rodada.
               </EmptyState>
             )}
-          </CardContent>
+          </div>
 
-          <CardFooter className="flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
             {currentMatch.length === 2 ? (
               <Button asChild size="lg" variant="outline">
                 <Link href={`/tables/${table.id}/scoreboard`}>
@@ -458,49 +480,46 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 </DialogContent>
               </Dialog>
             ) : null}
-          </CardFooter>
-        </Card>
+          </div>
+        </WorkflowSection>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="truncate text-2xl">{table.name}</CardTitle>
-          <CardDescription>
+      <section className="grid gap-4 border-y border-border py-5">
+        <div className="min-w-0">
+          <h2 className="truncate text-2xl font-semibold">{table.name}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Criada por {userLabel(table.createdBy)} em{" "}
             {formatDateTime(table.createdAt)}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-lg border p-4">
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3 md:divide-x md:divide-border">
+          <div className="md:pr-4">
             <p className="text-sm text-muted-foreground">Aguardando</p>
             <p className="text-2xl font-semibold tabular-nums">
               {queuedParticipants.length}
             </p>
           </div>
-          <div className="rounded-lg border p-4">
+          <div className="md:px-4">
             <p className="text-sm text-muted-foreground">Mesa atual</p>
             <p className="text-2xl font-semibold">
               {currentMatch.length === 2 ? "Ativa" : "Aguardando"}
             </p>
           </div>
-          <div className="rounded-lg border p-4">
+          <div className="md:pl-4">
             <p className="text-sm text-muted-foreground">Rodadas recentes</p>
             <p className="text-2xl font-semibold tabular-nums">
               {table.recentMatches.length}
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {table.viewerIsMember ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sua participação</CardTitle>
-            <CardDescription>
-              Entre na fila quando estiver pronto para jogar.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <WorkflowSection
+          description="Entre na fila quando estiver pronto para jogar."
+          title="Sua participação"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="grid gap-1 text-sm">
               {table.viewerIsPlaying ? (
                 <>
@@ -553,19 +572,16 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 Sair da fila
               </Button>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </WorkflowSection>
       ) : null}
 
       {canManage ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gerenciar entrada</CardTitle>
-            <CardDescription>
-              Adicione membros manualmente ou gere um convite para a mesa.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
+        <WorkflowSection
+          description="Adicione membros manualmente ou gere um convite para a mesa."
+          title="Gerenciar entrada"
+        >
+          <div className="grid gap-4">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
               <div className="grid gap-2">
                 <Label>Adicionar membro</Label>
@@ -632,7 +648,7 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
             </div>
 
             {table.currentInvitation ? (
-              <div className="grid gap-2 rounded-lg border bg-muted/20 p-4">
+              <div className="grid gap-2 border-l-2 border-primary bg-muted/20 py-3 pl-4 pr-3">
                 <p className="break-all text-sm">
                   {buildInvitationLink(table.currentInvitation.token)}
                 </p>
@@ -660,18 +676,15 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 </div>
               </div>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </WorkflowSection>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Últimas rodadas</CardTitle>
-          <CardDescription>
-            Histórico recente e variação de Elo da mesa.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <WorkflowSection
+        description="Histórico recente e variação de Elo da mesa."
+        title="Últimas rodadas"
+      >
+        <div className="overflow-x-auto">
           {table.recentMatches.length > 0 ? (
             <Table>
               <TableHeader>
@@ -744,8 +757,8 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
               Elo aparecem aqui.
             </EmptyState>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </WorkflowSection>
     </div>
   );
 }

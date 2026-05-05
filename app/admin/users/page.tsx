@@ -3,16 +3,9 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { UsersAdmin } from "@/app/admin/users/users-admin";
-import { CardTableSkeleton } from "@/components/page-skeletons";
 import { PaginationControls } from "@/components/pagination-controls";
+import { Skeleton } from "@/components/ui/skeleton";
 import { isSuperAdmin } from "@/lib/auth/roles";
 import { requireRole, type AuthenticatedUser } from "@/lib/auth/session";
 import {
@@ -26,6 +19,27 @@ import { prisma } from "@/lib/prisma";
 type AdminUsersPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function UsersAdminSkeleton() {
+  return (
+    <div className="grid gap-5 border-t border-border pt-5">
+      <div className="grid gap-2">
+        <Skeleton className="h-6 w-56" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+      </div>
+      <div className="grid gap-0 divide-y divide-border border-y border-border">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div className="py-3" key={index}>
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-end">
+        <Skeleton className="h-10 w-40" />
+      </div>
+    </div>
+  );
+}
 
 async function UsersAdminPanel({
   currentUser,
@@ -63,34 +77,32 @@ async function UsersAdminPanel({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gerenciamento de usuários</CardTitle>
-        <CardDescription>
+    <section className="grid gap-5 border-t border-border pt-5">
+      <div className="grid gap-1">
+        <h2 className="text-lg font-semibold">Gerenciamento de usuários</h2>
+        <p className="text-sm leading-6 text-muted-foreground">
           Admins visualizam apenas users. Superadmins visualizam todos e podem
           alterar roles.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <UsersAdmin
-          currentUser={{ id: currentUser.id, role: currentUser.role }}
-          users={users.map((user) => ({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            avatarUrl: user.avatarUrl ?? user.image,
-            role: user.role,
-            createdAt: user.createdAt.toISOString(),
-          }))}
-        />
-        <PaginationControls
-          itemLabel="usuários"
-          pageInfo={pageInfo}
-          pathname="/admin/users"
-          searchParams={searchParams}
-        />
-      </CardContent>
-    </Card>
+        </p>
+      </div>
+      <UsersAdmin
+        currentUser={{ id: currentUser.id, role: currentUser.role }}
+        users={users.map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatarUrl: user.avatarUrl ?? user.image,
+          role: user.role,
+          createdAt: user.createdAt.toISOString(),
+        }))}
+      />
+      <PaginationControls
+        itemLabel="usuários"
+        pageInfo={pageInfo}
+        pathname="/admin/users"
+        searchParams={searchParams}
+      />
+    </section>
   );
 }
 
@@ -131,7 +143,7 @@ export default async function AdminUsersPage({
       eyebrow="Painel administrativo"
       title="Usuários"
     >
-      <Suspense fallback={<CardTableSkeleton rows={6} />}>
+      <Suspense fallback={<UsersAdminSkeleton />}>
         <UsersAdminPanel
           currentUser={currentUser}
           pagination={pagination}

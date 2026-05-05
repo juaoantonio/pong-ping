@@ -5,14 +5,6 @@ import { ArrowRight, Swords, Trash, UsersRound } from "lucide-react";
 import { EmptyState } from "@/components/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
 import type { TableListItem } from "@/components/tables/types";
 import { Fragment, startTransition } from "react";
@@ -65,28 +57,60 @@ export function TableList({ canRemoveTables, tables }: TableListProps) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {tables.map((table) => (
-        <Card className="overflow-hidden" key={table.id}>
-          <CardHeader>
-            <CardTitle className="truncate text-xl">{table.name}</CardTitle>
-            <CardDescription className="line-clamp-2">
-              Criada por {userLabel(table.createdBy)} em{" "}
-              {formatDateTime(table.createdAt)}
-            </CardDescription>
-            <CardAction>
-              <Badge
-                variant={
-                  table.currentPlayers.length >= 2 ? "default" : "outline"
-                }
-              >
-                {table.participantCount} na fila
-              </Badge>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-3 rounded-lg bg-secondary/60 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold">
+    <div className="overflow-hidden rounded-2xl border border-border/60">
+      <div className="divide-y divide-border/60">
+        {tables.map((table) => (
+          <article
+            className="grid gap-5 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_auto] lg:gap-6"
+            key={table.id}
+          >
+            <div className="min-w-0 space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <h3 className="truncate text-lg font-semibold sm:text-xl">
+                    {table.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Criada por {userLabel(table.createdBy)} em{" "}
+                    {formatDateTime(table.createdAt)}
+                  </p>
+                </div>
+                <Badge
+                  className="shrink-0"
+                  variant={
+                    table.currentPlayers.length >= 2 ? "default" : "outline"
+                  }
+                >
+                  {table.participantCount} na fila
+                </Badge>
+              </div>
+
+              {table.latestMatch ? (
+                <div className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
+                  <UsersRound
+                    aria-hidden="true"
+                    className="mt-0.5 size-4 shrink-0"
+                  />
+                  <span className="min-w-0 break-words">
+                    {table.latestMatch.kind === "rollback" ? (
+                      <>
+                        Último rollback: {userLabel(table.latestMatch.winner)} x{" "}
+                        {userLabel(table.latestMatch.loser)} em{" "}
+                        {formatDateTime(table.latestMatch.createdAt)}
+                      </>
+                    ) : (
+                      <>
+                        Última rodada: {userLabel(table.latestMatch.winner)}{" "}
+                        venceu em {formatDateTime(table.latestMatch.createdAt)}
+                      </>
+                    )}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="min-w-0 space-y-2 rounded-xl bg-secondary/50 px-3 py-3 sm:px-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Rodada atual
               </div>
               {table.currentPlayers.length > 0 ? (
@@ -96,7 +120,7 @@ export function TableList({ canRemoveTables, tables }: TableListProps) {
 
                     return (
                       <Fragment key={`${table.id}-${index}-${label}`}>
-                        <div className="flex min-w-0 items-center gap-2 rounded-md bg-background/70 p-2">
+                        <div className="flex min-w-0 items-center gap-2">
                           <UserAvatar
                             className="size-9"
                             name={label}
@@ -105,7 +129,7 @@ export function TableList({ canRemoveTables, tables }: TableListProps) {
                           <span className="min-w-0 truncate text-sm font-medium">
                             {label}
                           </span>
-                        </div>{" "}
+                        </div>
                         {index === 0 && (
                           <Swords
                             aria-hidden="true"
@@ -123,31 +147,8 @@ export function TableList({ canRemoveTables, tables }: TableListProps) {
               )}
             </div>
 
-            {table.latestMatch ? (
-              <div className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
-                <UsersRound
-                  aria-hidden="true"
-                  className="mt-0.5 size-4 shrink-0"
-                />
-                <span className="min-w-0 break-words">
-                  {table.latestMatch.kind === "rollback" ? (
-                    <>
-                      Último rollback: {userLabel(table.latestMatch.winner)} x{" "}
-                      {userLabel(table.latestMatch.loser)} em{" "}
-                      {formatDateTime(table.latestMatch.createdAt)}
-                    </>
-                  ) : (
-                    <>
-                      Última rodada: {userLabel(table.latestMatch.winner)}{" "}
-                      venceu em {formatDateTime(table.latestMatch.createdAt)}
-                    </>
-                  )}
-                </span>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild className="justify-self-start">
+            <div className="flex flex-wrap items-center gap-2 lg:min-w-44 lg:flex-col lg:items-stretch">
+              <Button asChild className="justify-self-start lg:w-full">
                 <Link href={`/tables/${table.id}`}>
                   Abrir mesa
                   <ArrowRight className="size-4" />
@@ -155,7 +156,7 @@ export function TableList({ canRemoveTables, tables }: TableListProps) {
               </Button>
               {canRemoveTables ? (
                 <Button
-                  className="justify-self-start"
+                  className="justify-self-start lg:w-full"
                   onClick={() => deleteTable(table.id)}
                   variant="destructive"
                 >
@@ -164,9 +165,9 @@ export function TableList({ canRemoveTables, tables }: TableListProps) {
                 </Button>
               ) : null}
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
