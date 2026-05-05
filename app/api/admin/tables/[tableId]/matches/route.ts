@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { finishTableMatch } from "@/lib/tables/service";
 import { requireAdmin } from "@/app/api/admin/_shared";
+import {
+  finishMatch,
+  mapCompetitionErrorToHttp,
+} from "@/lib/contexts/competition";
 
 type FinishMatchBody = {
   winnerParticipantId?: unknown;
@@ -39,37 +42,18 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   try {
-    const match = await prisma.$transaction((tx) =>
-      finishTableMatch(tx, tableId, winnerParticipantId, actor.id),
+    const result = await prisma.$transaction((tx) =>
+      finishMatch(tx, { tableId, winnerParticipantId, actorUserId: actor.id }),
     );
 
-    return NextResponse.json({ match });
+    if (!result.ok) {
+      const { body, status } = mapCompetitionErrorToHttp(result.error);
+
+      return NextResponse.json(body, { status });
+    }
+
+    return NextResponse.json({ match: result.value });
   } catch (error) {
-    if (!(error instanceof Error)) {
-      throw error;
-    }
-
-    if (error.message === "table_not_found") {
-      return NextResponse.json(
-        { error: "Mesa nao encontrada." },
-        { status: 404 },
-      );
-    }
-
-    if (error.message === "not_enough_players") {
-      return NextResponse.json(
-        { error: "A fila precisa de pelo menos dois jogadores." },
-        { status: 400 },
-      );
-    }
-
-    if (error.message === "winner_not_in_current_match") {
-      return NextResponse.json(
-        { error: "O vencedor precisa estar na mesa atual." },
-        { status: 400 },
-      );
-    }
-
     throw error;
   }
 }

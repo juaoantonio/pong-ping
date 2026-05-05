@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { rollbackTableMatch } from "@/lib/tables/service";
+import { requireAdmin } from "@/app/api/admin/_shared";
 import {
-  getRollbackErrorResponse,
-  requireAdmin,
-} from "@/app/api/admin/_shared";
+  mapCompetitionErrorToHttp,
+  rollbackMatch,
+} from "@/lib/contexts/competition";
 
 type RouteContext = {
   params: Promise<{
@@ -25,17 +25,18 @@ export async function POST(_request: Request, context: RouteContext) {
   const { tableId, matchId } = await context.params;
 
   try {
-    const rollback = await prisma.$transaction((tx) =>
-      rollbackTableMatch(tx, tableId, matchId, actor.id),
+    const result = await prisma.$transaction((tx) =>
+      rollbackMatch(tx, { tableId, matchHistoryId: matchId, actorUserId: actor.id }),
     );
 
-    return NextResponse.json({ rollback });
-  } catch (error) {
-    const errorResponse = getRollbackErrorResponse(error);
+    if (!result.ok) {
+      const { body, status } = mapCompetitionErrorToHttp(result.error);
 
-    if (errorResponse) {
-      return errorResponse;
+      return NextResponse.json(body, { status });
     }
+
+    return NextResponse.json({ rollback: result.value });
+  } catch (error) {
     throw error;
   }
 }

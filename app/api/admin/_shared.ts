@@ -59,39 +59,3 @@ export async function requireAdmin(reason: string): Promise<
 
   return { actor };
 }
-
-export function getRollbackErrorResponse(error: unknown) {
-  if (!(error instanceof Error)) {
-    throw error;
-  }
-
-  if (error.message === "match_not_found") {
-    return NextResponse.json(
-      { error: "Rodada nao encontrada." },
-      { status: 404 },
-    );
-  }
-
-  if (error.message === "cannot_rollback_rollback") {
-    return NextResponse.json(
-      { error: "Um rollback nao pode ser revertido." },
-      { status: 400 },
-    );
-  }
-
-  if (error.message === "match_already_rolled_back") {
-    return NextResponse.json(
-      { error: "Esta rodada ja foi revertida." },
-      { status: 409 },
-    );
-  }
-
-  if (error.message === "ranking_not_found") {
-    return NextResponse.json(
-      { error: "Ranking da rodada nao encontrado." },
-      { status: 409 },
-    );
-  }
-
-  return null;
-}
