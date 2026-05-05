@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BetweenHorizonalStart,
   Building2,
   Home,
   LogOut,
   Shield,
   Swords,
-  Trophy,
   UserRound,
   Users2,
 } from "lucide-react";
@@ -29,6 +27,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { canAccessAdmin, isSuperAdmin } from "@/lib/auth/roles";
+import PingPongPaddle from "@/icons/ping-pong-paddle";
+import PingPongTable from "@/icons/ping-pong-table";
 
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -50,7 +50,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild size="lg" tooltip={tenantName}>
               <Link href="/">
                 <span className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Trophy className="size-4" />
+                  <PingPongPaddle size={16} />
                 </span>
                 <span className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{tenantName}</span>
@@ -86,7 +86,7 @@ export function AppSidebar() {
                   tooltip="Mesas"
                 >
                   <Link href="/tables">
-                    <BetweenHorizonalStart />
+                    <PingPongTable size={16} strokeWidth={5} />
                     <span>Mesas</span>
                   </Link>
                 </SidebarMenuButton>
