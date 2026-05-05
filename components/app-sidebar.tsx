@@ -111,53 +111,56 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel>Admin</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/admin/users"}
-                >
-                  <Link href="/admin/users">
-                    {" "}
-                    <Users2 /> Usuários
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/admin/access"}
-                >
-                  <Link href="/admin/access">
-                    <Shield /> Acesso
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {canUseRoundManagement ? (
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === "/admin/tenants"}
+                    isActive={pathname === "/admin/users"}
                   >
-                    <Link href="/admin/tenants">
-                      <Building2 />
-                      Tenants
+                    <Link href="/admin/users">
+                      <Users2 />
+                      <span>Usuários</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ) : null}
-              {canUseRoundManagement ? (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === "/admin/rounds"}
+                    isActive={pathname === "/admin/access"}
                   >
-                    <Link href="/admin/rounds">
-                      <Swords />
-                      Rodadas
+                    <Link href="/admin/access">
+                      <Shield />
+                      <span>Acesso</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ) : null}
+                {canUseRoundManagement ? (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/admin/tenants"}
+                    >
+                      <Link href="/admin/tenants">
+                        <Building2 />
+                        <span>Tenants</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ) : null}
+                {canUseRoundManagement ? (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/admin/rounds"}
+                    >
+                      <Link href="/admin/rounds">
+                        <Swords />
+                        <span>Rodadas</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ) : null}
+              </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}
