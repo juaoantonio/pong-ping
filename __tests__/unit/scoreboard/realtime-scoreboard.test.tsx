@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
+import { ref } from "firebase/database";
 import { RealtimeScoreboard } from "@/components/scoreboard/realtime-scoreboard";
 import {
   createInitialScoreboardState,
   type ScoreboardPlayer,
-} from "@/lib/scoreboard/state";
+} from "@/lib/contexts/scoreboard";
 
 jest.mock("@/lib/firebase", () => ({
   realtimeDatabase: {},
@@ -22,6 +23,27 @@ const players: [ScoreboardPlayer, ScoreboardPlayer] = [
 ];
 
 describe("RealtimeScoreboard", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("subscribes through the scoreboard context path", () => {
+    render(
+      <RealtimeScoreboard
+        currentPlayers={[...players]}
+        initialState={createInitialScoreboardState({
+          players,
+          tableId: "table-1",
+        })}
+        tableId="table-1"
+        tableName="Mesa 1"
+        viewerCanControl={false}
+      />,
+    );
+
+    expect(ref).toHaveBeenCalledWith({}, "scoreboards/table-1/current");
+  });
+
   it("hides score controls from non-members", () => {
     render(
       <RealtimeScoreboard

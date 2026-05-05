@@ -2,9 +2,10 @@ import {
   awardSet,
   changePlayerPoint,
   createInitialScoreboardState,
+  getCurrentScoreboardPath,
   shouldCreateFreshState,
   type ScoreboardPlayer,
-} from "@/lib/scoreboard/state";
+} from "@/lib/contexts/scoreboard";
 
 const players: [ScoreboardPlayer, ScoreboardPlayer] = [
   { id: "user-a", name: "Ana", avatarUrl: null },
@@ -12,6 +13,12 @@ const players: [ScoreboardPlayer, ScoreboardPlayer] = [
 ];
 
 describe("scoreboard state", () => {
+  it("builds the current scoreboard path through the context boundary", () => {
+    expect(getCurrentScoreboardPath("table-1")).toBe(
+      "scoreboards/table-1/current",
+    );
+  });
+
   it("increments and decrements player points without going below zero", () => {
     const initialState = createInitialScoreboardState({
       now: 100,

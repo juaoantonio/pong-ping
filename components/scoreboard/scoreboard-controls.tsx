@@ -11,10 +11,11 @@ import {
   changePlayerPoint,
   coerceScoreboardState,
   createInitialScoreboardState,
+  getCurrentScoreboardPath,
   shouldCreateFreshState,
   type ScoreboardPlayer,
   type ScoreboardState,
-} from "@/lib/scoreboard/state";
+} from "@/lib/contexts/scoreboard";
 
 type ScoreboardControlsProps = {
   currentPlayers: [ScoreboardPlayer, ScoreboardPlayer];
@@ -34,7 +35,7 @@ export function ScoreboardControls({
     [currentPlayers],
   );
   const [board, setBoard] = useState<ScoreboardState | null>(null);
-  const boardPath = `scoreboards/${tableId}/current`;
+  const boardPath = getCurrentScoreboardPath(tableId);
   const player = roundPlayers[playerIndex];
   const playerName = userLabel(player);
   const points = board?.points[playerIndex] ?? 0;

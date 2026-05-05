@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { runTransaction } from "firebase/database";
+import { ref, runTransaction } from "firebase/database";
 import { ScoreboardControls } from "@/components/scoreboard/scoreboard-controls";
-import type { ScoreboardPlayer } from "@/lib/scoreboard/state";
+import type { ScoreboardPlayer } from "@/lib/contexts/scoreboard";
 
 jest.mock("@/lib/firebase", () => ({
   realtimeDatabase: {},
@@ -37,6 +37,23 @@ const players: [ScoreboardPlayer, ScoreboardPlayer] = [
 ];
 
 describe("ScoreboardControls", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("subscribes through the scoreboard context path", () => {
+    render(
+      <ScoreboardControls
+        currentPlayers={players}
+        playerIndex={0}
+        tableId="table-1"
+        tableName="Mesa 1"
+      />,
+    );
+
+    expect(ref).toHaveBeenCalledWith({}, "scoreboards/table-1/current");
+  });
+
   it("renders large add and remove point controls for the current player", () => {
     render(
       <ScoreboardControls

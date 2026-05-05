@@ -20,11 +20,12 @@ import {
   changePlayerPoint,
   coerceScoreboardState,
   createInitialScoreboardState,
+  getCurrentScoreboardPath,
   resetCurrentSet,
   type ScoreboardPlayer,
   type ScoreboardState,
   shouldCreateFreshState,
-} from "@/lib/scoreboard/state";
+} from "@/lib/contexts/scoreboard";
 
 type RealtimeScoreboardProps = {
   currentPlayers: ScoreboardPlayer[];
@@ -54,7 +55,7 @@ export function RealtimeScoreboard({
   const [board, setBoard] = useState<ScoreboardState | null>(initialState);
   const [fullscreen, setFullscreen] = useState(false);
 
-  const boardPath = `scoreboards/${tableId}/current`;
+  const boardPath = getCurrentScoreboardPath(tableId);
   const loading = Boolean(roundPlayers && !board);
 
   useEffect(() => {
