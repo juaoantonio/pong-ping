@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { PageShell } from "@/components/page-shell";
 import { TableDetail } from "@/components/tables/table-detail";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { requireAuth } from "@/lib/auth/session";
@@ -32,8 +33,11 @@ export default async function TablePage({ params }: TablePageProps) {
   const users = canManage ? await getTableUserOptions(tenantId) : [];
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <PageShell
+      description="Controle a rodada atual, a fila de espera, convites e histórico da mesa."
+      title={table.name}
+    >
       <TableDetail canManage={canManage} table={table} users={users} />
-    </div>
+    </PageShell>
   );
 }

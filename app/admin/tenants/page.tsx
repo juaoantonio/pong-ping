@@ -1,12 +1,6 @@
 import { connection } from "next/server";
 import { TenantsAdmin } from "@/app/admin/tenants/tenants-admin";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { EmptyState, PageShell } from "@/components/page-shell";
 import { isSuperAdmin } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
@@ -16,22 +10,15 @@ export default async function AdminTenantsPage() {
 
   if (!isSuperAdmin(currentUser)) {
     return (
-      <div className="mx-auto grid w-full max-w-6xl gap-6">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Painel administrativo
-          </p>
-          <h1 className="text-2xl font-semibold">Tenants</h1>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Acesso restrito</CardTitle>
-            <CardDescription>
-              Somente superadmins podem gerenciar tenants.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <PageShell
+        description="Somente superadmins podem criar e inspecionar tenants."
+        eyebrow="Painel administrativo"
+        title="Tenants"
+      >
+        <EmptyState title="Acesso restrito">
+          Somente superadmins podem gerenciar tenants.
+        </EmptyState>
+      </PageShell>
     );
   }
 
@@ -53,31 +40,28 @@ export default async function AdminTenantsPage() {
   });
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6">
-      <div>
-        <p className="text-sm text-muted-foreground">Painel administrativo</p>
-        <h1 className="text-2xl font-semibold">Tenants</h1>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Gerenciamento de tenants</CardTitle>
-          <CardDescription>
+    <PageShell
+      description="Crie organizacoes isoladas para login, ranking, mesas e convites."
+      eyebrow="Painel administrativo"
+      title="Tenants"
+    >
+      <section className="grid gap-5 border-t border-border pt-5">
+        <div className="grid gap-1">
+          <h2 className="text-lg font-semibold">Gerenciamento de tenants</h2>
+          <p className="text-sm leading-6 text-muted-foreground">
             Crie organizacoes isoladas para login, ranking, mesas e convites.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TenantsAdmin
-            tenants={tenants.map((tenant) => ({
-              id: tenant.id,
-              name: tenant.name,
-              slug: tenant.slug,
-              createdAt: tenant.createdAt.toISOString(),
-              userCount: tenant._count.users,
-            }))}
-          />
-        </CardContent>
-      </Card>
-    </div>
+          </p>
+        </div>
+        <TenantsAdmin
+          tenants={tenants.map((tenant) => ({
+            id: tenant.id,
+            name: tenant.name,
+            slug: tenant.slug,
+            createdAt: tenant.createdAt.toISOString(),
+            userCount: tenant._count.users,
+          }))}
+        />
+      </section>
+    </PageShell>
   );
 }

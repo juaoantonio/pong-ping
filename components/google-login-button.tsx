@@ -4,8 +4,13 @@ import { KeyRound, Loader2 } from "lucide-react";
 import { useTransition } from "react";
 import { signInWithGoogle } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_LOGIN_TENANT_SLUG } from "@/lib/auth/login-tenant";
 
-export function GoogleLoginButton() {
+export function GoogleLoginButton({
+  tenantSlug = DEFAULT_LOGIN_TENANT_SLUG,
+}: {
+  tenantSlug?: string;
+}) {
   const [loading, startTransition] = useTransition();
 
   return (
@@ -14,12 +19,16 @@ export function GoogleLoginButton() {
       disabled={loading}
       onClick={() => {
         startTransition(async () => {
-          await signInWithGoogle();
+          await signInWithGoogle(tenantSlug);
         });
       }}
       size="lg"
     >
-      {loading ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+      {loading ? (
+        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+      ) : (
+        <KeyRound className="size-4" aria-hidden="true" />
+      )}
       Entrar com Google
     </Button>
   );

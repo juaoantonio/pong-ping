@@ -34,7 +34,7 @@ describe("PaginationControls", () => {
       "href",
       "/admin/rounds?q=mesa&status=rollback_available&page=1&pageSize=25",
     );
-    expect(screen.getByRole("link", { name: /proxima/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /próxima/i })).toHaveAttribute(
       "href",
       "/admin/rounds?q=mesa&status=rollback_available&page=3&pageSize=25",
     );

@@ -1,13 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/session";
@@ -72,26 +65,60 @@ export default async function TableInvitePage({
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle>Entrar na mesa</CardTitle>
-          <CardDescription>
-            {currentUser.name ?? currentUser.email ?? "Usuario"}, voce foi
-            convidado para a mesa <strong>{invitation.table.name}</strong>{" "}
-            criada por {creatorName}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
+      <section className="grid w-full max-w-2xl gap-6">
+        <header className="grid gap-4 border-b border-border/80 pb-5">
+          <div className="grid gap-2">
+            <p className="text-sm font-medium text-muted-foreground">
+              Convite para mesa
+            </p>
+            <h1 className="text-3xl font-semibold tracking-normal">
+              Entrar na mesa
+            </h1>
+            <p className="text-sm leading-6 text-muted-foreground text-pretty">
+              {currentUser.name ?? currentUser.email ?? "Usuario"}, voce foi
+              convidado para a mesa{" "}
+              <strong className="font-semibold text-foreground">
+                {invitation.table.name}
+              </strong>{" "}
+              criada por {creatorName}.
+            </p>
+          </div>
+
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div className="grid gap-1">
+              <dt className="font-medium text-muted-foreground">Mesa</dt>
+              <dd className="break-words font-medium text-foreground">
+                {invitation.table.name}
+              </dd>
+            </div>
+            <div className="grid gap-1">
+              <dt className="font-medium text-muted-foreground">Criada por</dt>
+              <dd className="break-words text-foreground">{creatorName}</dd>
+            </div>
+          </dl>
+        </header>
+
+        <section className="grid gap-4 border-t border-border pt-5">
+          <div className="grid gap-1">
+            <h2 className="text-base font-semibold">Confirmar entrada</h2>
+            <p className="text-sm text-muted-foreground">
+              Ao aceitar, voce entra na mesa imediatamente e pode entrar na fila
+              quando estiver pronto.
+            </p>
+          </div>
           <TableInviteForm
             expiresAt={invitation.expiresAt.toISOString()}
             tableName={invitation.table.name}
             token={token}
           />
+        </section>
+
+        <div className="border-t border-border pt-4">
           <Link className={buttonVariants({ variant: "ghost" })} href="/tables">
             Voltar as mesas
           </Link>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </main>
   );
 }

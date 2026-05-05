@@ -82,6 +82,7 @@ export function PaginationControls({
   itemLabel = "itens",
 }: PaginationControlsProps) {
   const router = useRouter();
+  const totalFormatter = new Intl.NumberFormat("pt-BR");
   const previousHref = pageHref(
     pathname,
     searchParams,
@@ -96,10 +97,14 @@ export function PaginationControls({
   );
 
   return (
-    <div className="flex flex-col gap-3 border-t pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
-      <p>
-        Pagina {pageInfo.page} de {pageInfo.totalPages} ·{" "}
-        {pageInfo.totalCount} {itemLabel}
+    <nav
+      aria-label="Paginação"
+      className="flex flex-col gap-3 border-t pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between"
+    >
+      <p className="tabular-nums">
+        Página {totalFormatter.format(pageInfo.page)} de{" "}
+        {totalFormatter.format(pageInfo.totalPages)} ·{" "}
+        {totalFormatter.format(pageInfo.totalCount)} {itemLabel}
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -110,7 +115,7 @@ export function PaginationControls({
           value={String(pageInfo.pageSize)}
         >
           <SelectTrigger
-            aria-label="Itens por pagina"
+            aria-label="Itens por página"
             className="w-[150px]"
             size="sm"
           >
@@ -119,7 +124,7 @@ export function PaginationControls({
           <SelectContent>
             {PAGE_SIZE_OPTIONS.map((pageSize) => (
               <SelectItem key={pageSize} value={String(pageSize)}>
-                {pageSize} por pagina
+                {pageSize} por página
               </SelectItem>
             ))}
           </SelectContent>
@@ -145,16 +150,16 @@ export function PaginationControls({
             className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
             href={nextHref}
           >
-            Proxima
+            Próxima
             <ChevronRight className="size-4" />
           </Link>
         ) : (
           <Button disabled size="sm" variant="outline">
-            Proxima
+            Próxima
             <ChevronRight className="size-4" />
           </Button>
         )}
       </div>
-    </div>
+    </nav>
   );
 }

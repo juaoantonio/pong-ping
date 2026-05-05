@@ -2,15 +2,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/auth";
+import { EmptyState, PageShell } from "@/components/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -39,6 +33,15 @@ import { cn } from "@/lib/utils";
 type HomeProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const integerFormatter = new Intl.NumberFormat("pt-BR", {
+  maximumFractionDigits: 0,
+});
+const percentFormatter = new Intl.NumberFormat("pt-BR", {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 1,
+  style: "percent",
+});
 
 async function HomeAction({ tenant }: { tenant: RequestTenant | null }) {
   const session = await auth();
@@ -69,83 +72,179 @@ async function RankingTable({
     tenant?.id,
   );
   const rankingOffset = getPaginationOffset(result.pageInfo);
+  const podium = result.rankings.slice(0, 3);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Classificacao geral</CardTitle>
-        <CardDescription>
-          Ranking publico por Elo, vitorias e aproveitamento.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">#</TableHead>
-              <TableHead>Jogador</TableHead>
-              <TableHead>Nivel</TableHead>
-              <TableHead className="text-right">Elo</TableHead>
-              <TableHead className="text-right">Vitorias</TableHead>
-              <TableHead className="text-right">Partidas</TableHead>
-              <TableHead className="text-right">Win rate</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {result.rankings.map((user, index) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-semibold">
-                  {rankingOffset + index + 1}
-                </TableCell>
-                <TableCell>
-                  <div className="min-w-44">
-                    <p className="truncate font-medium">
-                      {user.name ?? "Sem nome"}
-                    </p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {user.email ?? "Sem email"}
+    <section className="grid gap-5">
+      {podium.length > 0 ? (
+        <div className="overflow-hidden border-y border-border/80 bg-[linear-gradient(135deg,color-mix(in_oklch,var(--accent)_14%,transparent),transparent_55%),linear-gradient(180deg,color-mix(in_oklch,var(--muted)_55%,transparent),transparent)]">
+          <div className="grid md:grid-cols-3">
+            {podium.map((user, index) => (
+              <article
+                className={cn(
+                  "grid min-w-0 gap-4 px-4 py-5 md:px-5",
+                  index === 0 && "bg-accent/10",
+                  index < podium.length - 1 &&
+                    "border-b border-border/70 md:border-r md:border-b-0",
+                )}
+                key={user.id}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <Badge variant={index === 0 ? "default" : "secondary"}>
+                    #{rankingOffset + index + 1}
+                  </Badge>
+                  <span className="text-2xl font-semibold tabular-nums">
+                    {integerFormatter.format(user.ranking.elo)}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-semibold">
+                    {user.name ?? "Sem nome"}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {user.email ?? "Sem email"}
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Vitórias</p>
+                    <p className="font-semibold tabular-nums">
+                      {integerFormatter.format(user.ranking.wins)}
                     </p>
                   </div>
-                </TableCell>
-                <TableCell>
-                  {user.rankLevel ? (
-                    <div className="flex items-center gap-2">
-                      {user.rankIconExists ? (
-                        <Image
-                          alt=""
-                          className="size-7 rounded-sm object-contain"
-                          height={28}
-                          src={`/${user.rankLevel.iconImgKey}`}
-                          width={28}
-                        />
-                      ) : null}
-                      <Badge variant="secondary">{user.rankLevel.name}</Badge>
-                    </div>
-                  ) : (
-                    <Badge variant="outline">Sem nivel</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  {user.ranking.elo}
-                </TableCell>
-                <TableCell className="text-right">
-                  {user.ranking.wins}
-                </TableCell>
-                <TableCell className="text-right">
-                  {user.ranking.total_matches}
-                </TableCell>
-                <TableCell className="text-right">
-                  {user.ranking.winRate.toFixed(2)}%
-                </TableCell>
-              </TableRow>
+                  <div>
+                    <p className="text-muted-foreground">Partidas</p>
+                    <p className="font-semibold tabular-nums">
+                      {integerFormatter.format(user.ranking.total_matches)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Aproveit.</p>
+                    <p className="font-semibold tabular-nums">
+                      {percentFormatter.format(user.ranking.winRate / 100)}
+                    </p>
+                  </div>
+                </div>
+              </article>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="grid gap-4">
+        <div className="grid gap-3 border-b border-border/80 pb-4 md:flex md:items-end md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Classificação Geral</h2>
+            <p className="text-sm text-muted-foreground">
+              Ranking público por Elo, vitórias e aproveitamento.
+            </p>
+          </div>
+          <Badge variant="outline">
+            {integerFormatter.format(result.pageInfo.totalCount)} jogadores
+          </Badge>
+        </div>
+
+        <div className="divide-y border-y border-border/80 md:hidden">
+          {result.rankings.map((user, index) => (
+            <article className="grid min-w-0 gap-3 px-1 py-4" key={user.id}>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">
+                    #{rankingOffset + index + 1} {user.name ?? "Sem nome"}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {user.email ?? "Sem email"}
+                  </p>
+                </div>
+                <Badge variant="secondary">
+                  {integerFormatter.format(user.ranking.elo)} Elo
+                </Badge>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm tabular-nums">
+                <span>
+                  {integerFormatter.format(user.ranking.wins)} vitórias
+                </span>
+                <span>
+                  {integerFormatter.format(user.ranking.total_matches)} partidas
+                </span>
+                <span>
+                  {percentFormatter.format(user.ranking.winRate / 100)}
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto border-y border-border/80 md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16">#</TableHead>
+                <TableHead>Jogador</TableHead>
+                <TableHead>Nível</TableHead>
+                <TableHead className="text-right">Elo</TableHead>
+                <TableHead className="text-right">Vitórias</TableHead>
+                <TableHead className="text-right">Partidas</TableHead>
+                <TableHead className="text-right">Aproveitamento</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {result.rankings.map((user, index) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-semibold">
+                    {integerFormatter.format(rankingOffset + index + 1)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">
+                        {user.name ?? "Sem nome"}
+                      </p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {user.email ?? "Sem email"}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {user.rankLevel ? (
+                      <div className="flex items-center gap-2">
+                        {user.rankIconExists ? (
+                          <Image
+                            alt=""
+                            className="size-7 rounded-sm object-contain"
+                            height={28}
+                            src={`/${user.rankLevel.iconImgKey}`}
+                            width={28}
+                          />
+                        ) : null}
+                        <Badge variant="secondary">{user.rankLevel.name}</Badge>
+                      </div>
+                    ) : (
+                      <Badge variant="outline">Sem nível</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {integerFormatter.format(user.ranking.elo)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {integerFormatter.format(user.ranking.wins)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {integerFormatter.format(user.ranking.total_matches)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {percentFormatter.format(user.ranking.winRate / 100)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
         {result.rankings.length === 0 ? (
-          <div className="rounded-md border border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            Nenhum jogador cadastrado.
-          </div>
+          <EmptyState title="Nenhum jogador no ranking">
+            Quando a primeira rodada for finalizada, os jogadores aparecem aqui
+            com Elo, vitórias e aproveitamento.
+          </EmptyState>
         ) : null}
 
         <PaginationControls
@@ -154,8 +253,8 @@ async function RankingTable({
           pathname="/"
           searchParams={searchParams}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -164,24 +263,21 @@ export default async function Home({ searchParams }: HomeProps) {
   const tenant = await getTenantFromRequestHost();
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {tenant?.name ?? "Pong Ping"}
-            </p>
-            <h1 className="text-3xl font-semibold">Ranking</h1>
-          </div>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--accent)_22%,transparent),transparent_32rem),var(--background)] px-4 py-8">
+      <PageShell
+        action={
           <Suspense fallback={<HeaderActionSkeleton />}>
             <HomeAction tenant={tenant} />
           </Suspense>
-        </header>
-
+        }
+        description="Acompanhe quem está liderando a mesa: Elo, volume de partidas e aproveitamento em uma leitura rápida."
+        eyebrow={tenant?.name ?? "Pong Ping"}
+        title="Ranking"
+      >
         <Suspense fallback={<RankingTableSkeleton />}>
           <RankingTable searchParams={params} tenant={tenant} />
         </Suspense>
-      </div>
+      </PageShell>
     </main>
   );
 }

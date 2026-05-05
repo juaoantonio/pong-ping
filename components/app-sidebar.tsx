@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
   Building2,
+  Home,
   LogOut,
   Shield,
   Swords,
-  Trophy,
   UserRound,
-  UsersRound,
+  Users2,
 } from "lucide-react";
 import { useAuthenticatedUser } from "@/components/auth/authenticated-user-provider";
 import { LogoutButton } from "@/components/logout-button";
@@ -26,11 +25,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { canAccessAdmin, isSuperAdmin } from "@/lib/auth/roles";
+import PingPongPaddle from "@/icons/ping-pong-paddle";
+import PingPongTable from "@/icons/ping-pong-table";
 
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -52,7 +50,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild size="lg" tooltip={tenantName}>
               <Link href="/">
                 <span className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Trophy className="size-4" />
+                  <PingPongPaddle size={16} />
                 </span>
                 <span className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{tenantName}</span>
@@ -88,7 +86,7 @@ export function AppSidebar() {
                   tooltip="Mesas"
                 >
                   <Link href="/tables">
-                    <UsersRound />
+                    <PingPongTable size={16} strokeWidth={5} />
                     <span>Mesas</span>
                   </Link>
                 </SidebarMenuButton>
@@ -113,61 +111,53 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel>Admin</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/admin/users"}
+                >
+                  <Link href="/admin/users">
+                    {" "}
+                    <Users2 /> Usuários
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/admin/access"}
+                >
+                  <Link href="/admin/access">
+                    <Shield /> Acesso
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {canUseRoundManagement ? (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    isActive={isActivePath(pathname, "/admin")}
-                    tooltip="Admin"
+                    asChild
+                    isActive={pathname === "/admin/tenants"}
                   >
-                    <Shield />
-                    <span>Admin</span>
+                    <Link href="/admin/tenants">
+                      <Building2 />
+                      Tenants
+                    </Link>
                   </SidebarMenuButton>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/admin/users"}
-                      >
-                        <Link href="/admin/users">Usuarios</Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/admin/access"}
-                      >
-                        <Link href="/admin/access">Acesso</Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    {canUseRoundManagement ? (
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === "/admin/tenants"}
-                        >
-                          <Link href="/admin/tenants">
-                            <Building2 />
-                            Tenants
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ) : null}
-                    {canUseRoundManagement ? (
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === "/admin/rounds"}
-                        >
-                          <Link href="/admin/rounds">
-                            <Swords />
-                            Rodadas
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ) : null}
-                  </SidebarMenuSub>
                 </SidebarMenuItem>
-              </SidebarMenu>
+              ) : null}
+              {canUseRoundManagement ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/admin/rounds"}
+                  >
+                    <Link href="/admin/rounds">
+                      <Swords />
+                      Rodadas
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : null}
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}
