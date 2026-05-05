@@ -27,10 +27,11 @@ export type InvitationErrorCode =
   | "table_not_found"
   | "user_not_found";
 
-export type InvitationError<TCode extends InvitationErrorCode = InvitationErrorCode> =
-  DomainError<TCode> & {
-    context: typeof INVITATIONS_CONTEXT;
-  };
+export type InvitationError<
+  TCode extends InvitationErrorCode = InvitationErrorCode,
+> = DomainError<TCode> & {
+  context: typeof INVITATIONS_CONTEXT;
+};
 
 type TransactionRunner = {
   $transaction<T>(
@@ -41,13 +42,11 @@ type TransactionRunner = {
 type AccessInvitationStore = TransactionRunner;
 
 type TableInvitationStore = TransactionRunner &
-  Pick<
-    Prisma.TransactionClient,
-    "pingPongTable" | "pingPongTableInvitation"
-  >;
+  Pick<Prisma.TransactionClient, "pingPongTable" | "pingPongTableInvitation">;
 
 export type CreateAccessInvitationInput = {
   actorUserId: string;
+  tenantId: string;
   expiresIn: InvitationExpiryPreset;
   oneTimeUse: boolean;
   now?: number;
@@ -66,6 +65,7 @@ export type CreateTableInvitationInput = {
   expiresIn: InvitationExpiryPreset;
   oneTimeUse: boolean;
   tableId: string;
+  tenantId: string;
   now?: number;
 };
 
@@ -90,6 +90,7 @@ export type ClaimedAccessInvitation = {
 
 export type ClaimTableInvitationInput = {
   token: string;
+  tenantId: string;
   userId: string;
   now?: Date;
 };
@@ -117,9 +118,9 @@ function invitationError<TCode extends InvitationErrorCode>(
   };
 }
 
-function knownInvitationError<TCode extends "table_not_found" | "user_not_found">(
-  code: TCode,
-): InvitationError<TCode> {
+function knownInvitationError<
+  TCode extends "table_not_found" | "user_not_found",
+>(code: TCode): InvitationError<TCode> {
   return {
     context: INVITATIONS_CONTEXT,
     code,
@@ -146,6 +147,7 @@ export async function createAccessInvitation(
   const invitation = await store.authInvitation.create({
     data: {
       tokenHash: hashAccessInvitationToken(token),
+      tenantId: input.tenantId,
       expiresAt: getInvitationExpiry(input.expiresIn, input.now),
       oneTimeUse: input.oneTimeUse,
       createdByUserId: input.actorUserId,
@@ -159,10 +161,12 @@ export async function createAccessInvitation(
   });
 
   await recordAuditEvent(store, {
+    tenantId: input.tenantId,
     actorUserId: input.actorUserId,
     action: "invitation_created",
     metadata: {
       invitationId: invitation.id,
+      tenantId: input.tenantId,
       expiresAt: invitation.expiresAt,
       oneTimeUse: invitation.oneTimeUse,
     },
@@ -177,8 +181,8 @@ export async function createTableInvitation(
 ): Promise<
   DomainResult<CreatedTableInvitation, InvitationError<"table_not_found">>
 > {
-  const table = await store.pingPongTable.findUnique({
-    where: { id: input.tableId },
+  const table = await store.pingPongTable.findFirst({
+    where: { id: input.tableId, tenantId: input.tenantId, deletedAt: null },
     select: { id: true },
   });
 
@@ -191,6 +195,7 @@ export async function createTableInvitation(
   const invite = await store.$transaction(async (tx) => {
     const createdInvite = await tx.pingPongTableInvitation.create({
       data: {
+        tenantId: input.tenantId,
         tableId: input.tableId,
         token,
         createdById: input.actorUserId,
@@ -205,9 +210,11 @@ export async function createTableInvitation(
     });
 
     await recordAuditEvent(tx, {
+      tenantId: input.tenantId,
       actorUserId: input.actorUserId,
       action: "table_invitation_created",
       metadata: {
+        tenantId: input.tenantId,
         tableId: input.tableId,
         invitationId: createdInvite.id,
         expiresAt: createdInvite.expiresAt.toISOString(),
@@ -238,6 +245,7 @@ export async function claimAccessInvitation(
       where: { tokenHash },
       select: {
         id: true,
+        tenantId: true,
         createdByUserId: true,
         expiresAt: true,
         oneTimeUse: true,
@@ -265,19 +273,27 @@ export async function claimAccessInvitation(
     }
 
     await tx.allowedEmail.upsert({
-      where: { email: input.email },
+      where: {
+        tenantId_email: {
+          tenantId: invitation.tenantId,
+          email: input.email,
+        },
+      },
       create: {
+        tenantId: invitation.tenantId,
         email: input.email,
         createdByUserId: invitation.createdByUserId,
       },
       update: {},
-    });
+    } as never);
 
     await recordAuditEvent(tx, {
+      tenantId: invitation.tenantId,
       actorUserId: invitation.createdByUserId,
       action: "invitation_used",
       metadata: {
         invitationId: invitation.id,
+        tenantId: invitation.tenantId,
         email: input.email,
         oneTimeUse: invitation.oneTimeUse,
       },
@@ -303,6 +319,7 @@ export async function claimTableInvitation(
     where: { token: input.token },
     select: {
       id: true,
+      tenantId: true,
       tableId: true,
       expiresAt: true,
       oneTimeUse: true,
@@ -311,6 +328,10 @@ export async function claimTableInvitation(
   });
 
   if (!invitation) {
+    return fail(invitationError("invitation_not_found"));
+  }
+
+  if (invitation.tenantId !== input.tenantId) {
     return fail(invitationError("invitation_not_found"));
   }
 
@@ -326,11 +347,17 @@ export async function claimTableInvitation(
 
   try {
     return await store.$transaction(async (tx) => {
-      await ensureTableMembership(tx, invitation.tableId, input.userId);
+      await ensureTableMembership(
+        tx,
+        invitation.tableId,
+        input.userId,
+        invitation.tenantId,
+      );
 
       const claimed = await tx.pingPongTableInvitation.updateMany({
         where: {
           id: invitation.id,
+          tenantId: invitation.tenantId,
           ...getInvitationClaimWhereGate(invitation, now),
         },
         data: {
@@ -344,9 +371,11 @@ export async function claimTableInvitation(
       }
 
       await recordAuditEvent(tx, {
+        tenantId: invitation.tenantId,
         actorUserId: input.userId,
         action: "table_joined_via_invitation",
         metadata: {
+          tenantId: invitation.tenantId,
           tableId: invitation.tableId,
           invitationId: invitation.id,
           oneTimeUse: invitation.oneTimeUse,

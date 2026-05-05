@@ -39,27 +39,34 @@ describe("table queue", () => {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
       },
       pingPongTableMember: {
-        findUnique: jest.fn().mockResolvedValue({ id: "member-1" }),
+        findFirst: jest.fn().mockResolvedValue({ id: "member-1" }),
       },
       pingPongTableParticipant: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        findFirst: jest.fn().mockResolvedValue({ queuePosition: 2 }),
+        findFirst: jest
+          .fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ queuePosition: 2 }),
         create: jest.fn().mockResolvedValue(participant),
       },
     };
 
     await expect(
-      enqueueUserInTable(tx as never, "table-1", "user-1"),
+      enqueueUserInTable(tx as never, "table-1", "user-1", "tenant-1"),
     ).resolves.toEqual({
       ok: true,
       value: participant,
     });
     expect(tx.pingPongTableParticipant.create).toHaveBeenCalledWith({
       data: {
+        tenantId: "tenant-1",
         tableId: "table-1",
         userId: "user-1",
         queuePosition: 3,
       },
+    });
+    expect(tx.pingPongTable.findFirst).toHaveBeenCalledWith({
+      where: { id: "table-1", tenantId: "tenant-1", deletedAt: null },
+      select: { id: true },
     });
   });
 
@@ -69,15 +76,15 @@ describe("table queue", () => {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
       },
       pingPongTableMember: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn().mockResolvedValue(null),
       },
       pingPongTableParticipant: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn().mockResolvedValue(null),
       },
     };
 
     await expect(
-      enqueueUserInTable(tx as never, "table-1", "user-1"),
+      enqueueUserInTable(tx as never, "table-1", "user-1", "tenant-1"),
     ).resolves.toEqual({
       ok: false,
       error: {
@@ -94,7 +101,7 @@ describe("table queue", () => {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
       },
       pingPongTableParticipant: {
-        findUnique: jest.fn().mockResolvedValue({
+        findFirst: jest.fn().mockResolvedValue({
           id: "participant-1",
           queuePosition: 1,
         }),
@@ -105,7 +112,7 @@ describe("table queue", () => {
     };
 
     await expect(
-      removeUserFromTableQueue(tx as never, "table-1", "user-1"),
+      removeUserFromTableQueue(tx as never, "table-1", "user-1", "tenant-1"),
     ).resolves.toEqual({
       ok: false,
       error: {

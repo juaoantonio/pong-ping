@@ -49,6 +49,7 @@ function tablePlayError(code: string) {
 function authenticatedUser() {
   return {
     id: "user-1",
+    tenantId: "tenant-1",
     role: "user" as const,
     email: "user@example.com",
     name: "User",
@@ -101,6 +102,7 @@ describe("table queue route", () => {
       expect.anything(),
       "table-1",
       "user-1",
+      "tenant-1",
     );
     expect(mockedTransaction).toHaveBeenCalledTimes(1);
   });
@@ -165,6 +167,7 @@ describe("table queue route", () => {
       expect.anything(),
       "table-1",
       "user-1",
+      "tenant-1",
     );
     expect(auditCreate).toHaveBeenCalledWith({
       data: {
@@ -262,6 +265,7 @@ describe("table queue route", () => {
       expect.anything(),
       "table-1",
       "user-1",
+      "tenant-1",
     );
     expect(auditCreate).toHaveBeenCalledWith({
       data: {

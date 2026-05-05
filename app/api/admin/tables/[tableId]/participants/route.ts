@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureTableMembership } from "@/lib/tables/service";
 import { requireAdmin } from "@/app/api/admin/_shared";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type AddParticipantBody = {
   userId?: unknown;
@@ -22,6 +23,15 @@ export async function POST(request: Request, context: RouteContext) {
     return response;
   }
 
+  const tenantId = getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Contexto de tenant ausente." },
+      { status: 403 },
+    );
+  }
+
   const { tableId } = await context.params;
   const body = (await request
     .json()
@@ -37,10 +47,11 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     await prisma.$transaction(async (tx) => {
-      await ensureTableMembership(tx, tableId, userId);
+      await ensureTableMembership(tx, tableId, userId, tenantId);
 
       await tx.auditLog.create({
         data: {
+          tenantId,
           actorUserId: actor.id,
           targetUserId: userId,
           action: "table_member_added",

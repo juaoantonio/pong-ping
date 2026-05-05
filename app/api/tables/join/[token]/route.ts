@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { claimTableInvitation } from "@/lib/contexts/invitations";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type RouteContext = {
   params: Promise<{
@@ -16,10 +17,20 @@ export async function POST(_: Request, context: RouteContext) {
     return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
   }
 
+  const tenantId = getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Contexto de tenant ausente." },
+      { status: 403 },
+    );
+  }
+
   const { token } = await context.params;
 
   const result = await claimTableInvitation(prisma, {
     token,
+    tenantId,
     userId: actor.id,
   });
 

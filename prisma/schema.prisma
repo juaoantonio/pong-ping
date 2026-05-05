@@ -17,17 +17,40 @@ enum MatchHistoryKind {
   rollback
 }
 
+model Tenant {
+  id              String                    @id @default(cuid())
+  name            String
+  slug            String                    @unique
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @default(now()) @updatedAt
+  users           User[]
+  accounts        Account[]
+  auditLogs       AuditLog[]
+  allowedEmails   AllowedEmail[]
+  authInvitations AuthInvitation[]
+  playerRankings  PlayerRanking[]
+  matchHistories  MatchHistory[]
+  tables          PingPongTable[]
+  tableMembers    PingPongTableMember[]
+  tableQueue      PingPongTableParticipant[]
+  tableInvitations PingPongTableInvitation[]
+
+  @@index([slug])
+}
+
 model User {
   id                      String                     @id @default(cuid())
+  tenantId                String
   name                    String?
-  email                   String?                    @unique
+  email                   String?
   emailVerified           DateTime?
   image                   String?
-  googleId                String?                    @unique
+  googleId                String?
   avatarUrl               String?
   role                    Role                       @default(user)
   createdAt               DateTime                   @default(now())
   updatedAt               DateTime                   @default(now()) @updatedAt
+  tenant                  Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   accounts                Account[]
   sessions                Session[]
   auditLogs               AuditLog[]                 @relation("ActorAuditLogs")
@@ -41,10 +64,16 @@ model User {
   tableQueueEntries       PingPongTableParticipant[]
   tableInvitationsCreated PingPongTableInvitation[]  @relation("TableInvitationCreator")
   tablesCreated           PingPongTable[]            @relation("TableCreator")
+
+  @@unique([tenantId, email])
+  @@unique([tenantId, googleId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, role])
 }
 
 model Account {
   id                String  @id @default(cuid())
+  tenantId          String
   userId            String
   type              String
   provider          String
@@ -56,9 +85,12 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+  tenant            Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@unique([tenantId, provider, providerAccountId])
+  @@index([tenantId, userId])
+  @@index([userId])
 }
 
 model Session {
@@ -81,14 +113,18 @@ model VerificationToken {
 
 model AuditLog {
   id           String   @id @default(cuid())
+  tenantId     String?
   actorUserId  String?
   targetUserId String?
   action       String
   metadata     Json?
   createdAt    DateTime @default(now())
 
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   actor User? @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: SetNull)
 
+  @@index([tenantId, createdAt])
+  @@index([tenantId, action])
   @@index([actorUserId])
   @@index([targetUserId])
   @@index([action])
@@ -96,18 +132,23 @@ model AuditLog {
 
 model AllowedEmail {
   id              String   @id @default(cuid())
-  email           String   @unique
+  tenantId        String
+  email           String
   createdByUserId String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
 
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   createdBy User? @relation("AllowedEmailCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
+  @@unique([tenantId, email])
+  @@index([tenantId, email])
   @@index([createdByUserId])
 }
 
 model AuthInvitation {
   id              String    @id @default(cuid())
+  tenantId        String
   tokenHash       String    @unique
   expiresAt       DateTime
   oneTimeUse      Boolean   @default(true)
@@ -116,8 +157,10 @@ model AuthInvitation {
   createdByUserId String?
   createdAt       DateTime  @default(now())
 
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   createdBy User? @relation("AuthInvitationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
+  @@index([tenantId, createdAt])
   @@index([createdByUserId])
   @@index([expiresAt])
   @@index([usedAt])
@@ -125,6 +168,7 @@ model AuthInvitation {
 
 model PlayerRanking {
   id            String   @id @default(cuid())
+  tenantId      String
   userId        String   @unique
   elo           Int      @default(1000)
   wins          Int      @default(0)
@@ -133,8 +177,11 @@ model PlayerRanking {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId, elo])
+  @@index([tenantId, wins])
   @@index([elo])
   @@index([wins])
 }
@@ -150,6 +197,7 @@ model RankLevel {
 
 model MatchHistory {
   id               String           @id @default(cuid())
+  tenantId         String
   tableId          String?
   winnerId         String
   loserId          String
@@ -166,6 +214,7 @@ model MatchHistory {
   createdAt        DateTime         @default(now())
   finishedAt       DateTime         @default(now())
 
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   table      PingPongTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
   winner     User           @relation("MatchHistoryWinner", fields: [winnerId], references: [id], onDelete: Restrict)
   loser      User           @relation("MatchHistoryLoser", fields: [loserId], references: [id], onDelete: Restrict)
@@ -173,6 +222,8 @@ model MatchHistory {
   rollbackOf MatchHistory?  @relation("MatchHistoryRollback", fields: [rollbackOfId], references: [id], onDelete: Restrict)
   rollbacks  MatchHistory[] @relation("MatchHistoryRollback")
 
+  @@index([tenantId, tableId])
+  @@index([tenantId, createdAt])
   @@index([tableId])
   @@index([winnerId])
   @@index([loserId])
@@ -183,51 +234,63 @@ model MatchHistory {
 
 model PingPongTable {
   id             String                     @id @default(cuid())
+  tenantId       String
   name           String
   createdById    String
   createdAt      DateTime                   @default(now())
   updatedAt      DateTime                   @default(now()) @updatedAt
   deletedAt      DateTime?
+  tenant         Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   createdBy      User                       @relation("TableCreator", fields: [createdById], references: [id], onDelete: Restrict)
   invitations    PingPongTableInvitation[]
   matchHistories MatchHistory[]
   members        PingPongTableMember[]
   participants   PingPongTableParticipant[]
 
+  @@index([tenantId, deletedAt, createdAt])
   @@index([createdById])
   @@index([createdAt])
 }
 
 model PingPongTableMember {
   id       String        @id @default(cuid())
+  tenantId String
   tableId  String
   userId   String
   joinedAt DateTime      @default(now())
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   table    PingPongTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tableId, userId])
+  @@index([tenantId, tableId])
+  @@index([tenantId, userId])
   @@index([tableId])
   @@index([userId])
 }
 
 model PingPongTableParticipant {
   id            String        @id @default(cuid())
+  tenantId      String
   tableId       String
   userId        String
   queuePosition Int
   joinedAt      DateTime      @default(now())
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   table         PingPongTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tableId, userId])
   @@unique([tableId, queuePosition])
+  @@index([tenantId, tableId, queuePosition])
+  @@index([tenantId, userId])
   @@index([tableId])
   @@index([userId])
 }
 
 model PingPongTableInvitation {
   id           String        @id @default(cuid())
+  tenantId     String
   tableId      String
   token        String        @unique
   createdById  String
@@ -236,9 +299,12 @@ model PingPongTableInvitation {
   usedAt       DateTime?
   usedByUserId String?
   createdAt    DateTime      @default(now())
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   table        PingPongTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
   createdBy    User          @relation("TableInvitationCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
+  @@index([tenantId, tableId])
+  @@index([tenantId, createdAt])
   @@index([tableId])
   @@index([createdById])
   @@index([expiresAt])

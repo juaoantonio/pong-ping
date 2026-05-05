@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isSuperAdmin } from "@/lib/auth/roles";
 import { getCurrentUser } from "@/lib/auth/session";
-import { deny } from "@/app/api/admin/_shared";
+import { deny, getKnownTenantIdForActor } from "@/app/api/admin/_shared";
 import {
   mapCompetitionErrorToHttp,
   rollbackMatch,
@@ -26,9 +26,15 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Sem permissao." }, { status: 403 });
   }
 
+  const tenantId = await getKnownTenantIdForActor(actor);
+
+  if (!tenantId) {
+    return NextResponse.json({ error: "Sem tenant." }, { status: 403 });
+  }
+
   const { roundId } = await context.params;
-  const round = await prisma.matchHistory.findUnique({
-    where: { id: roundId },
+  const round = await prisma.matchHistory.findFirst({
+    where: { id: roundId, tenantId },
     select: { tableId: true },
   });
 
@@ -49,6 +55,7 @@ export async function POST(_request: Request, context: RouteContext) {
   try {
     const result = await prisma.$transaction((tx) =>
       rollbackMatch(tx, {
+        tenantId,
         tableId: round.tableId!,
         matchHistoryId: roundId,
         actorUserId: actor.id,

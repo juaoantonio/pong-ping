@@ -32,6 +32,7 @@ describe("competition admin rounds query", () => {
 
   it("maps admin round filters to the existing Prisma where semantics", async () => {
     await getAdminRoundsReadModel(
+      "tenant-1",
       {
         q: " Ana ",
         tableId: "table-1",
@@ -51,6 +52,7 @@ describe("competition admin rounds query", () => {
     });
     const where = {
       AND: [
+        { tenantId: "tenant-1" },
         {
           OR: [
             { id: textContains(" Ana ") },
@@ -129,6 +131,7 @@ describe("competition admin rounds query", () => {
 
     await expect(
       getAdminRoundsReadModel(
+        "tenant-1",
         {
           q: "",
           tableId: "",
@@ -172,12 +175,18 @@ describe("competition admin rounds query", () => {
       ],
     });
     expect(mockedPrisma.matchHistory.count).toHaveBeenCalledWith({
-      where: { AND: [{ kind: "match", rollbacks: { none: {} } }] },
+      where: {
+        AND: [
+          { tenantId: "tenant-1" },
+          { kind: "match", rollbacks: { none: {} } },
+        ],
+      },
     });
   });
 
   it("maps rollback_record status independently from kind=all", async () => {
     await getAdminRoundsReadModel(
+      "tenant-1",
       {
         q: "",
         tableId: "",
@@ -192,7 +201,7 @@ describe("competition admin rounds query", () => {
     );
 
     expect(mockedPrisma.matchHistory.count).toHaveBeenCalledWith({
-      where: { AND: [{ kind: "rollback" }] },
+      where: { AND: [{ tenantId: "tenant-1" }, { kind: "rollback" }] },
     });
   });
 });

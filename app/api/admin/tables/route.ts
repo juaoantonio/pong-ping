@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/app/api/admin/_shared";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type CreateTableBody = {
   name?: unknown;
@@ -11,6 +12,15 @@ export async function POST(request: Request) {
 
   if (!actor) {
     return response;
+  }
+
+  const tenantId = getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Contexto de tenant ausente." },
+      { status: 403 },
+    );
   }
 
   const body = (await request
@@ -28,6 +38,7 @@ export async function POST(request: Request) {
   const table = await prisma.$transaction(async (tx) => {
     const createdTable = await tx.pingPongTable.create({
       data: {
+        tenantId,
         name,
         createdById: actor.id,
       },
@@ -39,6 +50,7 @@ export async function POST(request: Request) {
 
     await tx.auditLog.create({
       data: {
+        tenantId,
         actorUserId: actor.id,
         action: "table_created",
         metadata: {

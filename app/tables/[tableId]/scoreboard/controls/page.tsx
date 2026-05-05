@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { ScoreboardControls } from "@/components/scoreboard/scoreboard-controls";
 import { requireAuth } from "@/lib/auth/session";
 import { getTableScoreboard } from "@/lib/tables/queries";
+import { getActorTenantId } from "@/lib/tables/tenant";
 import type { ScoreboardPlayer } from "@/lib/scoreboard/state";
 
 type ScoreboardControlsPageProps = {
@@ -17,7 +18,13 @@ export default async function ScoreboardControlsPage({
   const paramsPromise = params;
 
   const [user, { tableId }] = await Promise.all([userPromise, paramsPromise]);
-  const table = await getTableScoreboard(tableId, user.id);
+  const tenantId = getActorTenantId(user);
+
+  if (!tenantId) {
+    redirect("/unauthorized");
+  }
+
+  const table = await getTableScoreboard(tableId, user.id, tenantId);
 
   if (!table) {
     notFound();

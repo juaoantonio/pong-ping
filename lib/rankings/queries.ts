@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { cache } from "react";
 import { connection } from "next/server";
+import { auth } from "@/auth";
 import {
   getPageInfo,
   getPaginationOffset,
@@ -12,13 +13,40 @@ import {
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_PLAYER_ELO } from "@/lib/ranking/elo";
 
-export const getPublicRankings = cache(async (pagination: PaginationInput) => {
+async function resolveRankingTenantId(explicitTenantId?: string) {
+  if (explicitTenantId) {
+    return explicitTenantId;
+  }
+
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { tenantId: true },
+  });
+
+  return user?.tenantId ?? null;
+}
+
+export const getPublicRankings = cache(async (
+  pagination: PaginationInput,
+  tenantIdInput?: string,
+) => {
   await connection();
 
-  const totalCount = await prisma.user.count();
+  const tenantId = await resolveRankingTenantId(tenantIdInput);
+  const where = tenantId
+    ? { tenantId }
+    : { id: "__tenant_context_required__" };
+  const totalCount = await prisma.user.count({ where });
   const pageInfo = getPageInfo(pagination, totalCount);
   const [users, rankLevels] = await Promise.all([
     prisma.user.findMany({
+      where,
       select: {
         id: true,
         name: true,

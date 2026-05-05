@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { redirect } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -29,16 +30,19 @@ async function UsersAdminPanel({
   currentUser,
   pagination,
   searchParams,
+  tenantId,
 }: {
   currentUser: AuthenticatedUser;
   pagination: PaginationInput;
   searchParams: Record<string, string | string[] | undefined>;
+  tenantId: string;
 }) {
   await connection();
 
-  const where: Prisma.UserWhereInput | undefined = isSuperAdmin(currentUser)
-    ? undefined
-    : { role: "user" };
+  const where = {
+    tenantId,
+    ...(isSuperAdmin(currentUser) ? {} : { role: "user" }),
+  } as Prisma.UserWhereInput;
   const totalCount = await prisma.user.count({ where });
   const pageInfo = getPageInfo(pagination, totalCount);
   const users = await prisma.user.findMany({
@@ -89,6 +93,19 @@ async function UsersAdminPanel({
   );
 }
 
+async function getActorTenantId(actor: { id: string; tenantId?: string | null }) {
+  if (actor.tenantId) {
+    return actor.tenantId;
+  }
+
+  const actorRecord = (await prisma.user.findUnique({
+    where: { id: actor.id },
+    select: { tenantId: true },
+  } as never)) as { tenantId: string | null } | null;
+
+  return actorRecord?.tenantId ?? null;
+}
+
 export default async function AdminUsersPage({
   searchParams,
 }: AdminUsersPageProps) {
@@ -96,6 +113,12 @@ export default async function AdminUsersPage({
     requireRole("admin"),
     searchParams,
   ]);
+  const tenantId = await getActorTenantId(currentUser);
+
+  if (!tenantId) {
+    redirect("/unauthorized");
+  }
+
   const pagination = parseServerPaginationParams(params);
 
   return (
@@ -110,6 +133,7 @@ export default async function AdminUsersPage({
           currentUser={currentUser}
           pagination={pagination}
           searchParams={params}
+          tenantId={tenantId}
         />
       </Suspense>
     </div>

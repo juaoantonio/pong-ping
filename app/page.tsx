@@ -29,19 +29,28 @@ import {
   parseServerPaginationParams,
 } from "@/lib/pagination";
 import { getPublicRankings } from "@/lib/rankings/queries";
+import {
+  getTenantFromRequestHost,
+  buildTenantUrlFromRequest,
+  type RequestTenant,
+} from "@/lib/tenants/request";
 import { cn } from "@/lib/utils";
 
 type HomeProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-async function HomeAction() {
+async function HomeAction({ tenant }: { tenant: RequestTenant | null }) {
   const session = await auth();
+  const loginHref = tenant ? `/login?tenant=${tenant.slug}` : "/login";
+  const tablesHref = session?.user?.tenantSlug
+    ? await buildTenantUrlFromRequest("/tables", session.user.tenantSlug)
+    : "/tables";
 
   return (
     <Link
       className={cn(buttonVariants({ variant: "outline" }))}
-      href={session?.user ? "/tables" : "/login"}
+      href={session?.user ? tablesHref : loginHref}
     >
       {session?.user ? "Mesas" : "Login"}
     </Link>
@@ -50,11 +59,14 @@ async function HomeAction() {
 
 async function RankingTable({
   searchParams,
+  tenant,
 }: {
   searchParams: Record<string, string | string[] | undefined>;
+  tenant: RequestTenant | null;
 }) {
   const result = await getPublicRankings(
     parseServerPaginationParams(searchParams),
+    tenant?.id,
   );
   const rankingOffset = getPaginationOffset(result.pageInfo);
 
@@ -149,22 +161,25 @@ async function RankingTable({
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
+  const tenant = await getTenantFromRequestHost();
 
   return (
     <main className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Pong Ping</p>
+            <p className="text-sm text-muted-foreground">
+              {tenant?.name ?? "Pong Ping"}
+            </p>
             <h1 className="text-3xl font-semibold">Ranking</h1>
           </div>
           <Suspense fallback={<HeaderActionSkeleton />}>
-            <HomeAction />
+            <HomeAction tenant={tenant} />
           </Suspense>
         </header>
 
         <Suspense fallback={<RankingTableSkeleton />}>
-          <RankingTable searchParams={params} />
+          <RankingTable searchParams={params} tenant={tenant} />
         </Suspense>
       </div>
     </main>

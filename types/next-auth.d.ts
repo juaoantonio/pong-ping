@@ -9,10 +9,14 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       role: Role;
+      tenantId: string | null;
+      tenantSlug: string | null;
+      tenantName: string | null;
     };
   }
 
   interface User {
     role?: Role;
+    tenantId?: string | null;
   }
 }

@@ -6,6 +6,7 @@ import { hashInvitationToken } from "@/lib/auth/access";
 import {
   claimAccessInvitation,
   claimTableInvitation,
+  createTableInvitation,
 } from "@/lib/contexts/invitations";
 import { ensureTableMembership } from "@/lib/tables/service";
 
@@ -40,6 +41,7 @@ function createAccessStore() {
 function createTableStore() {
   const tx = {
     pingPongTableInvitation: {
+      create: jest.fn(),
       updateMany: jest.fn(),
     },
     auditLog: {
@@ -50,6 +52,9 @@ function createTableStore() {
   return {
     tx,
     store: {
+      pingPongTable: {
+        findFirst: jest.fn(),
+      },
       pingPongTableInvitation: {
         findUnique: jest.fn(),
       },
@@ -69,6 +74,7 @@ describe("invitation use cases", () => {
     const { store, tx } = createAccessStore();
     tx.authInvitation.findUnique.mockResolvedValue({
       id: "invitation-1",
+      tenantId: "tenant-1",
       createdByUserId: "admin-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: true,
@@ -96,6 +102,7 @@ describe("invitation use cases", () => {
       where: { tokenHash: hashInvitationToken("raw-token") },
       select: {
         id: true,
+        tenantId: true,
         createdByUserId: true,
         expiresAt: true,
         oneTimeUse: true,
@@ -114,8 +121,14 @@ describe("invitation use cases", () => {
       },
     });
     expect(tx.allowedEmail.upsert).toHaveBeenCalledWith({
-      where: { email: "person@example.com" },
+      where: {
+        tenantId_email: {
+          tenantId: "tenant-1",
+          email: "person@example.com",
+        },
+      },
       create: {
+        tenantId: "tenant-1",
         email: "person@example.com",
         createdByUserId: "admin-1",
       },
@@ -123,11 +136,13 @@ describe("invitation use cases", () => {
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: {
+        tenantId: "tenant-1",
         actorUserId: "admin-1",
         targetUserId: undefined,
         action: "invitation_used",
         metadata: {
           invitationId: "invitation-1",
+          tenantId: "tenant-1",
           email: "person@example.com",
           oneTimeUse: true,
         },
@@ -139,6 +154,7 @@ describe("invitation use cases", () => {
     const { store, tx } = createAccessStore();
     tx.authInvitation.findUnique.mockResolvedValue({
       id: "invitation-1",
+      tenantId: "tenant-1",
       createdByUserId: "admin-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: false,
@@ -169,6 +185,7 @@ describe("invitation use cases", () => {
     const { store, tx } = createAccessStore();
     tx.authInvitation.findUnique.mockResolvedValue({
       id: "invitation-1",
+      tenantId: "tenant-1",
       createdByUserId: "admin-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: true,
@@ -214,6 +231,7 @@ describe("invitation use cases", () => {
 
     tx.authInvitation.findUnique.mockResolvedValueOnce({
       id: "invitation-2",
+      tenantId: "tenant-1",
       createdByUserId: "admin-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: true,
@@ -235,10 +253,61 @@ describe("invitation use cases", () => {
     });
   });
 
+  it("creates table invitations inside the actor tenant", async () => {
+    const { store, tx } = createTableStore();
+    const expiresAt = new Date("2026-05-11T12:00:00.000Z");
+
+    store.pingPongTable.findFirst.mockResolvedValue({ id: "table-1" });
+    tx.pingPongTableInvitation.create.mockResolvedValue({
+      id: "table-invitation-1",
+      expiresAt,
+      oneTimeUse: false,
+    });
+
+    await expect(
+      createTableInvitation(store, {
+        actorUserId: "admin-1",
+        tenantId: "tenant-1",
+        tableId: "table-1",
+        expiresIn: "7d",
+        oneTimeUse: false,
+        now: Date.parse("2026-05-04T12:00:00.000Z"),
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      value: {
+        id: "table-invitation-1",
+        expiresAt,
+        oneTimeUse: false,
+      },
+    });
+
+    expect(store.pingPongTable.findFirst).toHaveBeenCalledWith({
+      where: { id: "table-1", tenantId: "tenant-1", deletedAt: null },
+      select: { id: true },
+    });
+    expect(tx.pingPongTableInvitation.create).toHaveBeenCalledWith({
+      data: {
+        tenantId: "tenant-1",
+        tableId: "table-1",
+        token: expect.any(String),
+        createdById: "admin-1",
+        expiresAt,
+        oneTimeUse: false,
+      },
+      select: {
+        id: true,
+        expiresAt: true,
+        oneTimeUse: true,
+      },
+    });
+  });
+
   it("claims a table invitation after ensuring membership", async () => {
     const { store, tx } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValue({
       id: "table-invitation-1",
+      tenantId: "tenant-1",
       tableId: "table-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: true,
@@ -250,6 +319,7 @@ describe("invitation use cases", () => {
     await expect(
       claimTableInvitation(store, {
         token: "table-token",
+        tenantId: "tenant-1",
         userId: "user-1",
         now,
       }),
@@ -267,10 +337,12 @@ describe("invitation use cases", () => {
       tx,
       "table-1",
       "user-1",
+      "tenant-1",
     );
     expect(tx.pingPongTableInvitation.updateMany).toHaveBeenCalledWith({
       where: {
         id: "table-invitation-1",
+        tenantId: "tenant-1",
         expiresAt: { gt: now },
         usedAt: null,
       },
@@ -281,10 +353,12 @@ describe("invitation use cases", () => {
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: {
+        tenantId: "tenant-1",
         actorUserId: "user-1",
         targetUserId: undefined,
         action: "table_joined_via_invitation",
         metadata: {
+          tenantId: "tenant-1",
           tableId: "table-1",
           invitationId: "table-invitation-1",
           oneTimeUse: true,
@@ -297,6 +371,7 @@ describe("invitation use cases", () => {
     const { store, tx } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValue({
       id: "table-invitation-1",
+      tenantId: "tenant-1",
       tableId: "table-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: false,
@@ -307,6 +382,7 @@ describe("invitation use cases", () => {
 
     await claimTableInvitation(store, {
       token: "table-token",
+      tenantId: "tenant-1",
       userId: "user-1",
       now,
     });
@@ -314,6 +390,7 @@ describe("invitation use cases", () => {
     expect(tx.pingPongTableInvitation.updateMany).toHaveBeenCalledWith({
       where: {
         id: "table-invitation-1",
+        tenantId: "tenant-1",
         expiresAt: { gt: now },
       },
       data: {
@@ -327,6 +404,7 @@ describe("invitation use cases", () => {
     const { store, tx } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValue({
       id: "table-invitation-1",
+      tenantId: "tenant-1",
       tableId: "table-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: true,
@@ -338,6 +416,7 @@ describe("invitation use cases", () => {
     await expect(
       claimTableInvitation(store, {
         token: "table-token",
+        tenantId: "tenant-1",
         userId: "user-1",
         now,
       }),
@@ -352,6 +431,36 @@ describe("invitation use cases", () => {
     expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
+  it("does not create membership when a table invitation belongs to another tenant", async () => {
+    const { store } = createTableStore();
+    store.pingPongTableInvitation.findUnique.mockResolvedValue({
+      id: "table-invitation-1",
+      tenantId: "tenant-a",
+      tableId: "table-1",
+      expiresAt: new Date("2026-05-04T12:05:00.000Z"),
+      oneTimeUse: true,
+      usedAt: null,
+    });
+
+    await expect(
+      claimTableInvitation(store, {
+        token: "table-token",
+        tenantId: "tenant-b",
+        userId: "user-b",
+        now,
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        context: "invitations",
+        code: "invitation_not_found",
+      },
+    });
+
+    expect(mockedEnsureTableMembership).not.toHaveBeenCalled();
+    expect(store.$transaction).not.toHaveBeenCalled();
+  });
+
   it("returns typed errors for unavailable invitations and membership failures", async () => {
     const { store } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValueOnce(null);
@@ -359,6 +468,7 @@ describe("invitation use cases", () => {
     await expect(
       claimTableInvitation(store, {
         token: "missing",
+        tenantId: "tenant-1",
         userId: "user-1",
         now,
       }),
@@ -372,6 +482,7 @@ describe("invitation use cases", () => {
 
     store.pingPongTableInvitation.findUnique.mockResolvedValueOnce({
       id: "table-invitation-1",
+      tenantId: "tenant-1",
       tableId: "table-1",
       expiresAt: new Date("2026-05-04T12:05:00.000Z"),
       oneTimeUse: true,
@@ -384,6 +495,7 @@ describe("invitation use cases", () => {
     await expect(
       claimTableInvitation(store, {
         token: "table-token",
+        tenantId: "tenant-1",
         userId: "user-1",
         now,
       }),

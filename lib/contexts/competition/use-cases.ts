@@ -61,13 +61,14 @@ export async function finishMatch(
   tx: Tx,
   input: {
     actorUserId: string;
+    tenantId: string;
     tableId: string;
     winnerParticipantId: string;
   },
 ): Promise<DomainResult<FinishedMatchDto, CompetitionError>> {
-  const table = await tx.pingPongTable.findUnique({
-    where: { id: input.tableId },
-    select: { id: true },
+  const table = await tx.pingPongTable.findFirst({
+    where: { id: input.tableId, tenantId: input.tenantId, deletedAt: null },
+    select: { id: true, tenantId: true },
   });
 
   if (!table) {
@@ -77,6 +78,7 @@ export async function finishMatch(
   const currentPlayersResult = await getCurrentMatchParticipants(
     tx,
     input.tableId,
+    input.tenantId,
   );
 
   if (!currentPlayersResult.ok) {
@@ -103,12 +105,20 @@ export async function finishMatch(
     tx.playerRanking.upsert({
       where: { userId: winnerParticipant.userId },
       update: {},
-      create: { userId: winnerParticipant.userId, elo: DEFAULT_PLAYER_ELO },
+      create: {
+        tenantId: input.tenantId,
+        userId: winnerParticipant.userId,
+        elo: DEFAULT_PLAYER_ELO,
+      },
     }),
     tx.playerRanking.upsert({
       where: { userId: loserParticipant.userId },
       update: {},
-      create: { userId: loserParticipant.userId, elo: DEFAULT_PLAYER_ELO },
+      create: {
+        tenantId: input.tenantId,
+        userId: loserParticipant.userId,
+        elo: DEFAULT_PLAYER_ELO,
+      },
     }),
   ]);
 
@@ -126,6 +136,7 @@ export async function finishMatch(
   const [createdMatch] = await Promise.all([
     tx.matchHistory.create({
       data: {
+        tenantId: input.tenantId,
         tableId: input.tableId,
         winnerId: winnerParticipant.userId,
         loserId: loserParticipant.userId,
@@ -165,6 +176,7 @@ export async function finishMatch(
       },
     }),
     recordAuditEvent(tx, {
+      tenantId: input.tenantId,
       actorUserId: input.actorUserId,
       action: "table_match_finished",
       metadata: {
@@ -178,6 +190,7 @@ export async function finishMatch(
 
   const rotationResult = await rotateQueueAfterFinishedMatch(tx, {
     tableId: input.tableId,
+    tenantId: input.tenantId,
     winnerParticipantId: input.winnerParticipantId,
   });
 
@@ -196,14 +209,20 @@ export async function rollbackMatch(
   tx: Tx,
   input: {
     actorUserId: string;
+    tenantId: string;
     matchHistoryId: string;
     tableId: string;
   },
 ): Promise<DomainResult<RollbackMatchDto, CompetitionError>> {
   const match = await tx.matchHistory.findFirst({
-    where: { id: input.matchHistoryId, tableId: input.tableId },
+    where: {
+      id: input.matchHistoryId,
+      tableId: input.tableId,
+      tenantId: input.tenantId,
+    },
     select: {
       id: true,
+      tenantId: true,
       tableId: true,
       winnerId: true,
       loserId: true,
@@ -231,11 +250,11 @@ export async function rollbackMatch(
   }
 
   const [winnerRanking, loserRanking] = await Promise.all([
-    tx.playerRanking.findUnique({
-      where: { userId: match.winnerId },
+    tx.playerRanking.findFirst({
+      where: { userId: match.winnerId, tenantId: input.tenantId },
     }),
-    tx.playerRanking.findUnique({
-      where: { userId: match.loserId },
+    tx.playerRanking.findFirst({
+      where: { userId: match.loserId, tenantId: input.tenantId },
     }),
   ]);
 
@@ -252,6 +271,7 @@ export async function rollbackMatch(
   const [rollback] = await Promise.all([
     tx.matchHistory.create({
       data: {
+        tenantId: input.tenantId,
         tableId: input.tableId,
         winnerId: match.winnerId,
         loserId: match.loserId,
@@ -293,6 +313,7 @@ export async function rollbackMatch(
       },
     }),
     recordAuditEvent(tx, {
+      tenantId: input.tenantId,
       actorUserId: input.actorUserId,
       action: "table_match_rolled_back",
       metadata: {

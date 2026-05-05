@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/app/api/admin/_shared";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type RouteContext = {
   params: Promise<{
@@ -15,16 +16,32 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return response;
   }
 
+  const tenantId = getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Contexto de tenant ausente." },
+      { status: 403 },
+    );
+  }
+
   const { tableId } = await context.params;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.pingPongTable.update({
-      where: { id: tableId },
+  const deleted = await prisma.$transaction(async (tx) =>
+    tx.pingPongTable.updateMany({
+      where: { id: tableId, tenantId, deletedAt: null },
       data: {
         deletedAt: new Date(),
       },
-    });
-  });
+    }),
+  );
+
+  if (deleted.count === 0) {
+    return NextResponse.json(
+      { error: "Mesa nao encontrada." },
+      { status: 404 },
+    );
+  }
 
   return NextResponse.json({ message: "Mesa deletada com sucesso." });
 }

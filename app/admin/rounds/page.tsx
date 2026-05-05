@@ -10,6 +10,7 @@ import {
   RoundsAdmin,
   type RoundAdminFilters,
 } from "@/app/admin/rounds/rounds-admin";
+import { getKnownTenantIdForActor } from "@/app/api/admin/_shared";
 import { PaginationControls } from "@/components/pagination-controls";
 import { CardTableSkeleton } from "@/components/page-skeletons";
 import { requireRole } from "@/lib/auth/session";
@@ -31,12 +32,15 @@ async function RoundsAdminPanel({
   filters,
   pagination,
   searchParams,
+  tenantId,
 }: {
   filters: RoundAdminFilters;
   pagination: PaginationInput;
   searchParams: Record<string, string | string[] | undefined>;
+  tenantId: string;
 }) {
   const { pageInfo, rounds } = await getAdminRoundsReadModel(
+    tenantId,
     filters,
     pagination,
   );
@@ -69,10 +73,29 @@ async function RoundsAdminPanel({
 export default async function AdminRoundsPage({
   searchParams,
 }: AdminRoundsPageProps) {
-  const [, params] = await Promise.all([
+  const [actor, params] = await Promise.all([
     requireRole("superadmin"),
     searchParams,
   ]);
+  const tenantId = await getKnownTenantIdForActor(actor);
+
+  if (!tenantId) {
+    return (
+      <div className="mx-auto grid w-full max-w-7xl gap-6">
+        <div>
+          <p className="text-sm text-muted-foreground">Painel superadmin</p>
+          <h1 className="text-2xl font-semibold">Rodadas</h1>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Historico auditavel</CardTitle>
+            <CardDescription>Sem tenant associado ao usuario.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   const filters: RoundAdminFilters = {
     q: firstParam(params.q)?.trim() ?? "",
     tableId: firstParam(params.tableId)?.trim() ?? "",
@@ -97,6 +120,7 @@ export default async function AdminRoundsPage({
           filters={filters}
           pagination={pagination}
           searchParams={params}
+          tenantId={tenantId}
         />
       </Suspense>
     </div>

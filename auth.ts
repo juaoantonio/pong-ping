@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import {
   canSignInWithEmail,
@@ -8,6 +7,13 @@ import {
   isInitialSuperAdminEmail,
 } from "@/lib/auth/sign-in-policy";
 import { normalizeEmail } from "@/lib/auth/access";
+import {
+  clearPendingTenantCookie,
+  getPendingTenantCookie,
+} from "@/lib/auth/pending-tenant";
+import { sharedAuthCookies } from "@/lib/auth/cookies";
+import { TenantAwarePrismaAdapter } from "@/lib/auth/tenant-adapter";
+import { isAllowedTenantRedirectUrl } from "@/lib/tenants/hosts";
 
 type GoogleProfile = {
   sub?: string;
@@ -27,7 +33,8 @@ function getGooglePicture(profile: unknown) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: TenantAwarePrismaAdapter(prisma),
+  cookies: sharedAuthCookies(),
 
   providers: [
     Google({
@@ -58,13 +65,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      return isAllowedTenantRedirectUrl(url, baseUrl)
+        ? new URL(url, baseUrl).toString()
+        : baseUrl;
+    },
+
     async signIn({ user, account, profile }) {
       const email = normalizeEmail(user.email ?? "");
+      const pendingTenant = await getPendingTenantCookie();
 
       const googleEmailVerified =
           account?.provider !== "google" || profile?.email_verified === true;
 
-      if (!email || !googleEmailVerified || !(await canSignInWithEmail(email))) {
+      if (!pendingTenant) {
+        return "/login?error=tenant_context_required";
+      }
+
+      if (
+        !email ||
+        !googleEmailVerified ||
+        !(await canSignInWithEmail(email, pendingTenant.tenantId))
+      ) {
         return "/login?error=email_not_allowed";
       }
 
@@ -81,6 +103,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         select: {
           email: true,
           role: true,
+          tenantId: true,
+          tenant: {
+            select: {
+              slug: true,
+              name: true,
+            },
+          },
         },
       });
 
@@ -89,7 +118,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           isInitialSuperAdminEmail(dbUser.email) &&
           dbUser.role !== "superadmin"
       ) {
-        await ensureInitialSuperAdminAllowed(dbUser.email, user.id);
+        await ensureInitialSuperAdminAllowed(dbUser.email, user.id, dbUser.tenantId);
 
         await prisma.user.update({
           where: {
@@ -104,6 +133,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       } else {
         session.user.role = dbUser?.role ?? "user";
       }
+
+      session.user.tenantId = dbUser?.tenantId ?? null;
+      session.user.tenantSlug = dbUser?.tenant.slug ?? null;
+      session.user.tenantName = dbUser?.tenant.name ?? null;
 
       return session;
     },
@@ -125,6 +158,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
       }
+
+      await clearPendingTenantCookie();
     },
 
     async createUser({ user }) {
@@ -140,7 +175,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (user.id && user.email && isInitialSuperAdminEmail(user.email)) {
-        await ensureInitialSuperAdminAllowed(user.email, user.id);
+        const dbUser = await prisma.user.findUnique({
+          where: {
+            id: user.id,
+          },
+          select: {
+            tenantId: true,
+          },
+        });
+
+        await ensureInitialSuperAdminAllowed(user.email, user.id, dbUser?.tenantId);
 
         await prisma.user.update({
           where: {

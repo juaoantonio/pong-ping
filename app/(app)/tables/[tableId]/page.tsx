@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { TableDetail } from "@/components/tables/table-detail";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { requireAuth } from "@/lib/auth/session";
 import { getTableDetail, getTableUserOptions } from "@/lib/tables/queries";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type TablePageProps = {
   params: Promise<{
@@ -15,14 +16,20 @@ export default async function TablePage({ params }: TablePageProps) {
   const paramsPromise = params;
 
   const [user, { tableId }] = await Promise.all([userPromise, paramsPromise]);
-  const table = await getTableDetail(tableId, user.id);
+  const tenantId = getActorTenantId(user);
+
+  if (!tenantId) {
+    redirect("/unauthorized");
+  }
+
+  const table = await getTableDetail(tableId, user.id, tenantId);
 
   if (!table) {
     notFound();
   }
 
   const canManage = canAccessAdmin(user.role);
-  const users = canManage ? await getTableUserOptions() : [];
+  const users = canManage ? await getTableUserOptions(tenantId) : [];
 
   return (
     <div className="mx-auto w-full max-w-6xl">

@@ -20,7 +20,7 @@ function ranking(userId: string, elo = 1000) {
 function createFinishTx() {
   const tx = {
     pingPongTable: {
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
     },
     pingPongTableParticipant: {
       findMany: jest.fn(),
@@ -38,7 +38,10 @@ function createFinishTx() {
     },
   };
 
-  tx.pingPongTable.findUnique.mockResolvedValue({ id: "table-1" });
+  tx.pingPongTable.findFirst.mockResolvedValue({
+    id: "table-1",
+    tenantId: "tenant-1",
+  });
   tx.pingPongTableParticipant.findMany.mockResolvedValue([
     { id: "participant-winner", userId: "winner-1", queuePosition: 0 },
     { id: "participant-loser", userId: "loser-1", queuePosition: 1 },
@@ -68,6 +71,7 @@ describe("competition match use cases", () => {
     await expect(
       finishMatch(tx as never, {
         tableId: "table-1",
+        tenantId: "tenant-1",
         winnerParticipantId: "participant-winner",
         actorUserId: "admin-1",
       }),
@@ -82,9 +86,23 @@ describe("competition match use cases", () => {
       },
     });
 
+    expect(tx.pingPongTable.findFirst).toHaveBeenCalledWith({
+      where: { id: "table-1", tenantId: "tenant-1", deletedAt: null },
+      select: { id: true, tenantId: true },
+    });
+    expect(tx.playerRanking.upsert).toHaveBeenCalledWith({
+      where: { userId: "winner-1" },
+      update: {},
+      create: {
+        tenantId: "tenant-1",
+        userId: "winner-1",
+        elo: 1000,
+      },
+    });
     expect(tx.matchHistory.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         tableId: "table-1",
+        tenantId: "tenant-1",
         winnerId: "winner-1",
         loserId: "loser-1",
         kind: "match",
@@ -110,6 +128,7 @@ describe("competition match use cases", () => {
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: {
+        tenantId: "tenant-1",
         actorUserId: "admin-1",
         targetUserId: undefined,
         action: "table_match_finished",
@@ -131,6 +150,28 @@ describe("competition match use cases", () => {
     });
   });
 
+  it("rejects cross-tenant table ids as not found", async () => {
+    const tx = createFinishTx();
+    tx.pingPongTable.findFirst.mockResolvedValueOnce(null);
+
+    await expect(
+      finishMatch(tx as never, {
+        tableId: "table-1",
+        tenantId: "tenant-2",
+        winnerParticipantId: "participant-winner",
+        actorUserId: "admin-1",
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        context: "competition",
+        code: "table_not_found",
+      },
+    });
+
+    expect(tx.matchHistory.create).not.toHaveBeenCalled();
+  });
+
   it("rejects matches with fewer than two current players", async () => {
     const tx = createFinishTx();
     tx.pingPongTableParticipant.findMany.mockResolvedValueOnce([
@@ -140,6 +181,7 @@ describe("competition match use cases", () => {
     await expect(
       finishMatch(tx as never, {
         tableId: "table-1",
+        tenantId: "tenant-1",
         winnerParticipantId: "participant-1",
         actorUserId: "admin-1",
       }),
@@ -160,6 +202,7 @@ describe("competition match use cases", () => {
     await expect(
       finishMatch(tx as never, {
         tableId: "table-1",
+        tenantId: "tenant-1",
         winnerParticipantId: "participant-next",
         actorUserId: "admin-1",
       }),
@@ -181,7 +224,7 @@ describe("competition rollback use cases", () => {
         create: jest.fn(),
       },
       playerRanking: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
         update: jest.fn(),
       },
       auditLog: {
@@ -200,7 +243,7 @@ describe("competition rollback use cases", () => {
       loserDiffPoints: -32,
       rollbacks: [],
     });
-    tx.playerRanking.findUnique
+    tx.playerRanking.findFirst
       .mockResolvedValueOnce({
         ...ranking("winner-1", 1032),
         wins: 1,
@@ -233,6 +276,7 @@ describe("competition rollback use cases", () => {
     await expect(
       rollbackMatch(tx as never, {
         tableId: "table-1",
+        tenantId: "tenant-1",
         matchHistoryId: "match-1",
         actorUserId: "admin-1",
       }),
@@ -248,9 +292,21 @@ describe("competition rollback use cases", () => {
       },
     });
 
+    expect(tx.matchHistory.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "match-1",
+        tableId: "table-1",
+        tenantId: "tenant-1",
+      },
+      select: expect.any(Object),
+    });
+    expect(tx.playerRanking.findFirst).toHaveBeenCalledWith({
+      where: { userId: "winner-1", tenantId: "tenant-1" },
+    });
     expect(tx.matchHistory.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         tableId: "table-1",
+        tenantId: "tenant-1",
         winnerId: "winner-1",
         loserId: "loser-1",
         kind: "rollback",
@@ -275,6 +331,7 @@ describe("competition rollback use cases", () => {
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: {
+        tenantId: "tenant-1",
         actorUserId: "admin-1",
         targetUserId: undefined,
         action: "table_match_rolled_back",
@@ -288,6 +345,28 @@ describe("competition rollback use cases", () => {
     });
   });
 
+  it("rejects cross-tenant rollback attempts as match not found", async () => {
+    const tx = createRollbackTx();
+    tx.matchHistory.findFirst.mockResolvedValueOnce(null);
+
+    await expect(
+      rollbackMatch(tx as never, {
+        tableId: "table-1",
+        tenantId: "tenant-2",
+        matchHistoryId: "match-1",
+        actorUserId: "admin-1",
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        context: "competition",
+        code: "match_not_found",
+      },
+    });
+
+    expect(tx.playerRanking.findFirst).not.toHaveBeenCalled();
+  });
+
   it("rejects rollback records and already rolled back matches", async () => {
     const tx = createRollbackTx();
     tx.matchHistory.findFirst.mockResolvedValueOnce({
@@ -299,6 +378,7 @@ describe("competition rollback use cases", () => {
     await expect(
       rollbackMatch(tx as never, {
         tableId: "table-1",
+        tenantId: "tenant-1",
         matchHistoryId: "rollback-1",
         actorUserId: "admin-1",
       }),
@@ -319,6 +399,7 @@ describe("competition rollback use cases", () => {
     await expect(
       rollbackMatch(tx as never, {
         tableId: "table-1",
+        tenantId: "tenant-1",
         matchHistoryId: "match-1",
         actorUserId: "admin-1",
       }),

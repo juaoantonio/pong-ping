@@ -22,11 +22,20 @@ export async function POST(_request: Request, context: RouteContext) {
     return response;
   }
 
+  if (!actor.tenantId) {
+    return NextResponse.json({ error: "Sem tenant." }, { status: 403 });
+  }
+
   const { tableId, matchId } = await context.params;
 
   try {
     const result = await prisma.$transaction((tx) =>
-      rollbackMatch(tx, { tableId, matchHistoryId: matchId, actorUserId: actor.id }),
+      rollbackMatch(tx, {
+        tenantId: actor.tenantId!,
+        tableId,
+        matchHistoryId: matchId,
+        actorUserId: actor.id,
+      }),
     );
 
     if (!result.ok) {

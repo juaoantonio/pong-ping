@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { CreateTableForm } from "@/components/tables/create-table-form";
 import { TableList } from "@/components/tables/table-list";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -7,6 +8,7 @@ import { canAccessAdmin } from "@/lib/auth/roles";
 import { requireAuth } from "@/lib/auth/session";
 import { parseServerPaginationParams } from "@/lib/pagination";
 import { getTableListItems } from "@/lib/tables/queries";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type TablesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -15,12 +17,15 @@ type TablesPageProps = {
 async function TablesListContent({
   canRemoveTables,
   searchParams,
+  tenantId,
 }: {
   canRemoveTables: boolean;
   searchParams: Record<string, string | string[] | undefined>;
+  tenantId: string;
 }) {
   const result = await getTableListItems(
     parseServerPaginationParams(searchParams),
+    tenantId,
   );
 
   return (
@@ -38,6 +43,12 @@ async function TablesListContent({
 
 export default async function TablesPage({ searchParams }: TablesPageProps) {
   const [user, params] = await Promise.all([requireAuth(), searchParams]);
+  const tenantId = getActorTenantId(user);
+
+  if (!tenantId) {
+    redirect("/unauthorized");
+  }
+
   const canManageTables = canAccessAdmin(user.role);
 
   return (
@@ -53,6 +64,7 @@ export default async function TablesPage({ searchParams }: TablesPageProps) {
         <TablesListContent
           canRemoveTables={canManageTables}
           searchParams={params}
+          tenantId={tenantId}
         />
       </Suspense>
     </div>

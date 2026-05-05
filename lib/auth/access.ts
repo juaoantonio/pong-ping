@@ -20,28 +20,46 @@ export function createInvitationToken() {
   return randomBytes(32).toString("base64url");
 }
 
-export async function isEmailAllowed(email?: string | null) {
-  if (!email) {
+export async function isEmailAllowed(
+  email?: string | null,
+  tenantId?: string | null,
+) {
+  if (!email || !tenantId) {
     return false;
   }
 
   const allowedEmail = await prisma.allowedEmail.findUnique({
-    where: { email: normalizeEmail(email) },
+    where: {
+      tenantId_email: {
+        tenantId,
+        email: normalizeEmail(email),
+      },
+    },
     select: { id: true },
-  });
+  } as never);
 
   return Boolean(allowedEmail);
 }
 
-export async function allowEmail(email: string, createdByUserId?: string | null) {
+export async function allowEmail(
+  email: string,
+  tenantId: string,
+  createdByUserId?: string | null,
+) {
   const normalizedEmail = normalizeEmail(email);
 
   return prisma.allowedEmail.upsert({
-    where: { email: normalizedEmail },
+    where: {
+      tenantId_email: {
+        tenantId,
+        email: normalizedEmail,
+      },
+    },
     create: {
+      tenantId,
       email: normalizedEmail,
       createdByUserId,
     },
     update: {},
-  });
+  } as never);
 }

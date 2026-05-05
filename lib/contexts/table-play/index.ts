@@ -67,9 +67,9 @@ function tablePlayError(code: TablePlayErrorCode): TablePlayError {
   };
 }
 
-async function getNextQueuePosition(tx: Tx, tableId: string) {
+async function getNextQueuePosition(tx: Tx, tableId: string, tenantId: string) {
   const lastParticipant = await tx.pingPongTableParticipant.findFirst({
-    where: { tableId },
+    where: { tableId, tenantId },
     orderBy: { queuePosition: "desc" },
     select: { queuePosition: true },
   });
@@ -108,20 +108,19 @@ export async function ensureTableMembership(
   tx: Tx,
   tableId: string,
   userId: string,
+  tenantId: string,
 ): Promise<DomainResult<TableMembership, TablePlayError>> {
   const [table, user, existingMember] = await Promise.all([
     tx.pingPongTable.findFirst({
-      where: { id: tableId, deletedAt: null },
+      where: { id: tableId, tenantId, deletedAt: null },
       select: { id: true },
     }),
-    tx.user.findUnique({
-      where: { id: userId },
+    tx.user.findFirst({
+      where: { id: userId, tenantId },
       select: { id: true },
     }),
-    tx.pingPongTableMember.findUnique({
-      where: {
-        tableId_userId: { tableId, userId },
-      },
+    tx.pingPongTableMember.findFirst({
+      where: { tableId, userId, tenantId },
       select: { id: true },
     }),
   ]);
@@ -140,6 +139,7 @@ export async function ensureTableMembership(
 
   const member = await tx.pingPongTableMember.create({
     data: {
+      tenantId,
       tableId,
       userId,
     },
@@ -153,22 +153,19 @@ export async function enqueueUserInTable(
   tx: Tx,
   tableId: string,
   userId: string,
+  tenantId: string,
 ): Promise<DomainResult<TableParticipant, TablePlayError>> {
   const [table, membership, existingParticipant] = await Promise.all([
     tx.pingPongTable.findFirst({
-      where: { id: tableId, deletedAt: null },
+      where: { id: tableId, tenantId, deletedAt: null },
       select: { id: true },
     }),
-    tx.pingPongTableMember.findUnique({
-      where: {
-        tableId_userId: { tableId, userId },
-      },
+    tx.pingPongTableMember.findFirst({
+      where: { tableId, userId, tenantId },
       select: { id: true },
     }),
-    tx.pingPongTableParticipant.findUnique({
-      where: {
-        tableId_userId: { tableId, userId },
-      },
+    tx.pingPongTableParticipant.findFirst({
+      where: { tableId, userId, tenantId },
       select: { id: true },
     }),
   ]);
@@ -187,9 +184,10 @@ export async function enqueueUserInTable(
 
   const participant = await tx.pingPongTableParticipant.create({
     data: {
+      tenantId,
       tableId,
       userId,
-      queuePosition: await getNextQueuePosition(tx, tableId),
+      queuePosition: await getNextQueuePosition(tx, tableId, tenantId),
     },
   });
 
@@ -200,9 +198,10 @@ export async function removeParticipantFromTable(
   tx: Tx,
   tableId: string,
   participantId: string,
+  tenantId: string,
 ): Promise<DomainResult<void, TablePlayError>> {
   const participants = await tx.pingPongTableParticipant.findMany({
-    where: { tableId },
+    where: { tableId, tenantId },
     orderBy: { queuePosition: "asc" },
     select: { id: true },
   });
@@ -229,20 +228,19 @@ export async function removeUserFromTableQueue(
   tx: Tx,
   tableId: string,
   userId: string,
+  tenantId: string,
 ): Promise<DomainResult<RemovedTableParticipant, TablePlayError>> {
   const [table, participant, queueCount] = await Promise.all([
     tx.pingPongTable.findFirst({
-      where: { id: tableId, deletedAt: null },
+      where: { id: tableId, tenantId, deletedAt: null },
       select: { id: true },
     }),
-    tx.pingPongTableParticipant.findUnique({
-      where: {
-        tableId_userId: { tableId, userId },
-      },
+    tx.pingPongTableParticipant.findFirst({
+      where: { tableId, userId, tenantId },
       select: { id: true, queuePosition: true },
     }),
     tx.pingPongTableParticipant.count({
-      where: { tableId },
+      where: { tableId, tenantId },
     }),
   ]);
 
@@ -262,6 +260,7 @@ export async function removeUserFromTableQueue(
     tx,
     tableId,
     participant.id,
+    tenantId,
   );
 
   if (!removeResult.ok) {
@@ -274,11 +273,15 @@ export async function removeUserFromTableQueue(
 export async function getCurrentMatchParticipants(
   tx: Tx,
   tableId: string,
+  tenantId: string,
 ): Promise<
-  DomainResult<[CurrentMatchParticipant, CurrentMatchParticipant], TablePlayError>
+  DomainResult<
+    [CurrentMatchParticipant, CurrentMatchParticipant],
+    TablePlayError
+  >
 > {
   const queue = await tx.pingPongTableParticipant.findMany({
-    where: { tableId },
+    where: { tableId, tenantId },
     orderBy: { queuePosition: "asc" },
     select: { id: true, userId: true, queuePosition: true },
   });
@@ -294,11 +297,12 @@ export async function rotateQueueAfterFinishedMatch(
   tx: Tx,
   input: {
     tableId: string;
+    tenantId: string;
     winnerParticipantId: string;
   },
 ): Promise<DomainResult<void, TablePlayError>> {
   const queue = await tx.pingPongTableParticipant.findMany({
-    where: { tableId: input.tableId },
+    where: { tableId: input.tableId, tenantId: input.tenantId },
     orderBy: { queuePosition: "asc" },
     select: { id: true },
   });

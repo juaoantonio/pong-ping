@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 
 jest.mock("@/app/api/admin/_shared", () => ({
   deny: jest.fn(),
+  getKnownTenantIdForActor: jest.fn(async () => "tenant-1"),
   requireAdmin: jest.fn(),
 }));
 
@@ -37,7 +38,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     $transaction: jest.fn(),
     matchHistory: {
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
     },
   },
 }));
@@ -59,6 +60,7 @@ function actor() {
     avatarUrl: null,
     image: null,
     createdAt: new Date("2026-05-04T12:00:00.000Z"),
+    tenantId: "tenant-1",
   };
 }
 
@@ -123,6 +125,7 @@ describe("competition match routes", () => {
     });
     expect(mockedFinishMatch).toHaveBeenCalledWith(expect.anything(), {
       tableId: "table-1",
+      tenantId: "tenant-1",
       winnerParticipantId: "participant-1",
       actorUserId: "admin-1",
     });
@@ -182,6 +185,7 @@ describe("competition match routes", () => {
     });
     expect(mockedRollbackMatch).toHaveBeenCalledWith(expect.anything(), {
       tableId: "table-1",
+      tenantId: "tenant-1",
       matchHistoryId: "match-1",
       actorUserId: "admin-1",
     });
@@ -208,7 +212,7 @@ describe("competition match routes", () => {
   });
 
   it("keeps admin round rollback table-id precheck and uses competition rollback", async () => {
-    mockedPrisma.matchHistory.findUnique.mockResolvedValue({
+    mockedPrisma.matchHistory.findFirst.mockResolvedValue({
       tableId: "table-1",
     });
     mockedRollbackMatch.mockResolvedValue({
@@ -231,6 +235,7 @@ describe("competition match routes", () => {
     expect(response.status).toBe(200);
     expect(mockedRollbackMatch).toHaveBeenCalledWith(expect.anything(), {
       tableId: "table-1",
+      tenantId: "tenant-1",
       matchHistoryId: "match-1",
       actorUserId: "admin-1",
     });

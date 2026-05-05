@@ -9,135 +9,139 @@ import {
 } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
-export const getTableListItems = cache(async (pagination: PaginationInput) => {
-  await connection();
-
-  const where = { deletedAt: null };
-  const totalCount = await prisma.pingPongTable.count({ where });
-  const pageInfo = getPageInfo(pagination, totalCount);
-  const tables = await prisma.pingPongTable.findMany({
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    where,
-    skip: getPaginationOffset(pageInfo),
-    take: pageInfo.pageSize,
-    select: {
-      id: true,
-      name: true,
-      createdAt: true,
-      createdBy: {
-        select: {
-          name: true,
-          email: true,
-          avatarUrl: true,
-          image: true,
-        },
-      },
-      participants: {
-        orderBy: { queuePosition: "asc" },
-        select: {
-          user: {
-            select: {
-              name: true,
-              email: true,
-              avatarUrl: true,
-              image: true,
-            },
-          },
-        },
-      },
-      matchHistories: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          id: true,
-          kind: true,
-          rollbackOfId: true,
-          createdAt: true,
-          winnerOldElo: true,
-          winnerNewElo: true,
-          winnerDiffPoints: true,
-          loserOldElo: true,
-          loserNewElo: true,
-          loserDiffPoints: true,
-          rollbacks: {
-            select: { id: true },
-            take: 1,
-          },
-          winner: {
-            select: {
-              name: true,
-              email: true,
-              avatarUrl: true,
-              image: true,
-            },
-          },
-          loser: {
-            select: {
-              name: true,
-              email: true,
-              avatarUrl: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  return {
-    pageInfo,
-    tables: tables.map((table) => ({
-      id: table.id,
-      name: table.name,
-      createdAt: table.createdAt.toISOString(),
-      createdBy: {
-        name: table.createdBy.name,
-        email: table.createdBy.email,
-        avatarUrl: table.createdBy.avatarUrl ?? table.createdBy.image,
-      },
-      participantCount: table.participants.length,
-      currentPlayers: table.participants.slice(0, 2).map((participant) => ({
-        name: participant.user.name,
-        email: participant.user.email,
-        avatarUrl: participant.user.avatarUrl ?? participant.user.image,
-      })),
-      latestMatch: table.matchHistories[0]
-        ? {
-            id: table.matchHistories[0].id,
-            kind: table.matchHistories[0].kind,
-            rollbackOfId: table.matchHistories[0].rollbackOfId,
-            rolledBack: table.matchHistories[0].rollbacks.length > 0,
-            createdAt: table.matchHistories[0].createdAt.toISOString(),
-            winnerOldElo: table.matchHistories[0].winnerOldElo,
-            winnerNewElo: table.matchHistories[0].winnerNewElo,
-            winnerDiffPoints: table.matchHistories[0].winnerDiffPoints,
-            loserOldElo: table.matchHistories[0].loserOldElo,
-            loserNewElo: table.matchHistories[0].loserNewElo,
-            loserDiffPoints: table.matchHistories[0].loserDiffPoints,
-            winner: {
-              ...table.matchHistories[0].winner,
-              avatarUrl:
-                table.matchHistories[0].winner.avatarUrl ??
-                table.matchHistories[0].winner.image,
-            },
-            loser: {
-              ...table.matchHistories[0].loser,
-              avatarUrl:
-                table.matchHistories[0].loser.avatarUrl ??
-                table.matchHistories[0].loser.image,
-            },
-          }
-        : null,
-    })),
-  };
-});
-
-export const getTableDetail = cache(
-  async (tableId: string, viewerUserId: string) => {
+export const getTableListItems = cache(
+  async (pagination: PaginationInput, tenantId: string) => {
     await connection();
 
-    const table = await prisma.pingPongTable.findUnique({
-      where: { id: tableId },
+    const where = { tenantId, deletedAt: null };
+    const totalCount = await prisma.pingPongTable.count({ where });
+    const pageInfo = getPageInfo(pagination, totalCount);
+    const tables = await prisma.pingPongTable.findMany({
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      where,
+      skip: getPaginationOffset(pageInfo),
+      take: pageInfo.pageSize,
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        createdBy: {
+          select: {
+            name: true,
+            email: true,
+            avatarUrl: true,
+            image: true,
+          },
+        },
+        participants: {
+          where: { tenantId },
+          orderBy: { queuePosition: "asc" },
+          select: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                avatarUrl: true,
+                image: true,
+              },
+            },
+          },
+        },
+        matchHistories: {
+          where: { tenantId },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: {
+            id: true,
+            kind: true,
+            rollbackOfId: true,
+            createdAt: true,
+            winnerOldElo: true,
+            winnerNewElo: true,
+            winnerDiffPoints: true,
+            loserOldElo: true,
+            loserNewElo: true,
+            loserDiffPoints: true,
+            rollbacks: {
+              select: { id: true },
+              take: 1,
+            },
+            winner: {
+              select: {
+                name: true,
+                email: true,
+                avatarUrl: true,
+                image: true,
+              },
+            },
+            loser: {
+              select: {
+                name: true,
+                email: true,
+                avatarUrl: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      pageInfo,
+      tables: tables.map((table) => ({
+        id: table.id,
+        name: table.name,
+        createdAt: table.createdAt.toISOString(),
+        createdBy: {
+          name: table.createdBy.name,
+          email: table.createdBy.email,
+          avatarUrl: table.createdBy.avatarUrl ?? table.createdBy.image,
+        },
+        participantCount: table.participants.length,
+        currentPlayers: table.participants.slice(0, 2).map((participant) => ({
+          name: participant.user.name,
+          email: participant.user.email,
+          avatarUrl: participant.user.avatarUrl ?? participant.user.image,
+        })),
+        latestMatch: table.matchHistories[0]
+          ? {
+              id: table.matchHistories[0].id,
+              kind: table.matchHistories[0].kind,
+              rollbackOfId: table.matchHistories[0].rollbackOfId,
+              rolledBack: table.matchHistories[0].rollbacks.length > 0,
+              createdAt: table.matchHistories[0].createdAt.toISOString(),
+              winnerOldElo: table.matchHistories[0].winnerOldElo,
+              winnerNewElo: table.matchHistories[0].winnerNewElo,
+              winnerDiffPoints: table.matchHistories[0].winnerDiffPoints,
+              loserOldElo: table.matchHistories[0].loserOldElo,
+              loserNewElo: table.matchHistories[0].loserNewElo,
+              loserDiffPoints: table.matchHistories[0].loserDiffPoints,
+              winner: {
+                ...table.matchHistories[0].winner,
+                avatarUrl:
+                  table.matchHistories[0].winner.avatarUrl ??
+                  table.matchHistories[0].winner.image,
+              },
+              loser: {
+                ...table.matchHistories[0].loser,
+                avatarUrl:
+                  table.matchHistories[0].loser.avatarUrl ??
+                  table.matchHistories[0].loser.image,
+              },
+            }
+          : null,
+      })),
+    };
+  },
+);
+
+export const getTableDetail = cache(
+  async (tableId: string, viewerUserId: string, tenantId: string) => {
+    await connection();
+
+    const table = await prisma.pingPongTable.findFirst({
+      where: { id: tableId, tenantId, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -150,6 +154,7 @@ export const getTableDetail = cache(
         },
         invitations: {
           where: {
+            tenantId,
             expiresAt: {
               gt: new Date(),
             },
@@ -165,6 +170,7 @@ export const getTableDetail = cache(
           },
         },
         participants: {
+          where: { tenantId },
           orderBy: { queuePosition: "asc" },
           select: {
             id: true,
@@ -190,6 +196,7 @@ export const getTableDetail = cache(
           },
         },
         members: {
+          where: { tenantId },
           select: {
             joinedAt: true,
             user: {
@@ -204,6 +211,7 @@ export const getTableDetail = cache(
           },
         },
         matchHistories: {
+          where: { tenantId },
           orderBy: { createdAt: "desc" },
           take: 10,
           select: {
@@ -322,10 +330,11 @@ export const getTableDetail = cache(
   },
 );
 
-export const getTableUserOptions = cache(async () => {
+export const getTableUserOptions = cache(async (tenantId: string) => {
   await connection();
 
   const users = await prisma.user.findMany({
+    where: { tenantId },
     orderBy: [{ name: "asc" }, { email: "asc" }],
     select: {
       id: true,
@@ -345,15 +354,16 @@ export const getTableUserOptions = cache(async () => {
 });
 
 export const getTableScoreboard = cache(
-  async (tableId: string, viewerUserId: string) => {
+  async (tableId: string, viewerUserId: string, tenantId: string) => {
     await connection();
 
     const table = await prisma.pingPongTable.findFirst({
-      where: { id: tableId, deletedAt: null },
+      where: { id: tableId, tenantId, deletedAt: null },
       select: {
         id: true,
         name: true,
         participants: {
+          where: { tenantId },
           orderBy: { queuePosition: "asc" },
           take: 2,
           select: {
@@ -369,7 +379,7 @@ export const getTableScoreboard = cache(
           },
         },
         members: {
-          where: { userId: viewerUserId },
+          where: { userId: viewerUserId, tenantId },
           select: { id: true },
           take: 1,
         },

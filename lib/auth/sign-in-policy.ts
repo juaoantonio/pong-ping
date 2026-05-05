@@ -10,21 +10,40 @@ export function isInitialSuperAdminEmail(email?: string | null) {
   );
 }
 
-export async function canSignInWithEmail(email?: string | null) {
+export async function canSignInWithEmail(
+  email?: string | null,
+  tenantId?: string | null,
+) {
   if (!email) {
     return false;
   }
 
   const normalizedEmail = normalizeEmail(email);
 
-  return isInitialSuperAdminEmail(normalizedEmail) || isEmailAllowed(normalizedEmail);
+  if (isInitialSuperAdminEmail(normalizedEmail)) {
+    return true;
+  }
+
+  if (!tenantId) {
+    return false;
+  }
+
+  return isEmailAllowed(normalizedEmail, tenantId);
 }
 
-export async function ensureInitialSuperAdminAllowed(email: string, userId: string) {
+export async function ensureInitialSuperAdminAllowed(
+  email: string,
+  userId: string,
+  tenantId?: string | null,
+) {
   if (!isInitialSuperAdminEmail(email)) {
     return false;
   }
 
-  await allowEmail(email, userId);
+  if (!tenantId) {
+    return false;
+  }
+
+  await allowEmail(email, tenantId, userId);
   return true;
 }

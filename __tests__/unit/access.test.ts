@@ -31,10 +31,15 @@ describe("helpers de acesso por email e convite", () => {
   it("normaliza emails antes de consultar a allowlist", async () => {
     mockedPrisma.allowedEmail.findUnique.mockResolvedValue({ id: "allowed-email-id" } as never);
 
-    await expect(isEmailAllowed(" User@Example.COM ")).resolves.toBe(true);
+    await expect(isEmailAllowed(" User@Example.COM ", "tenant-1")).resolves.toBe(true);
 
     expect(mockedPrisma.allowedEmail.findUnique).toHaveBeenCalledWith({
-      where: { email: "user@example.com" },
+      where: {
+        tenantId_email: {
+          tenantId: "tenant-1",
+          email: "user@example.com",
+        },
+      },
       select: { id: true },
     });
   });
@@ -42,24 +47,32 @@ describe("helpers de acesso por email e convite", () => {
   it("retorna falso quando nao ha email ou registro autorizado", async () => {
     mockedPrisma.allowedEmail.findUnique.mockResolvedValue(null);
 
-    await expect(isEmailAllowed(null)).resolves.toBe(false);
-    await expect(isEmailAllowed("blocked@example.com")).resolves.toBe(false);
+    await expect(isEmailAllowed(null, "tenant-1")).resolves.toBe(false);
+    await expect(isEmailAllowed("blocked@example.com", null)).resolves.toBe(false);
+    await expect(isEmailAllowed("blocked@example.com", "tenant-1")).resolves.toBe(false);
   });
 
   it("cria ou reutiliza email autorizado normalizado com o id do admin", async () => {
     mockedPrisma.allowedEmail.upsert.mockResolvedValue({
       id: "allowed-email-id",
+      tenantId: "tenant-1",
       email: "user@example.com",
       createdByUserId: "admin-id",
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
-    await allowEmail(" User@Example.COM ", "admin-id");
+    await allowEmail(" User@Example.COM ", "tenant-1", "admin-id");
 
     expect(mockedPrisma.allowedEmail.upsert).toHaveBeenCalledWith({
-      where: { email: "user@example.com" },
+      where: {
+        tenantId_email: {
+          tenantId: "tenant-1",
+          email: "user@example.com",
+        },
+      },
       create: {
+        tenantId: "tenant-1",
         email: "user@example.com",
         createdByUserId: "admin-id",
       },

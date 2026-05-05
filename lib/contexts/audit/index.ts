@@ -24,6 +24,7 @@ export type AuditEvent = {
   action: AuditAction;
   metadata?: Prisma.InputJsonValue;
   targetUserId?: string | null;
+  tenantId?: string | null;
 };
 
 export async function recordAuditEvent(
@@ -32,6 +33,7 @@ export async function recordAuditEvent(
 ) {
   await client.auditLog.create({
     data: {
+      ...(event.tenantId ? { tenantId: event.tenantId } : {}),
       actorUserId: event.actorUserId,
       targetUserId: event.targetUserId,
       action: event.action,
@@ -46,12 +48,17 @@ export async function recordAdminDenied(
     actorUserId: string | null;
     reason: string;
     targetUserId?: string | null;
+    tenantId?: string | null;
   },
 ) {
   await recordAuditEvent(client, {
+    tenantId: input.tenantId,
     actorUserId: input.actorUserId,
     targetUserId: input.targetUserId,
     action: "admin_action_denied",
-    metadata: { reason: input.reason },
+    metadata: {
+      reason: input.reason,
+      tenantContext: input.tenantId ? "known" : "missing",
+    },
   });
 }

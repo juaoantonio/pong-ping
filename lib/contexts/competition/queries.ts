@@ -64,8 +64,8 @@ function textContains(value: string): Prisma.StringFilter {
   return { contains: value, mode: "insensitive" };
 }
 
-function getAdminRoundsWhere(filters: AdminRoundsReadFilters) {
-  const and: Prisma.MatchHistoryWhereInput[] = [];
+function getAdminRoundsWhere(filters: AdminRoundsReadFilters, tenantId: string) {
+  const and: Prisma.MatchHistoryWhereInput[] = [{ tenantId }];
 
   if (filters.q) {
     const q = filters.q;
@@ -147,12 +147,13 @@ function getAdminRoundsWhere(filters: AdminRoundsReadFilters) {
 }
 
 export async function getAdminRoundsReadModel(
+  tenantId: string,
   filters: AdminRoundsReadFilters,
   pagination: PaginationInput,
 ) {
   await connection();
 
-  const where = getAdminRoundsWhere(filters);
+  const where = getAdminRoundsWhere(filters, tenantId);
   const totalCount = await prisma.matchHistory.count({ where });
   const pageInfo = getPageInfo(pagination, totalCount);
   const rounds = await prisma.matchHistory.findMany({

@@ -24,9 +24,10 @@ export async function ensureTableMembership(
   tx: Tx,
   tableId: string,
   userId: string,
+  tenantId: string,
 ) {
   return unwrapTablePlayResult(
-    await ensureTableMembershipResult(tx, tableId, userId),
+    await ensureTableMembershipResult(tx, tableId, userId, tenantId),
   );
 }
 
@@ -34,9 +35,10 @@ export async function enqueueUserInTable(
   tx: Tx,
   tableId: string,
   userId: string,
+  tenantId: string,
 ) {
   return unwrapTablePlayResult(
-    await enqueueUserInTableResult(tx, tableId, userId),
+    await enqueueUserInTableResult(tx, tableId, userId, tenantId),
   );
 }
 
@@ -44,9 +46,15 @@ export async function removeParticipantFromTable(
   tx: Tx,
   tableId: string,
   participantId: string,
+  tenantId: string,
 ) {
   return unwrapTablePlayResult(
-    await removeParticipantFromTableResult(tx, tableId, participantId),
+    await removeParticipantFromTableResult(
+      tx,
+      tableId,
+      participantId,
+      tenantId,
+    ),
   );
 }
 
@@ -54,8 +62,9 @@ export async function removeUserFromTableQueue(
   tx: Tx,
   tableId: string,
   userId: string,
+  tenantId: string,
 ) {
   return unwrapTablePlayResult(
-    await removeUserFromTableQueueResult(tx, tableId, userId),
+    await removeUserFromTableQueueResult(tx, tableId, userId, tenantId),
   );
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isInvitationExpiryPreset } from "@/lib/invitations";
 import { requireAdmin } from "@/app/api/admin/_shared";
 import { createTableInvitation } from "@/lib/contexts/invitations";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type TableInvitationRequestBody = {
   expiresIn?: unknown;
@@ -22,6 +23,15 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!actor) {
     return response;
+  }
+
+  const tenantId = getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Contexto de tenant ausente." },
+      { status: 403 },
+    );
   }
 
   const { tableId } = await context.params;
@@ -44,6 +54,7 @@ export async function POST(request: Request, context: RouteContext) {
     expiresIn,
     oneTimeUse,
     tableId,
+    tenantId,
   });
 
   if (!result.ok) {

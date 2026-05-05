@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
-import { canChangeRole, isRole } from "@/lib/auth/roles";
+import { canChangeRole, isRole, type Role } from "@/lib/auth/roles";
 import { denyTarget } from "@/app/api/admin/_shared";
 
 type RouteParams = {
@@ -9,6 +9,19 @@ type RouteParams = {
     id: string;
   }>;
 };
+
+async function getActorTenantId(actor: { id: string; tenantId?: string | null }) {
+  if (actor.tenantId) {
+    return actor.tenantId;
+  }
+
+  const actorRecord = (await prisma.user.findUnique({
+    where: { id: actor.id },
+    select: { tenantId: true },
+  } as never)) as { tenantId: string | null } | null;
+
+  return actorRecord?.tenantId ?? null;
+}
 
 export async function PATCH(request: Request, context: RouteParams) {
   const actor = await getCurrentUser();
@@ -25,6 +38,13 @@ export async function PATCH(request: Request, context: RouteParams) {
     return NextResponse.json({ error: "Sem permissao para alterar roles." }, { status: 403 });
   }
 
+  const tenantId = await getActorTenantId(actor);
+
+  if (!tenantId) {
+    await denyTarget(actor.id, id, "missing_tenant_context");
+    return NextResponse.json({ error: "Sem contexto de tenant." }, { status: 403 });
+  }
+
   if (!isRole(body?.role)) {
     await denyTarget(actor.id, id, "invalid_role");
     return NextResponse.json({ error: "Role invalida." }, { status: 400 });
@@ -39,10 +59,10 @@ export async function PATCH(request: Request, context: RouteParams) {
 
   try {
     const updatedUser = await prisma.$transaction(async (tx) => {
-      const target = await tx.user.findUnique({
-        where: { id },
+      const target = (await tx.user.findFirst({
+        where: { id, tenantId },
         select: { id: true, email: true, role: true },
-      });
+      } as never)) as { id: string; email: string | null; role: Role } | null;
 
       if (!target) {
         return null;
@@ -72,10 +92,12 @@ export async function PATCH(request: Request, context: RouteParams) {
 
       await tx.auditLog.create({
         data: {
+          tenantId,
           actorUserId: actor.id,
           targetUserId: target.id,
           action: "role_changed",
           metadata: {
+            tenantId,
             previousRole: target.role,
             newRole: nextRole,
             targetEmail: target.email,

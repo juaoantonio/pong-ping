@@ -9,11 +9,30 @@ import {
   parseApiPaginationParams,
 } from "@/lib/pagination";
 
+async function getActorTenantId(actor: { id: string; tenantId?: string | null }) {
+  if (actor.tenantId) {
+    return actor.tenantId;
+  }
+
+  const actorRecord = (await prisma.user.findUnique({
+    where: { id: actor.id },
+    select: { tenantId: true },
+  } as never)) as { tenantId: string | null } | null;
+
+  return actorRecord?.tenantId ?? null;
+}
+
 export async function GET(request: Request) {
   const { actor, response } = await requireAdmin("list_users_forbidden");
 
   if (!actor) {
     return response;
+  }
+
+  const tenantId = await getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json({ error: "Sem contexto de tenant." }, { status: 403 });
   }
 
   const parsedPagination = parseApiPaginationParams(
@@ -27,9 +46,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const where: Prisma.UserWhereInput | undefined = isSuperAdmin(actor)
-    ? undefined
-    : { role: "user" };
+  const where = {
+    tenantId,
+    ...(isSuperAdmin(actor) ? {} : { role: "user" }),
+  } as Prisma.UserWhereInput;
   const totalCount = await prisma.user.count({ where });
   const pageInfo = getPageInfo(parsedPagination.pagination, totalCount);
   const users = await prisma.user.findMany({

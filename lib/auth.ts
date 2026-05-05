@@ -1,1 +1,7 @@
-export { getCurrentUser, requireAuth, requireRole } from "@/lib/auth/session";
+export {
+  getCurrentUser,
+  requireAuth,
+  requireRole,
+  requireTenantAdmin,
+  requireTenantUser,
+} from "@/lib/auth/session";

@@ -11,6 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useAuthenticatedUser } from "@/components/auth/authenticated-user-provider";
 
 const segmentLabels: Record<string, string> = {
   admin: "Admin",
@@ -26,6 +27,7 @@ function labelForSegment(segment: string) {
 
 export function AppBreadcrumbs() {
   const pathname = usePathname();
+  const { user } = useAuthenticatedUser();
   const segments = pathname.split("/").filter(Boolean);
   const crumbs = segments.map((segment, index) => ({
     href: `/${segments.slice(0, index + 1).join("/")}`,
@@ -37,7 +39,7 @@ export function AppBreadcrumbs() {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/tables">Pong Ping</Link>
+            <Link href="/tables">{user.tenantName ?? "Pong Ping"}</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {crumbs.map((crumb, index) => {

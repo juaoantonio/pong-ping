@@ -7,6 +7,7 @@ import {
   type TablePlayError,
 } from "@/lib/contexts/table-play";
 import { recordAuditEvent } from "@/lib/contexts/audit";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type RouteContext = {
   params: Promise<{
@@ -60,10 +61,24 @@ export async function POST(_: Request, context: RouteContext) {
     return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
   }
 
+  const tenantId = getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Contexto de tenant ausente." },
+      { status: 403 },
+    );
+  }
+
   const { tableId } = await context.params;
 
   const result = await prisma.$transaction(async (tx) => {
-    const queueResult = await enqueueUserInTable(tx, tableId, actor.id);
+    const queueResult = await enqueueUserInTable(
+      tx,
+      tableId,
+      actor.id,
+      tenantId,
+    );
 
     if (!queueResult.ok) {
       return queueResult;
@@ -93,10 +108,24 @@ export async function DELETE(_: Request, context: RouteContext) {
     return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
   }
 
+  const tenantId = getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Contexto de tenant ausente." },
+      { status: 403 },
+    );
+  }
+
   const { tableId } = await context.params;
 
   const result = await prisma.$transaction(async (tx) => {
-    const removeResult = await removeUserFromTableQueue(tx, tableId, actor.id);
+    const removeResult = await removeUserFromTableQueue(
+      tx,
+      tableId,
+      actor.id,
+      tenantId,
+    );
 
     if (!removeResult.ok) {
       return removeResult;

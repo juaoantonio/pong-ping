@@ -33,6 +33,7 @@ const mockedPrisma = jest.mocked(prisma);
 function actor(role: "admin" | "superadmin" = "admin") {
   return {
     id: "admin-id",
+    tenantId: "tenant-1",
     role,
     email: "admin@example.com",
     name: "Admin",
@@ -70,14 +71,14 @@ describe("admin GET pagination", () => {
 
     expect(response.status).toBe(200);
     expect(mockedPrisma.user.count).toHaveBeenCalledWith({
-      where: undefined,
+      where: { tenantId: "tenant-1" },
     });
     expect(mockedPrisma.user.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         orderBy: [{ role: "asc" }, { createdAt: "desc" }, { id: "desc" }],
         skip: 50,
         take: 50,
-        where: undefined,
+        where: { tenantId: "tenant-1" },
       }),
     );
     await expect(response.json()).resolves.toEqual({
@@ -117,6 +118,7 @@ describe("admin GET pagination", () => {
     expect(response.status).toBe(200);
     expect(mockedPrisma.allowedEmail.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { tenantId: "tenant-1" },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: 50,
         take: 25,
@@ -124,6 +126,7 @@ describe("admin GET pagination", () => {
     );
     expect(mockedPrisma.authInvitation.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { tenantId: "tenant-1" },
         orderBy: { createdAt: "desc" },
         take: 10,
       }),

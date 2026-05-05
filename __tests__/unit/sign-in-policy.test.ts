@@ -36,9 +36,9 @@ describe("politica de login por email", () => {
   it("permite login de emails presentes na allowlist", async () => {
     mockedIsEmailAllowed.mockResolvedValue(true);
 
-    await expect(canSignInWithEmail("user@example.com")).resolves.toBe(true);
+    await expect(canSignInWithEmail("user@example.com", "tenant-1")).resolves.toBe(true);
 
-    expect(mockedIsEmailAllowed).toHaveBeenCalledWith("user@example.com");
+    expect(mockedIsEmailAllowed).toHaveBeenCalledWith("user@example.com", "tenant-1");
   });
 
   it("bloqueia login sem email ou fora da allowlist", async () => {
@@ -46,6 +46,7 @@ describe("politica de login por email", () => {
 
     await expect(canSignInWithEmail(null)).resolves.toBe(false);
     await expect(canSignInWithEmail("blocked@example.com")).resolves.toBe(false);
+    await expect(canSignInWithEmail("blocked@example.com", "tenant-1")).resolves.toBe(false);
   });
 
   it("autoriza automaticamente apenas o superadmin inicial", async () => {
@@ -57,10 +58,21 @@ describe("politica de login por email", () => {
       updatedAt: new Date(),
     });
 
-    await expect(ensureInitialSuperAdminAllowed("root@example.com", "root-id")).resolves.toBe(true);
-    await expect(ensureInitialSuperAdminAllowed("user@example.com", "user-id")).resolves.toBe(false);
+    await expect(
+      ensureInitialSuperAdminAllowed("root@example.com", "root-id", "tenant-1"),
+    ).resolves.toBe(true);
+    await expect(
+      ensureInitialSuperAdminAllowed("user@example.com", "user-id", "tenant-1"),
+    ).resolves.toBe(false);
+    await expect(
+      ensureInitialSuperAdminAllowed("root@example.com", "root-id", null),
+    ).resolves.toBe(false);
 
     expect(mockedAllowEmail).toHaveBeenCalledTimes(1);
-    expect(mockedAllowEmail).toHaveBeenCalledWith("root@example.com", "root-id");
+    expect(mockedAllowEmail).toHaveBeenCalledWith(
+      "root@example.com",
+      "tenant-1",
+      "root-id",
+    );
   });
 });

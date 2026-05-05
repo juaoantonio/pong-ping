@@ -12,6 +12,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { TableInviteForm } from "@/app/table-invite/[token]/table-invite-form";
+import { getActorTenantId } from "@/lib/tables/tenant";
 
 type TableInvitePageProps = {
   params: Promise<{
@@ -31,6 +32,7 @@ export default async function TableInvitePage({
   const invitationPromise = prisma.pingPongTableInvitation.findUnique({
     where: { token },
     select: {
+      tenantId: true,
       expiresAt: true,
       oneTimeUse: true,
       usedAt: true,
@@ -52,9 +54,11 @@ export default async function TableInvitePage({
     currentUserPromise,
     invitationPromise,
   ]);
+  const tenantId = getActorTenantId(currentUser);
 
   if (
     !invitation ||
+    invitation.tenantId !== tenantId ||
     invitation.expiresAt < now ||
     (invitation.oneTimeUse && invitation.usedAt)
   ) {

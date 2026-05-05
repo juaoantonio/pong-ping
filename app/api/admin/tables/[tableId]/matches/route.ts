@@ -25,6 +25,10 @@ export async function POST(request: Request, context: RouteContext) {
     return response;
   }
 
+  if (!actor.tenantId) {
+    return NextResponse.json({ error: "Sem tenant." }, { status: 403 });
+  }
+
   const { tableId } = await context.params;
   const body = (await request
     .json()
@@ -43,7 +47,12 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     const result = await prisma.$transaction((tx) =>
-      finishMatch(tx, { tableId, winnerParticipantId, actorUserId: actor.id }),
+      finishMatch(tx, {
+        tenantId: actor.tenantId!,
+        tableId,
+        winnerParticipantId,
+        actorUserId: actor.id,
+      }),
     );
 
     if (!result.ok) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
+  Building2,
   LogOut,
   Shield,
   Swords,
@@ -39,6 +40,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuthenticatedUser();
   const userName = user.name ?? user.email ?? "Usuario";
+  const tenantName = user.tenantName ?? "Pong Ping";
   const canUseAdmin = canAccessAdmin(user.role);
   const canUseRoundManagement = isSuperAdmin(user);
 
@@ -47,13 +49,13 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" tooltip="Ranking">
+            <SidebarMenuButton asChild size="lg" tooltip={tenantName}>
               <Link href="/">
                 <span className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
                   <Trophy className="size-4" />
                 </span>
                 <span className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Pong Ping</span>
+                  <span className="truncate font-semibold">{tenantName}</span>
                   <span className="truncate text-xs">Ranking e mesas</span>
                 </span>
               </Link>
@@ -137,6 +139,19 @@ export function AppSidebar() {
                         <Link href="/admin/access">Acesso</Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
+                    {canUseRoundManagement ? (
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === "/admin/tenants"}
+                        >
+                          <Link href="/admin/tenants">
+                            <Building2 />
+                            Tenants
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ) : null}
                     {canUseRoundManagement ? (
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton

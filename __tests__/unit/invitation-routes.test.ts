@@ -44,6 +44,7 @@ const mockedCreateTableInvitation = jest.mocked(createTableInvitation);
 function actor() {
   return {
     id: "admin-1",
+    tenantId: "tenant-1",
     role: "admin" as const,
     email: "admin@example.com",
     name: "Admin",
@@ -88,6 +89,7 @@ describe("invitation routes", () => {
       expect.anything(),
       {
         actorUserId: "admin-1",
+        tenantId: "tenant-1",
         expiresIn: "15m",
         oneTimeUse: true,
       },
@@ -164,6 +166,7 @@ describe("invitation routes", () => {
         expiresIn: "7d",
         oneTimeUse: false,
         tableId: "table-1",
+        tenantId: "tenant-1",
       },
     );
   });
@@ -187,6 +190,7 @@ describe("invitation routes", () => {
     expect(response.status).toBe(200);
     expect(mockedClaimTableInvitation).toHaveBeenCalledWith(expect.anything(), {
       token: "table-token",
+      tenantId: "tenant-1",
       userId: "admin-1",
     });
     await expect(response.json()).resolves.toEqual({

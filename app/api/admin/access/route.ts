@@ -22,11 +22,30 @@ type AccessRequestBody = {
   type?: unknown;
 };
 
+async function getActorTenantId(actor: { id: string; tenantId?: string | null }) {
+  if (actor.tenantId) {
+    return actor.tenantId;
+  }
+
+  const actorRecord = (await prisma.user.findUnique({
+    where: { id: actor.id },
+    select: { tenantId: true },
+  } as never)) as { tenantId: string | null } | null;
+
+  return actorRecord?.tenantId ?? null;
+}
+
 export async function GET(request: Request) {
   const { actor, response } = await requireAdmin("access_management_forbidden");
 
   if (!actor) {
     return response;
+  }
+
+  const tenantId = await getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json({ error: "Sem contexto de tenant." }, { status: 403 });
   }
 
   const parsedPagination = parseApiPaginationParams(
@@ -40,10 +59,12 @@ export async function GET(request: Request) {
     );
   }
 
-  const totalCount = await prisma.allowedEmail.count();
+  const tenantWhere = { tenantId };
+  const totalCount = await prisma.allowedEmail.count({ where: tenantWhere } as never);
   const pageInfo = getPageInfo(parsedPagination.pagination, totalCount);
   const [allowedEmails, invitations] = await Promise.all([
     prisma.allowedEmail.findMany({
+      where: tenantWhere,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: getPaginationOffset(pageInfo),
       take: pageInfo.pageSize,
@@ -57,6 +78,7 @@ export async function GET(request: Request) {
       },
     }),
     prisma.authInvitation.findMany({
+      where: tenantWhere,
       orderBy: { createdAt: "desc" },
       take: 10,
       select: {
@@ -80,6 +102,12 @@ export async function POST(request: Request) {
     return response;
   }
 
+  const tenantId = await getActorTenantId(actor);
+
+  if (!tenantId) {
+    return NextResponse.json({ error: "Sem contexto de tenant." }, { status: 403 });
+  }
+
   const body = (await request
     .json()
     .catch(() => null)) as AccessRequestBody | null;
@@ -98,6 +126,7 @@ export async function POST(request: Request) {
       typeof body.oneTimeUse === "boolean" ? body.oneTimeUse : true;
     const result = await createAccessInvitation(prisma, {
       actorUserId: actor.id,
+      tenantId,
       expiresIn,
       oneTimeUse,
     });
@@ -134,12 +163,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const allowedEmail = await allowEmail(email, actor.id);
+  const allowedEmail = await allowEmail(email, tenantId, actor.id);
 
   await recordAuditEvent(prisma, {
+    tenantId,
     actorUserId: actor.id,
     action: "email_allowed",
-    metadata: { email },
+    metadata: { email, tenantId },
   });
 
   return NextResponse.json({ allowedEmail });

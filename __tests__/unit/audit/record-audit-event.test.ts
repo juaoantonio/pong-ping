@@ -9,6 +9,7 @@ describe("audit context", () => {
     const create = jest.fn().mockResolvedValue({});
     const client = { auditLog: { create } };
     const event: AuditEvent = {
+      tenantId: "tenant-1",
       actorUserId: "admin-1",
       targetUserId: "user-1",
       action: "table_match_finished",
@@ -24,6 +25,7 @@ describe("audit context", () => {
 
     expect(create).toHaveBeenCalledWith({
       data: {
+        tenantId: "tenant-1",
         actorUserId: "admin-1",
         targetUserId: "user-1",
         action: "table_match_finished",
@@ -42,6 +44,7 @@ describe("audit context", () => {
     const client = { auditLog: { create } };
 
     await recordAdminDenied(client as never, {
+      tenantId: "tenant-1",
       actorUserId: "admin-1",
       targetUserId: "user-1",
       reason: "role_change_forbidden",
@@ -49,10 +52,36 @@ describe("audit context", () => {
 
     expect(create).toHaveBeenCalledWith({
       data: {
+        tenantId: "tenant-1",
         actorUserId: "admin-1",
         targetUserId: "user-1",
         action: "admin_action_denied",
-        metadata: { reason: "role_change_forbidden" },
+        metadata: {
+          reason: "role_change_forbidden",
+          tenantContext: "known",
+        },
+      },
+    });
+  });
+
+  it("marks admin denial metadata when tenant context is missing", async () => {
+    const create = jest.fn().mockResolvedValue({});
+    const client = { auditLog: { create } };
+
+    await recordAdminDenied(client as never, {
+      actorUserId: null,
+      reason: "admin_context_missing",
+    });
+
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        actorUserId: null,
+        targetUserId: undefined,
+        action: "admin_action_denied",
+        metadata: {
+          reason: "admin_context_missing",
+          tenantContext: "missing",
+        },
       },
     });
   });
@@ -62,12 +91,14 @@ describe("audit context", () => {
     const client = { auditLog: { create } };
 
     await recordAuditEvent(client as never, {
+      tenantId: "tenant-1",
       actorUserId: "user-1",
       targetUserId: "user-1",
       action: "table_queue_joined",
       metadata: { tableId: "table-1" },
     });
     await recordAuditEvent(client as never, {
+      tenantId: "tenant-1",
       actorUserId: "admin-1",
       action: "invitation_used",
       metadata: { invitationId: "invite-1", email: "user@example.com" },
