@@ -78,25 +78,42 @@ describe("table queue route", () => {
     });
   });
 
-  it("rejects users who are not table members", async () => {
+  it("queues same-tenant users directly when membership is auto-created", async () => {
+    const auditCreate = jest.fn();
+    const participant = {
+      id: "participant-1",
+      tableId: "table-1",
+      userId: "user-1",
+      queuePosition: 0,
+      joinedAt: new Date("2026-04-30T12:00:00.000Z"),
+    };
+
     mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
-        auditLog: { create: jest.fn() },
+        auditLog: { create: auditCreate },
       } as never),
     );
-    mockedEnqueueUserInTable.mockResolvedValue(
-      tablePlayError("user_not_in_table") as never,
-    );
+    mockedEnqueueUserInTable.mockResolvedValue({
+      ok: true,
+      value: {
+        participant,
+        membershipCreated: true,
+      },
+    });
 
     const response = await POST(
       new Request("http://test.local"),
       routeContext(),
     );
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      error: "Entre na mesa antes de entrar na fila.",
+      ok: true,
+      participant: {
+        ...participant,
+        joinedAt: "2026-04-30T12:00:00.000Z",
+      },
     });
     expect(mockedEnqueueUserInTable).toHaveBeenCalledWith(
       expect.anything(),
@@ -105,6 +122,17 @@ describe("table queue route", () => {
       "tenant-1",
     );
     expect(mockedTransaction).toHaveBeenCalledTimes(1);
+    expect(auditCreate).toHaveBeenCalledWith({
+      data: {
+        actorUserId: "user-1",
+        targetUserId: "user-1",
+        action: "table_queue_joined",
+        metadata: {
+          tableId: "table-1",
+          membershipAutoCreated: true,
+        },
+      },
+    });
   });
 
   it("rejects users who are already queued", async () => {
@@ -147,7 +175,10 @@ describe("table queue route", () => {
     );
     mockedEnqueueUserInTable.mockResolvedValue({
       ok: true,
-      value: participant,
+      value: {
+        participant,
+        membershipCreated: false,
+      },
     });
 
     const response = await POST(
@@ -174,7 +205,10 @@ describe("table queue route", () => {
         actorUserId: "user-1",
         targetUserId: "user-1",
         action: "table_queue_joined",
-        metadata: { tableId: "table-1" },
+        metadata: {
+          tableId: "table-1",
+          membershipAutoCreated: false,
+        },
       },
     });
   });

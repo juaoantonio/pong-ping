@@ -67,6 +67,7 @@ export type TableSummary = {
   viewerIsQueued: boolean;
   viewerIsPlaying: boolean;
   viewerQueuePosition: number | null;
+  viewerUserId: string;
   recentMatches: TableMatch[];
 };
 

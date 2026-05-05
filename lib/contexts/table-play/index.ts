@@ -33,6 +33,11 @@ type TableParticipant = {
   joinedAt: Date;
 };
 
+type EnqueueUserInTableResult = {
+  participant: TableParticipant;
+  membershipCreated: boolean;
+};
+
 type RemovedTableParticipant = {
   id: string;
   queuePosition: number;
@@ -154,10 +159,14 @@ export async function enqueueUserInTable(
   tableId: string,
   userId: string,
   tenantId: string,
-): Promise<DomainResult<TableParticipant, TablePlayError>> {
-  const [table, membership, existingParticipant] = await Promise.all([
+): Promise<DomainResult<EnqueueUserInTableResult, TablePlayError>> {
+  const [table, user, membership, existingParticipant] = await Promise.all([
     tx.pingPongTable.findFirst({
       where: { id: tableId, tenantId, deletedAt: null },
+      select: { id: true },
+    }),
+    tx.user.findFirst({
+      where: { id: userId, tenantId },
       select: { id: true },
     }),
     tx.pingPongTableMember.findFirst({
@@ -174,12 +183,25 @@ export async function enqueueUserInTable(
     return fail(tablePlayError("table_not_found"));
   }
 
-  if (!membership) {
-    return fail(tablePlayError("user_not_in_table"));
+  if (!user) {
+    return fail(tablePlayError("user_not_found"));
   }
 
   if (existingParticipant) {
     return fail(tablePlayError("user_already_queued"));
+  }
+
+  const membershipCreated = !membership;
+
+  if (membershipCreated) {
+    await tx.pingPongTableMember.create({
+      data: {
+        tenantId,
+        tableId,
+        userId,
+      },
+      select: { id: true },
+    });
   }
 
   const participant = await tx.pingPongTableParticipant.create({
@@ -191,7 +213,7 @@ export async function enqueueUserInTable(
     },
   });
 
-  return { ok: true, value: participant };
+  return { ok: true, value: { participant, membershipCreated } };
 }
 
 export async function removeParticipantFromTable(

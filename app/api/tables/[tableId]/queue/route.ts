@@ -30,6 +30,13 @@ function tablePlayErrorResponse(error: TablePlayError) {
     );
   }
 
+  if (error.code === "user_not_found") {
+    return NextResponse.json(
+      { error: "Usuario nao encontrado." },
+      { status: 403 },
+    );
+  }
+
   if (error.code === "user_already_queued") {
     return NextResponse.json(
       { error: "Voce ja esta na fila desta mesa." },
@@ -88,7 +95,10 @@ export async function POST(_: Request, context: RouteContext) {
       actorUserId: actor.id,
       targetUserId: actor.id,
       action: "table_queue_joined",
-      metadata: { tableId },
+      metadata: {
+        tableId,
+        membershipAutoCreated: queueResult.value.membershipCreated,
+      },
     });
 
     return queueResult;
@@ -98,7 +108,7 @@ export async function POST(_: Request, context: RouteContext) {
     return tablePlayErrorResponse(result.error);
   }
 
-  return NextResponse.json({ ok: true, participant: result.value });
+  return NextResponse.json({ ok: true, participant: result.value.participant });
 }
 
 export async function DELETE(_: Request, context: RouteContext) {

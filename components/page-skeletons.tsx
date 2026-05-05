@@ -74,33 +74,95 @@ export function TablesGridSkeleton() {
 
 export function TableDetailSkeleton() {
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-6 lg:grid-cols-[minmax(260px,3fr)_minmax(0,7fr)]">
-        <section className="grid content-start gap-4 border-t border-border pt-5">
-          <div className="grid gap-2">
-            <Skeleton className="h-6 w-28" />
-            <Skeleton className="h-4 w-56" />
-          </div>
-          <div className="grid gap-0 divide-y divide-border">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div className="py-3" key={index}>
-                <Skeleton className="h-16 w-full" />
+    <div className="grid gap-8">
+      <Skeleton className="h-9 w-36" />
+
+      <section className="border-y border-border py-5 md:py-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
+          <div className="grid min-w-0 gap-5">
+            <div className="grid gap-3">
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-28" />
               </div>
-            ))}
+              <div className="grid gap-2">
+                <Skeleton className="h-8 w-64 max-w-full" />
+                <Skeleton className="h-4 w-full max-w-lg" />
+              </div>
+            </div>
+
+            <div className="grid border-y border-border md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:divide-x md:divide-border">
+              <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+                <div className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+                <div className="grid justify-items-center gap-4">
+                  <Skeleton className="size-24 rounded-full" />
+                  <div className="grid w-full justify-items-center gap-2">
+                    <Skeleton className="h-7 w-44 max-w-full" />
+                    <Skeleton className="h-4 w-56 max-w-full" />
+                  </div>
+                </div>
+                <div aria-hidden="true" />
+              </div>
+              <div className="grid place-items-center border-y border-border py-3 md:border-y-0 md:px-4">
+                <Skeleton className="h-10 w-14" />
+              </div>
+              <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+                <div className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+                <div className="grid justify-items-center gap-4">
+                  <Skeleton className="size-24 rounded-full" />
+                  <div className="grid w-full justify-items-center gap-2">
+                    <Skeleton className="h-7 w-44 max-w-full" />
+                    <Skeleton className="h-4 w-56 max-w-full" />
+                  </div>
+                </div>
+                <div aria-hidden="true" />
+              </div>
+            </div>
           </div>
-        </section>
-        <section className="grid content-start gap-5 border-t border-border pt-5">
-          <div>
-            <Skeleton className="h-6 w-40" />
+
+          <div className="grid gap-4 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+            <div className="grid gap-2">
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-48 max-w-full" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-11 w-32" />
+              <Skeleton className="h-11 w-32" />
+            </div>
+            <div className="border-t border-border pt-4">
+              <Skeleton className="h-9 w-32" />
+            </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-            <Skeleton className="h-72 w-full" />
-            <Skeleton className="hidden h-10 w-12 md:block" />
-            <Skeleton className="h-72 w-full" />
-          </div>
-        </section>
-      </div>
-      <DataRegionSkeleton rows={4} />
+        </div>
+      </section>
+
+      <section className="grid gap-4">
+        <div className="grid gap-2 border-b border-border/80 pb-4">
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-4 w-72 max-w-full" />
+        </div>
+        <div className="grid divide-y divide-border border-y border-border">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              className="grid gap-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+              key={index}
+            >
+              <Skeleton className="h-6 w-10" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-6 w-28" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <DataRegionSkeleton rows={3} />
     </div>
   );
 }

@@ -38,8 +38,12 @@ describe("table queue", () => {
       pingPongTable: {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
       },
+      user: {
+        findFirst: jest.fn().mockResolvedValue({ id: "user-1" }),
+      },
       pingPongTableMember: {
         findFirst: jest.fn().mockResolvedValue({ id: "member-1" }),
+        create: jest.fn(),
       },
       pingPongTableParticipant: {
         findFirst: jest
@@ -54,8 +58,9 @@ describe("table queue", () => {
       enqueueUserInTable(tx as never, "table-1", "user-1", "tenant-1"),
     ).resolves.toEqual({
       ok: true,
-      value: participant,
+      value: { participant, membershipCreated: false },
     });
+    expect(tx.pingPongTableMember.create).not.toHaveBeenCalled();
     expect(tx.pingPongTableParticipant.create).toHaveBeenCalledWith({
       data: {
         tenantId: "tenant-1",
@@ -70,16 +75,70 @@ describe("table queue", () => {
     });
   });
 
-  it("returns a domain error when a non-member tries to queue", async () => {
+  it("creates table membership when a same-tenant non-member queues", async () => {
+    const participant = {
+      id: "participant-1",
+      tableId: "table-1",
+      userId: "user-1",
+      queuePosition: 0,
+      joinedAt: new Date("2026-04-30T12:00:00.000Z"),
+    };
     const tx = {
       pingPongTable: {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
       },
+      user: {
+        findFirst: jest.fn().mockResolvedValue({ id: "user-1" }),
+      },
       pingPongTableMember: {
         findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ id: "member-1" }),
       },
       pingPongTableParticipant: {
         findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue(participant),
+      },
+    };
+
+    await expect(
+      enqueueUserInTable(tx as never, "table-1", "user-1", "tenant-1"),
+    ).resolves.toEqual({
+      ok: true,
+      value: { participant, membershipCreated: true },
+    });
+    expect(tx.pingPongTableMember.create).toHaveBeenCalledWith({
+      data: {
+        tenantId: "tenant-1",
+        tableId: "table-1",
+        userId: "user-1",
+      },
+      select: { id: true },
+    });
+    expect(tx.pingPongTableParticipant.create).toHaveBeenCalledWith({
+      data: {
+        tenantId: "tenant-1",
+        tableId: "table-1",
+        userId: "user-1",
+        queuePosition: 0,
+      },
+    });
+  });
+
+  it("keeps duplicate queue joins from creating membership or participant rows", async () => {
+    const tx = {
+      pingPongTable: {
+        findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
+      },
+      user: {
+        findFirst: jest.fn().mockResolvedValue({ id: "user-1" }),
+      },
+      pingPongTableMember: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+      pingPongTableParticipant: {
+        findFirst: jest.fn().mockResolvedValue({ id: "participant-1" }),
+        create: jest.fn(),
       },
     };
 
@@ -89,10 +148,48 @@ describe("table queue", () => {
       ok: false,
       error: {
         context: "table-play",
-        code: "user_not_in_table",
-        message: "Entre na mesa antes de entrar na fila.",
+        code: "user_already_queued",
+        message: "Voce ja esta na fila desta mesa.",
       },
     });
+    expect(tx.pingPongTableMember.create).not.toHaveBeenCalled();
+    expect(tx.pingPongTableParticipant.create).not.toHaveBeenCalled();
+  });
+
+  it("denies queue joins through tenant-scoped table lookup", async () => {
+    const tx = {
+      pingPongTable: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      user: {
+        findFirst: jest.fn().mockResolvedValue({ id: "user-1" }),
+      },
+      pingPongTableMember: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+      pingPongTableParticipant: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+    };
+
+    await expect(
+      enqueueUserInTable(tx as never, "table-1", "user-1", "tenant-1"),
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        context: "table-play",
+        code: "table_not_found",
+        message: "Mesa nao encontrada.",
+      },
+    });
+    expect(tx.pingPongTable.findFirst).toHaveBeenCalledWith({
+      where: { id: "table-1", tenantId: "tenant-1", deletedAt: null },
+      select: { id: true },
+    });
+    expect(tx.pingPongTableMember.create).not.toHaveBeenCalled();
+    expect(tx.pingPongTableParticipant.create).not.toHaveBeenCalled();
   });
 
   it("keeps current players from leaving while a match can be played", async () => {

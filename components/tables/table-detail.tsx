@@ -3,20 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Copy,
+  ArrowLeft,
   LogOut,
   Loader2,
   MonitorUp,
   Plus,
   RotateCcw,
-  Swords,
   Trophy,
   UserPlus,
   Users,
 } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { EmptyState } from "@/components/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,15 +25,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -45,32 +34,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
-import {
-  InvitationSettingsControls,
-  type InvitationUseMode,
-} from "@/components/invitation-settings-controls";
-import { type InvitationExpiryPreset } from "@/lib/invitations";
 import { formatDateTime, readApiError, userLabel } from "@/lib/client-utils";
 import type {
   TableParticipant,
   TableSummary,
   UserIdentityLike,
-  UserOption,
 } from "@/components/tables/types";
 
 type TableDetailProps = {
   canManage: boolean;
   table: TableSummary;
-  users: UserOption[];
 };
-
-function buildInvitationLink(token: string) {
-  if (typeof window === "undefined") {
-    return `/table-invite/${token}`;
-  }
-
-  return `${window.location.origin}/table-invite/${token}`;
-}
 
 function UserIdentity({ user }: { user: UserIdentityLike }) {
   const label = userLabel(user);
@@ -88,36 +62,72 @@ function UserIdentity({ user }: { user: UserIdentityLike }) {
   );
 }
 
-function RoundPlayer({
+function CurrentRoundSlot({
+  isViewer,
   participant,
-  side,
+  slot,
 }: {
-  participant: TableParticipant;
-  side: string;
+  isViewer: boolean;
+  participant?: TableParticipant;
+  slot: string;
 }) {
+  if (!participant) {
+    return (
+      <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <Badge variant="secondary">{slot}</Badge>
+          <Badge variant="outline">Livre</Badge>
+        </div>
+        <div className="grid justify-items-center gap-3 text-center">
+          <div
+            aria-hidden="true"
+            className="grid size-20 place-items-center rounded-full border border-dashed border-border text-2xl text-muted-foreground"
+          >
+            ?
+          </div>
+          <div className="grid gap-1">
+            <p className="text-xl font-semibold text-muted-foreground">
+              Aguardando jogador
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Próximo da fila entra aqui.
+            </p>
+          </div>
+        </div>
+        <div aria-hidden="true" />
+      </div>
+    );
+  }
+
   const label = userLabel(participant.user);
 
   return (
-    <div className="flex min-h-72 flex-col items-center justify-between rounded-lg bg-secondary/60 p-5 text-center">
-      <Badge variant="secondary">{side}</Badge>
-      <div className="grid justify-items-center gap-4">
+    <div className="grid min-h-48 content-between gap-5 py-5 md:px-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{slot}</Badge>
+          {isViewer ? <Badge>Você</Badge> : null}
+        </div>
+        <Badge className="shrink-0 text-sm tabular-nums" variant="outline">
+          {participant.user.playerRanking?.elo ?? 1000} Elo
+        </Badge>
+      </div>
+      <div className="grid min-w-0 justify-items-center gap-4 text-center">
         <UserAvatar
-          className="size-28 text-3xl"
+          className="size-24 text-3xl"
           name={label}
           src={participant.user.avatarUrl}
         />
-        <div className="grid gap-1">
-          <p className="max-w-56 truncate text-2xl font-semibold">{label}</p>
+        <div className="grid min-w-0 gap-1">
+          <p className="max-w-full truncate text-2xl font-semibold">{label}</p>
           {participant.user.email ? (
-            <p className="max-w-56 truncate text-sm text-muted-foreground">
+            <p className="max-w-full truncate text-sm text-muted-foreground">
               {participant.user.email}
             </p>
           ) : null}
         </div>
       </div>
-      <Badge className="text-sm tabular-nums">
-        {participant.user.playerRanking?.elo ?? 1000} Elo
-      </Badge>
+      <div aria-hidden="true" />
     </div>
   );
 }
@@ -158,21 +168,17 @@ function WorkflowSection({
   );
 }
 
-export function TableDetail({ canManage, table, users }: TableDetailProps) {
+export function TableDetail({ canManage, table }: TableDetailProps) {
   const router = useRouter();
-  const [selectedUser, setSelectedUser] = useState("");
-  const [inviteExpiresIn, setInviteExpiresIn] =
-    useState<InvitationExpiryPreset>("7d");
-  const [inviteUseMode, setInviteUseMode] =
-    useState<InvitationUseMode>("reusable");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const currentMatch = table.participants.slice(0, 2);
   const queuedParticipants = table.participants.slice(2);
-  const availableUsers = users.filter(
-    (user) => !table.members.some((member) => member.user.id === user.id),
-  );
+  const roundIsActive = currentMatch.length === 2;
+  const actionDisabled = isPending || busyKey !== null;
+  const viewerQueuePosition =
+    table.viewerQueuePosition === null ? null : table.viewerQueuePosition + 1;
 
   function runAction(actionKey: string, callback: () => Promise<void>) {
     setBusyKey(actionKey);
@@ -183,33 +189,6 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
       } finally {
         setBusyKey(null);
       }
-    });
-  }
-
-  function addParticipant() {
-    if (!selectedUser) {
-      toast.error("Selecione um usuário para adicionar na mesa.");
-      return;
-    }
-
-    runAction("add-participant", async () => {
-      const response = await fetch(
-        `/api/admin/tables/${table.id}/participants`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: selectedUser }),
-        },
-      );
-
-      if (!response.ok) {
-        toast.error(await readApiError(response));
-        return;
-      }
-
-      setSelectedUser("");
-      toast.success("Usuário adicionado à mesa.");
-      router.refresh();
     });
   }
 
@@ -242,40 +221,6 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
 
       toast.success("Você saiu da fila.");
       router.refresh();
-    });
-  }
-
-  function createInvitation() {
-    runAction("create-invite", async () => {
-      const response = await fetch(`/api/admin/tables/${table.id}/invites`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expiresIn: inviteExpiresIn,
-          oneTimeUse: inviteUseMode === "one-time",
-        }),
-      });
-
-      if (!response.ok) {
-        toast.error(await readApiError(response));
-        return;
-      }
-
-      const body = (await response.json()) as { invite: { token: string } };
-      await navigator.clipboard
-        .writeText(buildInvitationLink(body.invite.token))
-        .catch(() => undefined);
-      toast.success(
-        "Link de convite gerado e copiado para a area de transferencia.",
-      );
-      router.refresh();
-    });
-  }
-
-  function copyInvitation(token: string) {
-    runAction(`copy-invite:${token}`, async () => {
-      await navigator.clipboard.writeText(buildInvitationLink(token));
-      toast.success("Link de convite copiado.");
     });
   }
 
@@ -334,32 +279,233 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(260px,3fr)]">
-        <WorkflowSection
-          className="order-2 lg:order-2"
-          description="Vencedor permanece na mesa, perdedor volta para o fim."
-          icon={<Users className="size-4" />}
-          title="Fila"
-        >
-          <div className="grid gap-0 divide-y divide-border border-y border-border">
-            {queuedParticipants.length > 0 ? (
-              queuedParticipants.map((participant) => (
-                <div className="grid gap-3 py-4" key={participant.id}>
-                  <div className="flex items-center justify-between gap-3">
-                    <Badge variant="outline">
-                      #{participant.queuePosition + 1}
-                    </Badge>
-                    <Badge variant="secondary">
+    <div className="grid gap-8">
+      <Button asChild className="w-fit px-0" size="sm" variant="link">
+        <Link href="/tables">
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          Voltar para mesas
+        </Link>
+      </Button>
+
+      <section className="border-y border-border py-5 md:py-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
+          <div className="grid min-w-0 gap-5">
+            <header className="grid min-w-0 gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <Badge variant={roundIsActive ? "default" : "secondary"}>
+                  {roundIsActive ? "Mesa ativa" : "Aguardando jogador"}
+                </Badge>
+                <Badge variant="outline">
+                  {queuedParticipants.length} aguardando
+                </Badge>
+              </div>
+              <div className="min-w-0">
+                <h2 className="break-words text-2xl font-semibold text-balance">
+                  {table.name}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {roundIsActive
+                    ? "Rodada em andamento. Vencedor permanece na mesa; perdedor volta para o fim da fila."
+                    : "A mesa precisa de 2 jogadores para iniciar a rodada."}
+                </p>
+              </div>
+            </header>
+
+            <div className="grid border-y border-border md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:divide-x md:divide-y-0 md:divide-border">
+              <CurrentRoundSlot
+                isViewer={currentMatch[0]?.user.id === table.viewerUserId}
+                participant={currentMatch[0]}
+                slot="Jogador 1"
+              />
+              <div className="grid place-items-center border-y border-border py-3 md:border-y-0 md:px-4">
+                <Badge className="px-4 py-2 text-base" variant="outline">
+                  vs
+                </Badge>
+              </div>
+              <CurrentRoundSlot
+                isViewer={currentMatch[1]?.user.id === table.viewerUserId}
+                participant={currentMatch[1]}
+                slot="Jogador 2"
+              />
+            </div>
+          </div>
+
+          <aside className="grid gap-4 border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+            <div className="grid gap-1">
+              <p className="text-sm font-medium">Próxima ação</p>
+              {table.viewerIsPlaying ? (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Você está jogando agora. Use os controles; a saída da fila
+                  fica bloqueada até a rodada terminar.
+                </p>
+              ) : table.viewerIsQueued ? (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Você está na posição{" "}
+                  <span className="font-medium text-foreground tabular-nums">
+                    #{viewerQueuePosition ?? "-"}
+                  </span>
+                  . Aguarde sua vez ou saia da fila.
+                </p>
+              ) : (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Entre na fila desta mesa quando estiver pronto para jogar.
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {table.viewerIsPlaying ? (
+                <Button asChild size="lg">
+                  <Link href={`/tables/${table.id}/scoreboard/controls`}>
+                    <Plus aria-hidden="true" className="size-4" />
+                    Controles
+                  </Link>
+                </Button>
+              ) : table.viewerIsQueued ? (
+                <Button
+                  disabled={actionDisabled}
+                  onClick={leaveQueue}
+                  size="lg"
+                  variant="outline"
+                >
+                  {busyKey === "leave-queue" ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-4 animate-spin"
+                    />
+                  ) : (
+                    <LogOut aria-hidden="true" className="size-4" />
+                  )}
+                  Sair da fila
+                </Button>
+              ) : (
+                <Button disabled={actionDisabled} onClick={joinQueue} size="lg">
+                  {busyKey === "join-queue" ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-4 animate-spin"
+                    />
+                  ) : (
+                    <UserPlus aria-hidden="true" className="size-4" />
+                  )}
+                  Entrar na fila
+                </Button>
+              )}
+
+              {roundIsActive ? (
+                <Button asChild size="lg" variant="outline">
+                  <Link href={`/tables/${table.id}/scoreboard`}>
+                    <MonitorUp aria-hidden="true" className="size-4" />
+                    Abrir placar
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+
+            {canManage && roundIsActive ? (
+              <div className="border-t border-border pt-4">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      disabled={actionDisabled}
+                      size="sm"
+                      variant="destructive"
+                    >
+                      <Trophy aria-hidden="true" className="size-4" />
+                      Encerrar rodada
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Confirmar vencedor</DialogTitle>
+                      <DialogDescription>
+                        Escolha quem venceu a rodada. O Elo será recalculado, o
+                        resultado será registrado e a fila será reorganizada.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {currentMatch.map((participant) => {
+                        const playerName = userLabel(participant.user);
+                        const actionKey = `finish-match:${participant.id}`;
+
+                        return (
+                          <Button
+                            aria-label={`Encerrar rodada com vitória de ${playerName}`}
+                            className="h-auto justify-start gap-3 p-3"
+                            disabled={actionDisabled}
+                            key={participant.id}
+                            onClick={() =>
+                              finishMatch(participant.id, playerName)
+                            }
+                            variant="outline"
+                          >
+                            {busyKey === actionKey ? (
+                              <Loader2
+                                aria-hidden="true"
+                                className="size-5 animate-spin"
+                              />
+                            ) : (
+                              <UserAvatar
+                                className="size-10"
+                                name={playerName}
+                                src={participant.user.avatarUrl}
+                              />
+                            )}
+                            <span className="min-w-0 text-left">
+                              <span className="block truncate font-medium">
+                                {playerName}
+                              </span>
+                              <span className="block text-xs text-muted-foreground">
+                                {participant.user.playerRanking?.elo ?? 1000}{" "}
+                                Elo
+                              </span>
+                            </span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ) : null}
+          </aside>
+        </div>
+      </section>
+
+      <WorkflowSection
+        description="Ordem dos próximos jogadores após a rodada atual."
+        icon={<Users aria-hidden="true" className="size-4" />}
+        title="Fila de espera"
+      >
+        {queuedParticipants.length > 0 ? (
+          <ol className="grid divide-y divide-border border-y border-border">
+            {queuedParticipants.map((participant) => {
+              const participantName = userLabel(participant.user);
+
+              return (
+                <li
+                  className="grid min-w-0 gap-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
+                  key={participant.id}
+                  value={participant.queuePosition + 1}
+                >
+                  <Badge className="w-fit tabular-nums" variant="outline">
+                    #{participant.queuePosition + 1}
+                  </Badge>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <UserIdentity user={participant.user} />
+                    {participant.user.id === table.viewerUserId ? (
+                      <Badge className="shrink-0">Você</Badge>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground sm:justify-end">
+                    <span>{formatDateTime(participant.joinedAt)}</span>
+                    <Badge className="tabular-nums" variant="secondary">
                       {participant.user.playerRanking?.elo ?? 1000} Elo
                     </Badge>
-                  </div>
-                  <UserIdentity user={participant.user} />
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>{formatDateTime(participant.joinedAt)}</span>
                     {canManage ? (
                       <Button
-                        disabled={isPending}
+                        aria-label={`Remover ${participantName} da fila`}
+                        disabled={actionDisabled}
                         onClick={() => removeParticipant(participant.id)}
                         size="sm"
                         variant="ghost"
@@ -368,324 +514,23 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                       </Button>
                     ) : null}
                   </div>
-                </div>
-              ))
-            ) : (
-              <EmptyState
-                className="border-0 bg-transparent px-0 py-6"
-                title="Fila livre"
-              >
-                Convide jogadores ou entre na fila para formar a próxima rodada.
-              </EmptyState>
-            )}
-          </div>
-        </WorkflowSection>
-
-        <WorkflowSection
-          className="order-1 lg:order-1"
-          icon={<Swords className="size-4" />}
-          title="Rodada atual"
-        >
-          <div className="grid gap-5">
-            {currentMatch.length === 2 ? (
-              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-stretch">
-                <RoundPlayer participant={currentMatch[0]} side="Jogador 1" />
-                <div className="flex items-center justify-center">
-                  <Badge className="px-4 py-2 text-base" variant="outline">
-                    vs
-                  </Badge>
-                </div>
-                <RoundPlayer participant={currentMatch[1]} side="Jogador 2" />
-              </div>
-            ) : (
-              <EmptyState
-                className="justify-items-center py-14 text-center"
-                title="Rodada aguardando jogadores"
-              >
-                A mesa precisa de pelo menos 2 jogadores na fila para abrir uma
-                rodada.
-              </EmptyState>
-            )}
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
-            {currentMatch.length === 2 ? (
-              <Button asChild size="lg" variant="outline">
-                <Link href={`/tables/${table.id}/scoreboard`}>
-                  <MonitorUp className="size-4" />
-                  Abrir placar
-                </Link>
-              </Button>
-            ) : null}
-            {table.viewerIsPlaying ? (
-              <Button asChild size="lg" variant="secondary">
-                <Link href={`/tables/${table.id}/scoreboard/controls`}>
-                  <Plus className="size-4" />
-                  Controles
-                </Link>
-              </Button>
-            ) : null}
-            {canManage && currentMatch.length === 2 ? (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button disabled={isPending} size="lg">
-                    <Trophy className="size-4" />
-                    Encerrar rodada
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Confirmar vencedor</DialogTitle>
-                    <DialogDescription>
-                      Escolha quem venceu a rodada. O Elo será recalculado e a
-                      fila será reorganizada.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {currentMatch.map((participant) => {
-                      const playerName = userLabel(participant.user);
-                      const actionKey = `finish-match:${participant.id}`;
-
-                      return (
-                        <Button
-                          className="h-auto justify-start gap-3 p-3"
-                          disabled={isPending}
-                          key={participant.id}
-                          onClick={() =>
-                            finishMatch(participant.id, playerName)
-                          }
-                          variant="outline"
-                        >
-                          {busyKey === actionKey ? (
-                            <Loader2 className="size-5 animate-spin" />
-                          ) : (
-                            <UserAvatar
-                              className="size-10"
-                              name={playerName}
-                              src={participant.user.avatarUrl}
-                            />
-                          )}
-                          <span className="min-w-0 text-left">
-                            <span className="block truncate font-medium">
-                              {playerName}
-                            </span>
-                            <span className="block text-xs text-muted-foreground">
-                              {participant.user.playerRanking?.elo ?? 1000} Elo
-                            </span>
-                          </span>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            ) : null}
-          </div>
-        </WorkflowSection>
-      </div>
-
-      <section className="grid gap-4 border-y border-border py-5">
-        <div className="min-w-0">
-          <h2 className="truncate text-2xl font-semibold">{table.name}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Criada por {userLabel(table.createdBy)} em{" "}
-            {formatDateTime(table.createdAt)}
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p className="border-y border-border py-4 text-sm text-muted-foreground">
+            Sem jogadores aguardando.
           </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3 md:divide-x md:divide-border">
-          <div className="md:pr-4">
-            <p className="text-sm text-muted-foreground">Aguardando</p>
-            <p className="text-2xl font-semibold tabular-nums">
-              {queuedParticipants.length}
-            </p>
-          </div>
-          <div className="md:px-4">
-            <p className="text-sm text-muted-foreground">Mesa atual</p>
-            <p className="text-2xl font-semibold">
-              {currentMatch.length === 2 ? "Ativa" : "Aguardando"}
-            </p>
-          </div>
-          <div className="md:pl-4">
-            <p className="text-sm text-muted-foreground">Rodadas recentes</p>
-            <p className="text-2xl font-semibold tabular-nums">
-              {table.recentMatches.length}
-            </p>
-          </div>
-        </div>
-      </section>
+        )}
+      </WorkflowSection>
 
-      {table.viewerIsMember ? (
+      {table.recentMatches.length > 0 ? (
         <WorkflowSection
-          description="Entre na fila quando estiver pronto para jogar."
-          title="Sua participação"
+          description="Resumo compacto das rodadas finalizadas nesta mesa."
+          title="Resultados recentes"
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="grid gap-1 text-sm">
-              {table.viewerIsPlaying ? (
-                <>
-                  <p className="font-medium">Sua rodada está ativa.</p>
-                  <p className="text-muted-foreground">
-                    Aguarde o encerramento da partida para a fila girar.
-                  </p>
-                </>
-              ) : table.viewerIsQueued ? (
-                <>
-                  <p className="font-medium">Você está na fila.</p>
-                  <p className="text-muted-foreground">
-                    Posição #{(table.viewerQueuePosition ?? 0) + 1}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium">Você está nesta mesa.</p>
-                  <p className="text-muted-foreground">
-                    Entre na fila para aguardar sua vez.
-                  </p>
-                </>
-              )}
-            </div>
-            {!table.viewerIsQueued ? (
-              <Button
-                disabled={isPending}
-                onClick={joinQueue}
-                className="sm:self-start"
-              >
-                {busyKey === "join-queue" ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <UserPlus className="size-4" />
-                )}
-                Entrar na fila
-              </Button>
-            ) : !table.viewerIsPlaying ? (
-              <Button
-                className="sm:self-start"
-                disabled={isPending}
-                onClick={leaveQueue}
-                variant="outline"
-              >
-                {busyKey === "leave-queue" ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <LogOut className="size-4" />
-                )}
-                Sair da fila
-              </Button>
-            ) : null}
-          </div>
-        </WorkflowSection>
-      ) : null}
-
-      {canManage ? (
-        <WorkflowSection
-          description="Adicione membros manualmente ou gere um convite para a mesa."
-          title="Gerenciar entrada"
-        >
-          <div className="grid gap-4">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-              <div className="grid gap-2">
-                <Label>Adicionar membro</Label>
-                <Select
-                  disabled={isPending || availableUsers.length === 0}
-                  onValueChange={setSelectedUser}
-                  value={selectedUser}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione um jogador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableUsers.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {userLabel(user)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                disabled={isPending || availableUsers.length === 0}
-                onClick={addParticipant}
-              >
-                {busyKey === "add-participant" ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <UserPlus className="size-4" />
-                )}
-                Adicionar
-              </Button>
-            </div>
-
-            <Separator />
-
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_minmax(140px,170px)_auto] md:items-end">
-              <div>
-                <p className="text-sm font-medium">Convite por link</p>
-                <p className="text-sm text-muted-foreground">
-                  Qualquer usuário autenticado com o link entra na mesa.
-                </p>
-              </div>
-              <InvitationSettingsControls
-                disabled={isPending}
-                expiresIn={inviteExpiresIn}
-                expiresInId="table-invite-expires-in"
-                onExpiresInChange={setInviteExpiresIn}
-                onUseModeChange={setInviteUseMode}
-                useMode={inviteUseMode}
-                useModeId="table-invite-use-mode"
-              />
-              <Button
-                disabled={isPending}
-                onClick={createInvitation}
-                variant="outline"
-              >
-                {busyKey === "create-invite" ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
-                Gerar convite
-              </Button>
-            </div>
-
-            {table.currentInvitation ? (
-              <div className="grid gap-2 border-l-2 border-primary bg-muted/20 py-3 pl-4 pr-3">
-                <p className="break-all text-sm">
-                  {buildInvitationLink(table.currentInvitation.token)}
-                </p>
-                <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-                  <span>
-                    Expira em{" "}
-                    {formatDateTime(table.currentInvitation.expiresAt)}
-                  </span>
-                  <span>
-                    {table.currentInvitation.oneTimeUse
-                      ? "Uso único"
-                      : "Reutilizável"}
-                  </span>
-                  <Button
-                    disabled={isPending}
-                    onClick={() =>
-                      copyInvitation(table.currentInvitation!.token)
-                    }
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <Copy className="size-4" />
-                    Copiar link
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </WorkflowSection>
-      ) : null}
-
-      <WorkflowSection
-        description="Histórico recente e variação de Elo da mesa."
-        title="Últimas rodadas"
-      >
-        <div className="overflow-x-auto">
-          {table.recentMatches.length > 0 ? (
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -732,15 +577,21 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                       <TableCell className="text-right">
                         {match.kind === "match" && !match.rolledBack ? (
                           <Button
-                            disabled={isPending}
+                            disabled={actionDisabled}
                             onClick={() => rollbackMatch(match.id)}
                             size="sm"
                             variant="destructive"
                           >
                             {busyKey === `rollback-match:${match.id}` ? (
-                              <Loader2 className="size-4 animate-spin" />
+                              <Loader2
+                                aria-hidden="true"
+                                className="size-4 animate-spin"
+                              />
                             ) : (
-                              <RotateCcw className="size-4" />
+                              <RotateCcw
+                                aria-hidden="true"
+                                className="size-4"
+                              />
                             )}
                             Reverter
                           </Button>
@@ -751,14 +602,9 @@ export function TableDetail({ canManage, table, users }: TableDetailProps) {
                 ))}
               </TableBody>
             </Table>
-          ) : (
-            <EmptyState title="Nenhuma rodada finalizada">
-              Assim que uma partida for encerrada, o histórico e a variação de
-              Elo aparecem aqui.
-            </EmptyState>
-          )}
-        </div>
-      </WorkflowSection>
+          </div>
+        </WorkflowSection>
+      ) : null}
     </div>
   );
 }

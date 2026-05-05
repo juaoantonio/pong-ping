@@ -305,6 +305,7 @@ export const getTableDetail = cache(
       viewerIsQueued: Boolean(viewerParticipant),
       viewerIsPlaying,
       viewerQueuePosition: viewerParticipant?.queuePosition ?? null,
+      viewerUserId,
       recentMatches: table.matchHistories.map((match) => ({
         id: match.id,
         kind: match.kind,
