@@ -1,7 +1,7 @@
 # Pong Ping
 
 This repository is a pnpm/Turborepo monorepo. The Next.js app lives in
-`apps/web`.
+`apps/web`; the initial NestJS API app lives in `apps/api`.
 
 ## Getting Started
 
@@ -18,7 +18,9 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see
-the app.
+the web app. The API listens on
+[http://127.0.0.1:3001/v1](http://127.0.0.1:3001/v1), with health at
+`/v1/health` and docs at `/v1/docs`.
 
 ## Common Commands
 
@@ -35,6 +37,14 @@ pnpm prisma:migrate
 App-local environment files should live in `apps/web/.env`, or variables can
 be passed by the shell when running the app workspace. See
 `apps/web/.env.example` for the expected variables.
+
+The API uses `apps/api/envs/.env` and a separate PostgreSQL database named
+`pong_ping_api` in the root Docker Compose Postgres service. New Docker volumes
+create that database automatically. For an existing volume, run:
+
+```bash
+docker compose exec postgres psql -U postgres -d mydb -c "CREATE DATABASE pong_ping_api;"
+```
 
 ## Deploy on Vercel
 
