@@ -17,6 +17,24 @@ enum MatchHistoryKind {
   rollback
 }
 
+enum AthleteTechnicalLevel {
+  beginner
+  intermediate
+  advanced
+  competitive
+}
+
+enum AthleteGripStyle {
+  classic
+  penhold
+}
+
+enum AthletePlayingStyle {
+  offensive
+  defensive
+  all_round
+}
+
 model Tenant {
   id              String                    @id @default(cuid())
   name            String
@@ -25,6 +43,7 @@ model Tenant {
   updatedAt       DateTime                  @default(now()) @updatedAt
   users           User[]
   accounts        Account[]
+  athleteProfiles AthleteProfile[]
   auditLogs       AuditLog[]
   allowedEmails   AllowedEmail[]
   authInvitations AuthInvitation[]
@@ -54,6 +73,7 @@ model User {
   accounts                Account[]
   sessions                Session[]
   auditLogs               AuditLog[]                 @relation("ActorAuditLogs")
+  athleteProfile          AthleteProfile?
   allowedEmails           AllowedEmail[]             @relation("AllowedEmailCreator")
   invitations             AuthInvitation[]           @relation("AuthInvitationCreator")
   playerRanking           PlayerRanking?
@@ -69,6 +89,27 @@ model User {
   @@unique([tenantId, googleId])
   @@index([tenantId, createdAt])
   @@index([tenantId, role])
+}
+
+model AthleteProfile {
+  id                 String                 @id @default(cuid())
+  tenantId           String
+  userId             String                 @unique
+  technicalLevel     AthleteTechnicalLevel?
+  gripStyle          AthleteGripStyle?
+  playingStyle       AthletePlayingStyle?
+  bladeName          String?
+  forehandRubberName String?
+  backhandRubberName String?
+  equipmentNotes     String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @default(now()) @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, updatedAt])
 }
 
 model Account {
