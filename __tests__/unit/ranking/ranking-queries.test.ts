@@ -3,6 +3,7 @@
  */
 
 import { connection } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { getPublicRankings } from "@/lib/rankings/queries";
 import { prisma } from "@/lib/prisma";
 
@@ -30,16 +31,44 @@ jest.mock("@/lib/prisma", () => ({
 const mockedConnection = jest.mocked(connection);
 const mockedPrisma = jest.mocked(prisma);
 
+type PublicRankingUser = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    email: true;
+    image: true;
+    avatarUrl: true;
+    playerRanking: {
+      select: {
+        elo: true;
+        wins: true;
+        total_matches: true;
+        winRate: true;
+      };
+    };
+  };
+}>;
+
+type PublicRankLevel = Prisma.RankLevelGetPayload<{
+  select: {
+    name: true;
+    minElo: true;
+    iconImgKey: true;
+  };
+}>;
+
 describe("ranking queries", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedConnection.mockResolvedValue(undefined);
     mockedPrisma.user.count.mockResolvedValue(1);
-    mockedPrisma.user.findMany.mockResolvedValue([
+    const publicRankingUsers = [
       {
         id: "user-1",
         name: "Player",
         email: "player@example.com",
+        image: "https://example.com/google-avatar.png",
+        avatarUrl: null,
         playerRanking: {
           elo: 1100,
           wins: 3,
@@ -47,10 +76,15 @@ describe("ranking queries", () => {
           winRate: 75,
         },
       },
-    ]);
-    mockedPrisma.rankLevel.findMany.mockResolvedValue([
+    ] satisfies PublicRankingUser[];
+    const publicRankLevels = [
       { name: "Bronze", minElo: 1000, iconImgKey: "missing.png" },
-    ]);
+    ] satisfies PublicRankLevel[];
+
+    mockedPrisma.user.findMany.mockResolvedValue(publicRankingUsers as never);
+    mockedPrisma.rankLevel.findMany.mockResolvedValue(
+      publicRankLevels as never,
+    );
   });
 
   it("scopes public ranking reads to the requested tenant", async () => {
@@ -63,6 +97,7 @@ describe("ranking queries", () => {
       rankings: [
         {
           id: "user-1",
+          avatarUrl: "https://example.com/google-avatar.png",
           ranking: {
             elo: 1100,
             wins: 3,
@@ -80,6 +115,10 @@ describe("ranking queries", () => {
     expect(mockedPrisma.user.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { tenantId: "tenant-1" },
+        select: expect.objectContaining({
+          avatarUrl: true,
+          image: true,
+        }),
       }),
     );
   });
