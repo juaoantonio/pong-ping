@@ -51,6 +51,8 @@ export const getPublicRankings = cache(async (
         id: true,
         name: true,
         email: true,
+        image: true,
+        avatarUrl: true,
         playerRanking: {
           select: {
             elo: true,
@@ -77,6 +79,7 @@ export const getPublicRankings = cache(async (
     pageInfo,
     rankings: users
       .map((user) => {
+        const { avatarUrl, image, ...publicUser } = user;
         const ranking = user.playerRanking ?? {
           elo: DEFAULT_PLAYER_ELO,
           wins: 0,
@@ -91,7 +94,8 @@ export const getPublicRankings = cache(async (
           : false;
 
         return {
-          ...user,
+          ...publicUser,
+          avatarUrl: avatarUrl ?? image,
           ranking,
           rankLevel,
           rankIconExists,

@@ -18,6 +18,7 @@ import {
   RankingTableSkeleton,
 } from "@/components/page-skeletons";
 import { PaginationControls } from "@/components/pagination-controls";
+import { UserAvatar } from "@/components/user-avatar";
 import {
   getPaginationOffset,
   parseServerPaginationParams,
@@ -145,34 +146,42 @@ async function RankingTable({
         </div>
 
         <div className="divide-y border-y border-border/80 md:hidden">
-          {result.rankings.map((user, index) => (
-            <article className="grid min-w-0 gap-3 px-1 py-4" key={user.id}>
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">
-                    #{rankingOffset + index + 1} {user.name ?? "Sem nome"}
-                  </p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {user.email ?? "Sem email"}
-                  </p>
+          {result.rankings.map((user, index) => {
+            const label = user.name ?? user.email ?? "Usuário";
+
+            return (
+              <article className="grid min-w-0 gap-3 px-1 py-4" key={user.id}>
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <UserAvatar name={label} src={user.avatarUrl} />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">
+                        #{rankingOffset + index + 1} {user.name ?? "Sem nome"}
+                      </p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {user.email ?? "Sem email"}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge className="shrink-0" variant="secondary">
+                    {integerFormatter.format(user.ranking.elo)} Elo
+                  </Badge>
                 </div>
-                <Badge variant="secondary">
-                  {integerFormatter.format(user.ranking.elo)} Elo
-                </Badge>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-sm tabular-nums">
-                <span>
-                  {integerFormatter.format(user.ranking.wins)} vitórias
-                </span>
-                <span>
-                  {integerFormatter.format(user.ranking.total_matches)} partidas
-                </span>
-                <span>
-                  {percentFormatter.format(user.ranking.winRate / 100)}
-                </span>
-              </div>
-            </article>
-          ))}
+                <div className="grid grid-cols-3 gap-2 text-sm tabular-nums">
+                  <span>
+                    {integerFormatter.format(user.ranking.wins)} vitórias
+                  </span>
+                  <span>
+                    {integerFormatter.format(user.ranking.total_matches)}{" "}
+                    partidas
+                  </span>
+                  <span>
+                    {percentFormatter.format(user.ranking.winRate / 100)}
+                  </span>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         <div className="hidden overflow-x-auto md:block">
@@ -189,53 +198,62 @@ async function RankingTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {result.rankings.map((user, index) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-semibold">
-                    {integerFormatter.format(rankingOffset + index + 1)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">
-                        {user.name ?? "Sem nome"}
-                      </p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {user.email ?? "Sem email"}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {user.rankLevel ? (
-                      <div className="flex items-center gap-2">
-                        {user.rankIconExists ? (
-                          <Image
-                            alt=""
-                            className="size-7 rounded-sm object-contain"
-                            height={28}
-                            src={`/${user.rankLevel.iconImgKey}`}
-                            width={28}
-                          />
-                        ) : null}
-                        <Badge variant="secondary">{user.rankLevel.name}</Badge>
+              {result.rankings.map((user, index) => {
+                const label = user.name ?? user.email ?? "Usuário";
+
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-semibold">
+                      {integerFormatter.format(rankingOffset + index + 1)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex min-w-64 items-center gap-3">
+                        <UserAvatar name={label} src={user.avatarUrl} />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">
+                            {user.name ?? "Sem nome"}
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {user.email ?? "Sem email"}
+                          </p>
+                        </div>
                       </div>
-                    ) : (
-                      <Badge variant="outline">Sem nível</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">
-                    {integerFormatter.format(user.ranking.elo)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {integerFormatter.format(user.ranking.wins)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {integerFormatter.format(user.ranking.total_matches)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {percentFormatter.format(user.ranking.winRate / 100)}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      {user.rankLevel ? (
+                        <div className="flex items-center gap-2">
+                          {user.rankIconExists ? (
+                            <Image
+                              alt=""
+                              className="size-7 rounded-sm object-contain"
+                              height={28}
+                              src={`/${user.rankLevel.iconImgKey}`}
+                              width={28}
+                            />
+                          ) : null}
+                          <Badge variant="secondary">
+                            {user.rankLevel.name}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <Badge variant="outline">Sem nível</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {integerFormatter.format(user.ranking.elo)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {integerFormatter.format(user.ranking.wins)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {integerFormatter.format(user.ranking.total_matches)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {percentFormatter.format(user.ranking.winRate / 100)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
