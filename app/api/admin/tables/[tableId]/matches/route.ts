@@ -52,6 +52,7 @@ export async function POST(request: Request, context: RouteContext) {
         tableId,
         winnerParticipantId,
         actorUserId: actor.id,
+        actorCanManageTable: true,
       }),
     );
 

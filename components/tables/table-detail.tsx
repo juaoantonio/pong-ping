@@ -178,6 +178,8 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
   const currentMatch = table.participants.slice(0, 2);
   const queuedParticipants = table.participants.slice(2);
   const roundIsActive = currentMatch.length === 2;
+  const viewerCanFinishRound =
+    roundIsActive && (canManage || table.viewerIsPlaying);
   const actionDisabled = isPending || busyKey !== null;
   const viewerQueuePosition =
     table.viewerQueuePosition === null ? null : table.viewerQueuePosition + 1;
@@ -261,7 +263,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
 
   function finishMatch(winnerParticipantId: string, winnerName: string) {
     runAction(`finish-match:${winnerParticipantId}`, async () => {
-      const response = await fetch(`/api/admin/tables/${table.id}/matches`, {
+      const response = await fetch(`/api/tables/${table.id}/matches`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ winnerParticipantId }),
@@ -451,7 +453,7 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
               ) : null}
             </div>
 
-            {canManage && roundIsActive ? (
+            {viewerCanFinishRound ? (
               <div className="border-t border-border pt-4">
                 <Dialog>
                   <DialogTrigger asChild>

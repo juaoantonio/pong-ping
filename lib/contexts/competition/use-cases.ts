@@ -22,6 +22,7 @@ const COMPETITION_CONTEXT = "competition";
 
 export type CompetitionErrorCode =
   | "table_not_found"
+  | "finish_match_forbidden"
   | "not_enough_players"
   | "winner_not_in_current_match"
   | "match_not_found"
@@ -61,6 +62,7 @@ export async function finishMatch(
   tx: Tx,
   input: {
     actorUserId: string;
+    actorCanManageTable: boolean;
     tenantId: string;
     tableId: string;
     winnerParticipantId: string;
@@ -90,6 +92,14 @@ export async function finishMatch(
   }
 
   const currentPlayers = currentPlayersResult.value;
+  const actorIsCurrentPlayer = currentPlayers.some(
+    (participant) => participant.userId === input.actorUserId,
+  );
+
+  if (!input.actorCanManageTable && !actorIsCurrentPlayer) {
+    return fail(competitionError("finish_match_forbidden"));
+  }
+
   const winnerParticipant = currentPlayers.find(
     (participant) => participant.id === input.winnerParticipantId,
   );

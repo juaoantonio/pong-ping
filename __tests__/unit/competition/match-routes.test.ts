@@ -5,9 +5,10 @@
 import { POST as rollbackRound } from "@/app/api/admin/rounds/[roundId]/rollback/route";
 import { POST as rollbackTableMatch } from "@/app/api/admin/tables/[tableId]/matches/[matchId]/rollback/route";
 import { POST as finishTableMatch } from "@/app/api/admin/tables/[tableId]/matches/route";
+import { POST as finishPlayerTableMatch } from "@/app/api/tables/[tableId]/matches/route";
 import { requireAdmin } from "@/app/api/admin/_shared";
-import { isSuperAdmin } from "@/lib/auth/roles";
-import { getCurrentUser } from "@/lib/auth/session";
+import { canAccessAdmin, isSuperAdmin } from "@/lib/auth/roles";
+import { getCurrentUser, type AuthenticatedUser } from "@/lib/auth/session";
 import { finishMatch, rollbackMatch } from "@/lib/contexts/competition";
 import { prisma } from "@/lib/prisma";
 
@@ -18,6 +19,7 @@ jest.mock("@/app/api/admin/_shared", () => ({
 }));
 
 jest.mock("@/lib/auth/roles", () => ({
+  canAccessAdmin: jest.fn(),
   isSuperAdmin: jest.fn(),
 }));
 
@@ -44,6 +46,7 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 const mockedRequireAdmin = jest.mocked(requireAdmin);
+const mockedCanAccessAdmin = jest.mocked(canAccessAdmin);
 const mockedIsSuperAdmin = jest.mocked(isSuperAdmin);
 const mockedGetCurrentUser = jest.mocked(getCurrentUser);
 const mockedFinishMatch = jest.mocked(finishMatch);
@@ -51,16 +54,27 @@ const mockedRollbackMatch = jest.mocked(rollbackMatch);
 const mockedTransaction = jest.mocked(prisma.$transaction);
 const mockedPrisma = jest.mocked(prisma);
 
-function actor() {
+type RequireAdminResult = Awaited<ReturnType<typeof requireAdmin>>;
+type MatchHistoryFindFirstResult = Awaited<
+  ReturnType<typeof prisma.matchHistory.findFirst>
+>;
+
+function actor(
+  role: "superadmin" | "admin" | "user" = "superadmin",
+): AuthenticatedUser {
   return {
-    id: "admin-1",
-    role: "superadmin" as const,
-    email: "admin@example.com",
-    name: "Admin",
+    id: role === "user" ? "player-1" : "admin-1",
+    role,
+    email: `${role}@example.com`,
+    name: role === "user" ? "Player" : "Admin",
     avatarUrl: null,
     image: null,
     createdAt: new Date("2026-05-04T12:00:00.000Z"),
     tenantId: "tenant-1",
+    tenant: {
+      slug: "tenant-1",
+      name: "Tenant 1",
+    },
   };
 }
 
@@ -85,8 +99,11 @@ function roundRollbackContext() {
 describe("competition match routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedRequireAdmin.mockResolvedValue({ actor: actor() });
+    mockedRequireAdmin.mockResolvedValue({
+      actor: actor(),
+    } as RequireAdminResult);
     mockedGetCurrentUser.mockResolvedValue(actor());
+    mockedCanAccessAdmin.mockReturnValue(true);
     mockedIsSuperAdmin.mockReturnValue(true);
     mockedTransaction.mockImplementation(async (callback) =>
       callback({} as never),
@@ -128,6 +145,112 @@ describe("competition match routes", () => {
       tenantId: "tenant-1",
       winnerParticipantId: "participant-1",
       actorUserId: "admin-1",
+      actorCanManageTable: true,
+    });
+  });
+
+  it("lets a current player finish a match through the tenant table route", async () => {
+    mockedGetCurrentUser.mockResolvedValue(actor("user"));
+    mockedCanAccessAdmin.mockReturnValue(false);
+    mockedFinishMatch.mockResolvedValue({
+      ok: true,
+      value: {
+        id: "match-1",
+        winnerId: "winner-1",
+        loserId: "loser-1",
+        winnerNewElo: 1032,
+        loserNewElo: 968,
+      },
+    });
+
+    const response = await finishPlayerTableMatch(
+      new Request("http://test.local", {
+        method: "POST",
+        body: JSON.stringify({ winnerParticipantId: "participant-1" }),
+      }),
+      tableContext(),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      match: {
+        id: "match-1",
+        winnerId: "winner-1",
+        loserId: "loser-1",
+        winnerNewElo: 1032,
+        loserNewElo: 968,
+      },
+    });
+    expect(mockedFinishMatch).toHaveBeenCalledWith(expect.anything(), {
+      tableId: "table-1",
+      tenantId: "tenant-1",
+      winnerParticipantId: "participant-1",
+      actorUserId: "player-1",
+      actorCanManageTable: false,
+    });
+  });
+
+  it("rejects unauthenticated player finish requests", async () => {
+    mockedGetCurrentUser.mockResolvedValue(null);
+
+    const response = await finishPlayerTableMatch(
+      new Request("http://test.local", {
+        method: "POST",
+        body: JSON.stringify({ winnerParticipantId: "participant-1" }),
+      }),
+      tableContext(),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "Nao autenticado.",
+    });
+    expect(mockedFinishMatch).not.toHaveBeenCalled();
+  });
+
+  it("rejects player finish requests without tenant context", async () => {
+    mockedGetCurrentUser.mockResolvedValue({
+      ...actor("user"),
+      tenantId: null,
+    });
+
+    const response = await finishPlayerTableMatch(
+      new Request("http://test.local", {
+        method: "POST",
+        body: JSON.stringify({ winnerParticipantId: "participant-1" }),
+      }),
+      tableContext(),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Contexto de tenant ausente.",
+    });
+    expect(mockedFinishMatch).not.toHaveBeenCalled();
+  });
+
+  it("maps forbidden player finish requests from the competition use case", async () => {
+    mockedGetCurrentUser.mockResolvedValue(actor("user"));
+    mockedCanAccessAdmin.mockReturnValue(false);
+    mockedFinishMatch.mockResolvedValue({
+      ok: false,
+      error: {
+        context: "competition",
+        code: "finish_match_forbidden",
+      },
+    });
+
+    const response = await finishPlayerTableMatch(
+      new Request("http://test.local", {
+        method: "POST",
+        body: JSON.stringify({ winnerParticipantId: "participant-1" }),
+      }),
+      tableContext(),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Apenas jogadores da rodada atual ou admins podem encerrar a rodada.",
     });
   });
 
@@ -214,7 +337,7 @@ describe("competition match routes", () => {
   it("keeps admin round rollback table-id precheck and uses competition rollback", async () => {
     mockedPrisma.matchHistory.findFirst.mockResolvedValue({
       tableId: "table-1",
-    });
+    } as MatchHistoryFindFirstResult);
     mockedRollbackMatch.mockResolvedValue({
       ok: true,
       value: {

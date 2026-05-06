@@ -2,7 +2,11 @@
  * @jest-environment node
  */
 
-import { finishMatch, rollbackMatch } from "@/lib/contexts/competition";
+import {
+  finishMatch,
+  mapCompetitionErrorToHttp,
+  rollbackMatch,
+} from "@/lib/contexts/competition";
 
 function ranking(userId: string, elo = 1000) {
   return {
@@ -65,7 +69,7 @@ function createFinishTx() {
 }
 
 describe("competition match use cases", () => {
-  it("finishes a match with equivalent Elo, match history, audit, and queue rotation", async () => {
+  it("lets an admin/non-current actor finish a match with existing side effects", async () => {
     const tx = createFinishTx();
 
     await expect(
@@ -74,6 +78,7 @@ describe("competition match use cases", () => {
         tenantId: "tenant-1",
         winnerParticipantId: "participant-winner",
         actorUserId: "admin-1",
+        actorCanManageTable: true,
       }),
     ).resolves.toEqual({
       ok: true,
@@ -150,6 +155,71 @@ describe("competition match use cases", () => {
     });
   });
 
+  it("lets a current player with role user finish the match", async () => {
+    const tx = createFinishTx();
+
+    await expect(
+      finishMatch(tx as never, {
+        tableId: "table-1",
+        tenantId: "tenant-1",
+        winnerParticipantId: "participant-winner",
+        actorUserId: "winner-1",
+        actorCanManageTable: false,
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        id: "match-1",
+        winnerId: "winner-1",
+        loserId: "loser-1",
+        winnerNewElo: 1032,
+        loserNewElo: 968,
+      },
+    });
+
+    expect(tx.matchHistory.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        createdById: "winner-1",
+        winnerId: "winner-1",
+        loserId: "loser-1",
+      }),
+      select: expect.any(Object),
+    });
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        actorUserId: "winner-1",
+        action: "table_match_finished",
+      }),
+    });
+    expect(tx.pingPongTableParticipant.update).toHaveBeenCalled();
+  });
+
+  it("rejects same-tenant non-current actors before match writes", async () => {
+    const tx = createFinishTx();
+
+    await expect(
+      finishMatch(tx as never, {
+        tableId: "table-1",
+        tenantId: "tenant-1",
+        winnerParticipantId: "participant-winner",
+        actorUserId: "next-1",
+        actorCanManageTable: false,
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        context: "competition",
+        code: "finish_match_forbidden",
+      },
+    });
+
+    expect(tx.playerRanking.upsert).not.toHaveBeenCalled();
+    expect(tx.playerRanking.update).not.toHaveBeenCalled();
+    expect(tx.matchHistory.create).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+    expect(tx.pingPongTableParticipant.update).not.toHaveBeenCalled();
+  });
+
   it("rejects cross-tenant table ids as not found", async () => {
     const tx = createFinishTx();
     tx.pingPongTable.findFirst.mockResolvedValueOnce(null);
@@ -160,6 +230,7 @@ describe("competition match use cases", () => {
         tenantId: "tenant-2",
         winnerParticipantId: "participant-winner",
         actorUserId: "admin-1",
+        actorCanManageTable: true,
       }),
     ).resolves.toEqual({
       ok: false,
@@ -184,6 +255,7 @@ describe("competition match use cases", () => {
         tenantId: "tenant-1",
         winnerParticipantId: "participant-1",
         actorUserId: "admin-1",
+        actorCanManageTable: true,
       }),
     ).resolves.toEqual({
       ok: false,
@@ -205,6 +277,7 @@ describe("competition match use cases", () => {
         tenantId: "tenant-1",
         winnerParticipantId: "participant-next",
         actorUserId: "admin-1",
+        actorCanManageTable: true,
       }),
     ).resolves.toEqual({
       ok: false,
@@ -212,6 +285,23 @@ describe("competition match use cases", () => {
         context: "competition",
         code: "winner_not_in_current_match",
       },
+    });
+  });
+});
+
+describe("competition error mapping", () => {
+  it("maps finish match forbidden to HTTP 403", () => {
+    expect(
+      mapCompetitionErrorToHttp({
+        context: "competition",
+        code: "finish_match_forbidden",
+      }),
+    ).toEqual({
+      body: {
+        error:
+          "Apenas jogadores da rodada atual ou admins podem encerrar a rodada.",
+      },
+      status: 403,
     });
   });
 });

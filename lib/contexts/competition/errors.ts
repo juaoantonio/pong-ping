@@ -7,6 +7,14 @@ export function mapCompetitionErrorToHttp(error: CompetitionError): {
   switch (error.code) {
     case "table_not_found":
       return { body: { error: "Mesa nao encontrada." }, status: 404 };
+    case "finish_match_forbidden":
+      return {
+        body: {
+          error:
+            "Apenas jogadores da rodada atual ou admins podem encerrar a rodada.",
+        },
+        status: 403,
+      };
     case "not_enough_players":
       return {
         body: { error: "A fila precisa de pelo menos dois jogadores." },
