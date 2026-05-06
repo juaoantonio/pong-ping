@@ -9,6 +9,7 @@ export type AuditAction =
   | "invitation_used"
   | "role_changed"
   | "table_created"
+  | "table_current_round_left"
   | "table_invitation_created"
   | "table_joined_via_invitation"
   | "table_match_finished"

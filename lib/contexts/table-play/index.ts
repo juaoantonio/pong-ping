@@ -15,6 +15,7 @@ export type TablePlayErrorCode =
   | "user_already_queued"
   | "participant_not_found"
   | "user_not_queued"
+  | "user_not_in_current_match"
   | "current_player_cannot_leave_queue"
   | "not_enough_players"
   | "winner_not_in_current_match";
@@ -58,6 +59,7 @@ const tablePlayMessages: Record<TablePlayErrorCode, string> = {
   user_already_queued: "Voce ja esta na fila desta mesa.",
   participant_not_found: "Participante nao encontrado.",
   user_not_queued: "Voce nao esta na fila desta mesa.",
+  user_not_in_current_match: "Voce nao esta na rodada atual.",
   current_player_cannot_leave_queue:
     "Jogadores da rodada atual nao podem sair da fila.",
   not_enough_players: "A fila precisa de pelo menos dois jogadores.",
@@ -276,6 +278,48 @@ export async function removeUserFromTableQueue(
 
   if (participant.queuePosition < 2 && queueCount >= 2) {
     return fail(tablePlayError("current_player_cannot_leave_queue"));
+  }
+
+  const removeResult = await removeParticipantFromTable(
+    tx,
+    tableId,
+    participant.id,
+    tenantId,
+  );
+
+  if (!removeResult.ok) {
+    return removeResult;
+  }
+
+  return { ok: true, value: participant };
+}
+
+export async function removeUserFromCurrentRound(
+  tx: Tx,
+  tableId: string,
+  userId: string,
+  tenantId: string,
+): Promise<DomainResult<RemovedTableParticipant, TablePlayError>> {
+  const [table, participant, queueCount] = await Promise.all([
+    tx.pingPongTable.findFirst({
+      where: { id: tableId, tenantId, deletedAt: null },
+      select: { id: true },
+    }),
+    tx.pingPongTableParticipant.findFirst({
+      where: { tableId, userId, tenantId },
+      select: { id: true, queuePosition: true },
+    }),
+    tx.pingPongTableParticipant.count({
+      where: { tableId, tenantId },
+    }),
+  ]);
+
+  if (!table) {
+    return fail(tablePlayError("table_not_found"));
+  }
+
+  if (!participant || participant.queuePosition >= 2 || queueCount < 2) {
+    return fail(tablePlayError("user_not_in_current_match"));
   }
 
   const removeResult = await removeParticipantFromTable(

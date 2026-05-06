@@ -3,10 +3,12 @@
  */
 
 import { DELETE, POST } from "@/app/api/tables/[tableId]/queue/route";
+import { DELETE as DELETE_SEAT } from "@/app/api/tables/[tableId]/seat/route";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import {
   enqueueUserInTable,
+  removeUserFromCurrentRound,
   removeUserFromTableQueue,
 } from "@/lib/contexts/table-play";
 
@@ -22,12 +24,14 @@ jest.mock("@/lib/prisma", () => ({
 
 jest.mock("@/lib/contexts/table-play", () => ({
   enqueueUserInTable: jest.fn(),
+  removeUserFromCurrentRound: jest.fn(),
   removeUserFromTableQueue: jest.fn(),
 }));
 
 const mockedGetCurrentUser = jest.mocked(getCurrentUser);
 const mockedTransaction = jest.mocked(prisma.$transaction);
 const mockedEnqueueUserInTable = jest.mocked(enqueueUserInTable);
+const mockedRemoveUserFromCurrentRound = jest.mocked(removeUserFromCurrentRound);
 const mockedRemoveUserFromTableQueue = jest.mocked(removeUserFromTableQueue);
 
 function routeContext(tableId = "table-1") {
@@ -308,6 +312,68 @@ describe("table queue route", () => {
         action: "table_queue_left",
         metadata: { tableId: "table-1", participantId: "participant-1" },
       },
+    });
+  });
+
+  it("lets current players leave the table without finishing the round", async () => {
+    const auditCreate = jest.fn();
+
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
+    mockedTransaction.mockImplementation(async (callback) =>
+      callback({
+        auditLog: { create: auditCreate },
+      } as never),
+    );
+    mockedRemoveUserFromCurrentRound.mockResolvedValue({
+      ok: true,
+      value: {
+        id: "participant-1",
+        queuePosition: 0,
+      },
+    });
+
+    const response = await DELETE_SEAT(
+      new Request("http://test.local"),
+      routeContext(),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ ok: true });
+    expect(mockedRemoveUserFromCurrentRound).toHaveBeenCalledWith(
+      expect.anything(),
+      "table-1",
+      "user-1",
+      "tenant-1",
+    );
+    expect(auditCreate).toHaveBeenCalledWith({
+      data: {
+        actorUserId: "user-1",
+        targetUserId: "user-1",
+        action: "table_current_round_left",
+        metadata: { tableId: "table-1", participantId: "participant-1" },
+      },
+    });
+  });
+
+  it("rejects leaving the table when the user is not in the current round", async () => {
+    mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
+    mockedTransaction.mockImplementation(async (callback) =>
+      callback({
+        auditLog: { create: jest.fn() },
+      } as never),
+    );
+    mockedRemoveUserFromCurrentRound.mockResolvedValue(
+      tablePlayError("user_not_in_current_match") as never,
+    );
+
+    const response = await DELETE_SEAT(
+      new Request("http://test.local"),
+      routeContext(),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Voce nao esta na rodada atual.",
     });
   });
 });

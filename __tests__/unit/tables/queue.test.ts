@@ -1,5 +1,6 @@
 import {
   enqueueUserInTable,
+  removeUserFromCurrentRound,
   removeUserFromTableQueue,
   rotateQueueAfterMatch,
 } from "@/lib/contexts/table-play";
@@ -216,6 +217,77 @@ describe("table queue", () => {
         context: "table-play",
         code: "current_player_cannot_leave_queue",
         message: "Jogadores da rodada atual nao podem sair da fila.",
+      },
+    });
+    expect(tx.pingPongTableParticipant.delete).not.toHaveBeenCalled();
+  });
+
+  it("lets current players leave the active round without recording a match", async () => {
+    const tx = {
+      pingPongTable: {
+        findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
+      },
+      pingPongTableParticipant: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: "participant-1",
+          queuePosition: 0,
+        }),
+        count: jest.fn().mockResolvedValue(3),
+        findMany: jest.fn().mockResolvedValue([
+          { id: "participant-1" },
+          { id: "participant-2" },
+          { id: "participant-3" },
+        ]),
+        delete: jest.fn().mockResolvedValue({ id: "participant-1" }),
+        update: jest.fn().mockResolvedValue({}),
+      },
+    };
+
+    await expect(
+      removeUserFromCurrentRound(tx as never, "table-1", "user-1", "tenant-1"),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        id: "participant-1",
+        queuePosition: 0,
+      },
+    });
+    expect(tx.pingPongTableParticipant.delete).toHaveBeenCalledWith({
+      where: { id: "participant-1" },
+    });
+    expect(tx.pingPongTableParticipant.update).toHaveBeenCalledWith({
+      where: { id: "participant-2" },
+      data: { queuePosition: 1002 },
+    });
+    expect(tx.pingPongTableParticipant.update).toHaveBeenCalledWith({
+      where: { id: "participant-2" },
+      data: { queuePosition: 0 },
+    });
+  });
+
+  it("rejects non-current players leaving the active round", async () => {
+    const tx = {
+      pingPongTable: {
+        findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
+      },
+      pingPongTableParticipant: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: "participant-3",
+          queuePosition: 2,
+        }),
+        count: jest.fn().mockResolvedValue(3),
+        delete: jest.fn(),
+      },
+    };
+
+    await expect(
+      removeUserFromCurrentRound(tx as never, "table-1", "user-1", "tenant-1"),
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        context: "table-play",
+        code: "user_not_in_current_match",
+        message: "Voce nao esta na rodada atual.",
       },
     });
     expect(tx.pingPongTableParticipant.delete).not.toHaveBeenCalled();

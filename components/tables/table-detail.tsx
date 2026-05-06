@@ -226,6 +226,22 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
     });
   }
 
+  function leaveCurrentRound() {
+    runAction("leave-current-round", async () => {
+      const response = await fetch(`/api/tables/${table.id}/seat`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        toast.error(await readApiError(response));
+        return;
+      }
+
+      toast.success("Voce saiu da mesa sem encerrar a rodada.");
+      router.refresh();
+    });
+  }
+
   function removeParticipant(participantId: string) {
     runAction(`remove-participant:${participantId}`, async () => {
       const response = await fetch(
@@ -357,11 +373,22 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
 
             <div className="grid gap-2 sm:flex sm:flex-wrap">
               {table.viewerIsPlaying ? (
-                <Button asChild className="w-full sm:w-auto" size="lg">
-                  <Link href={`/tables/${table.id}/scoreboard/controls`}>
-                    <Plus aria-hidden="true" className="size-4" />
-                    Controles
-                  </Link>
+                <Button
+                  className="w-full sm:w-auto"
+                  disabled={actionDisabled}
+                  onClick={leaveCurrentRound}
+                  size="lg"
+                  variant="outline"
+                >
+                  {busyKey === "leave-current-round" ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-4 animate-spin"
+                    />
+                  ) : (
+                    <LogOut aria-hidden="true" className="size-4" />
+                  )}
+                  Sair da Mesa
                 </Button>
               ) : table.viewerIsQueued ? (
                 <Button
@@ -401,15 +428,24 @@ export function TableDetail({ canManage, table }: TableDetailProps) {
               )}
 
               {roundIsActive ? (
+                <Button asChild className="w-full sm:w-auto" size="lg">
+                  <Link href={`/tables/${table.id}/scoreboard`}>
+                    <MonitorUp aria-hidden="true" className="size-4" />
+                    Abrir placar
+                  </Link>
+                </Button>
+              ) : null}
+
+              {table.viewerIsPlaying ? (
                 <Button
                   asChild
                   className="w-full sm:w-auto"
                   size="lg"
-                  variant="outline"
+                  variant="secondary"
                 >
-                  <Link href={`/tables/${table.id}/scoreboard`}>
-                    <MonitorUp aria-hidden="true" className="size-4" />
-                    Abrir placar
+                  <Link href={`/tables/${table.id}/scoreboard/controls`}>
+                    <Plus aria-hidden="true" className="size-4" />
+                    Controles
                   </Link>
                 </Button>
               ) : null}
