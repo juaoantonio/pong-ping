@@ -1,4 +1,4 @@
-import { DomainRuleViolation } from "../../core/domain/shared";
+import { DomainRuleViolation } from "../../core/shared/domain";
 
 export const USER_ROLES = ["user", "admin", "superadmin"] as const;
 

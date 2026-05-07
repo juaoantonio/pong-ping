@@ -1,4 +1,4 @@
-import { AggregateRoot } from "../../core/domain/shared";
+import { AggregateRoot } from "../../core/shared/domain";
 import { type Email } from "./value-objects/email";
 import { type UserId } from "./value-objects/user-id";
 import { ensureUserRole, type UserRole } from "./user-role";

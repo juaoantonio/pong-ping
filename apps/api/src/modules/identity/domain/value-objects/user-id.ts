@@ -1,4 +1,4 @@
-import { DomainId } from "../../../core/domain/shared";
+import { DomainId } from "../../../core/shared/domain";
 
 export class UserId extends DomainId {
   public constructor(value: string) {

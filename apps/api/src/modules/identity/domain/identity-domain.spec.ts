@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DomainRuleViolation } from "../../core/domain/shared";
+import { DomainRuleViolation } from "../../core/shared/domain";
 import { User } from "./user";
 import { Email } from "./value-objects/email";
 import { UserId } from "./value-objects/user-id";

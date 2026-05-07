@@ -1,4 +1,4 @@
-import { DomainRuleViolation } from "../../../core/domain/shared";
+import { DomainRuleViolation } from "../../../core/shared/domain";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

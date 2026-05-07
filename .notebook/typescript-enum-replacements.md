@@ -9,9 +9,9 @@ Do not introduce TypeScript `enum` declarations. Represent enumerated values wit
 ## Current Pointers
 
 - `apps/api/src/common/shared/errors/app-error-code.enum.ts` defines `APP_ERROR_CODE` and `AppErrorCode`.
-- `apps/api/src/modules/core/domain/athletes/value-objects/athlete-technical-level.enum.ts` defines `ATHLETE_TECHNICAL_LEVEL` and `AthleteTechnicalLevel`.
-- `apps/api/src/modules/core/domain/athletes/value-objects/athlete-grip-style.enum.ts` defines `ATHLETE_GRIP_STYLE` and `AthleteGripStyle`.
-- `apps/api/src/modules/core/domain/athletes/value-objects/athlete-playing-style.enum.ts` defines `ATHLETE_PLAYING_STYLE` and `AthletePlayingStyle`.
+- `apps/api/src/modules/core/athlete/domain/value-objects/athlete-technical-level.enum.ts` defines `ATHLETE_TECHNICAL_LEVEL` and `AthleteTechnicalLevel`.
+- `apps/api/src/modules/core/athlete/domain/value-objects/athlete-grip-style.enum.ts` defines `ATHLETE_GRIP_STYLE` and `AthleteGripStyle`.
+- `apps/api/src/modules/core/athlete/domain/value-objects/athlete-playing-style.enum.ts` defines `ATHLETE_PLAYING_STYLE` and `AthletePlayingStyle`.
 
 ## Notes
 
