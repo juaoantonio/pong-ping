@@ -38,6 +38,7 @@
     "dotenv": "^17.2.3",
     "joi": "^18.0.1",
     "nest-winston": "^1.10.2",
+    "nestjs-cls": "^6.2.0",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -61,9 +62,9 @@
     "testcontainers": "^11.13.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "typeorm-ts-node-commonjs": "^0.3.20",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.1",
-    "typeorm-ts-node-commonjs": "^0.3.20",
     "unplugin-swc": "^1.5.8",
     "vitest": "^4.0.8"
   }
