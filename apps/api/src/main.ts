@@ -4,7 +4,7 @@ import { NestFactory } from "@nestjs/core";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import { AppModule } from "./app.module";
 import { configureApp } from "./configure-app";
-import type { ConfigSchema } from "./core/config/config.module";
+import type { ConfigSchema } from "./common/config/config.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });

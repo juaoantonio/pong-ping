@@ -1,11 +1,11 @@
 import type { INestApplication } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import type { ConfigSchema } from "./core/config/config.module";
-import { GlobalExceptionFilter } from "./core/shared/filters/global-exception.filter";
-import { SuccessEnvelopeInterceptor } from "./core/shared/interceptors/success-envelope.interceptor";
-import { requestIdMiddleware } from "./core/shared/middleware/request-id.middleware";
-import { createValidationPipe } from "./core/shared/validation/validation.pipe";
+import type { ConfigSchema } from "./common/config/config.module";
+import { GlobalExceptionFilter } from "./common/shared/filters/global-exception.filter";
+import { SuccessEnvelopeInterceptor } from "./common/shared/interceptors/success-envelope.interceptor";
+import { requestIdMiddleware } from "./common/shared/middleware/request-id.middleware";
+import { createValidationPipe } from "./common/shared/validation/validation.pipe";
 
 export function configureApp(app: INestApplication) {
   const config = app.get(ConfigService<ConfigSchema>);
