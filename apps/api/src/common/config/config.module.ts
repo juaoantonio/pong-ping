@@ -25,7 +25,18 @@ type DatabaseConfig = {
   DB_SYNCHRONIZE: boolean;
 };
 
-export type ConfigSchema = AppConfig & CorsConfig & DatabaseConfig;
+type IdentityAuthConfig = {
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_CALLBACK_URL: string;
+  SESSION_SECRET: string;
+  SESSION_COOKIE_NAME: string;
+  SESSION_TTL_SECONDS: number;
+  ROOT_DOMAIN: string;
+  RESERVED_TENANT_SUBDOMAINS: string[];
+};
+
+export type ConfigSchema = AppConfig & CorsConfig & DatabaseConfig & IdentityAuthConfig;
 
 export const appSchema: Joi.StrictSchemaMap<AppConfig> = {
   NODE_ENV: Joi.string().valid("development", "test", "production").default("development"),
@@ -65,6 +76,37 @@ export const databaseSchema: Joi.StrictSchemaMap<DatabaseConfig> = {
   DB_SYNCHRONIZE: Joi.boolean().default(false),
 };
 
+const jsonStringArray = (label: string) =>
+  Joi.string()
+    .custom((value: string, helpers) => {
+      try {
+        const parsedValue = JSON.parse(value) as string[];
+        if (!Array.isArray(parsedValue)) return helpers.error("any.invalid", { value });
+        const { error } = Joi.array().items(Joi.string()).validate(parsedValue);
+        if (error) return helpers.error("any.invalid", { value });
+        return parsedValue;
+      } catch {
+        return helpers.error("any.invalid", { value });
+      }
+    })
+    .messages({
+      "any.invalid": `${label} must be a JSON string containing an array of strings.`,
+    }) as unknown as ArraySchema<string[]>;
+
+export const identityAuthSchema: Joi.StrictSchemaMap<IdentityAuthConfig> = {
+  GOOGLE_CLIENT_ID: Joi.string().required(),
+  GOOGLE_CLIENT_SECRET: Joi.string().required(),
+  GOOGLE_CALLBACK_URL: Joi.string().uri().required(),
+  SESSION_SECRET: Joi.string().min(32).required(),
+  SESSION_COOKIE_NAME: Joi.string().default("pong_ping_session"),
+  SESSION_TTL_SECONDS: Joi.number().integer().min(60).default(60 * 60 * 24 * 14),
+  ROOT_DOMAIN: Joi.string().hostname().default("localhost"),
+  RESERVED_TENANT_SUBDOMAINS: jsonStringArray("RESERVED_TENANT_SUBDOMAINS").default([
+    "api",
+    "www",
+  ]),
+};
+
 @Module({})
 export class ConfigModule extends NestConfigModule {
   static forRoot(options: ConfigModuleOptions = {}) {
@@ -82,6 +124,7 @@ export class ConfigModule extends NestConfigModule {
         ...appSchema,
         ...corsSchema,
         ...databaseSchema,
+        ...identityAuthSchema,
       }),
       ...otherOptions,
     });
