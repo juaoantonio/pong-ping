@@ -1,0 +1,16 @@
+import { DomainRuleViolation } from "../../shared";
+
+export class TierThreshold {
+  public readonly minPoints: number;
+
+  public constructor(minPoints: number) {
+    if (!Number.isInteger(minPoints) || minPoints < 0) {
+      throw new DomainRuleViolation(
+        "invalid_tier_threshold",
+        "Tier threshold must be a non-negative integer.",
+      );
+    }
+
+    this.minPoints = minPoints;
+  }
+}
