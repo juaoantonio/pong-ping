@@ -1,14 +1,13 @@
-import { type UserId } from "../../../identity/domain";
-import { DomainRuleViolation } from "../../shared/domain";
+import { type ActorId, DomainRuleViolation } from "../../shared/domain";
 
 type InvitationClaimInput = {
   claimedAt: Date;
-  claimedBy: UserId;
+  claimedBy: ActorId;
 };
 
 export class InvitationClaim {
   public readonly claimedAt: Date;
-  public readonly claimedBy: UserId;
+  public readonly claimedBy: ActorId;
 
   public constructor(input: InvitationClaimInput) {
     if (Number.isNaN(input.claimedAt.getTime())) {

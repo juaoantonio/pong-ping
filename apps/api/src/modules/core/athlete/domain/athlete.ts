@@ -1,6 +1,5 @@
 import { type ClubId } from "../../club/domain";
-import { type UserId } from "../../../identity/domain";
-import { AggregateRoot } from "../../shared/domain";
+import { AggregateRoot, type ActorId } from "../../shared/domain";
 import { type AthleteId } from "./value-objects/athlete-id";
 import { type AthleteDisplayName } from "./value-objects/athlete-display-name";
 import { AthleteProfile } from "./value-objects/athlete-profile";
@@ -8,14 +7,14 @@ import { AthleteProfile } from "./value-objects/athlete-profile";
 type AthleteRegistration = {
   id: AthleteId;
   clubId: ClubId;
-  userId: UserId;
+  userId: ActorId;
   displayName: AthleteDisplayName;
   profile?: AthleteProfile;
 };
 
 export class Athlete extends AggregateRoot<AthleteId> {
   public readonly clubId: ClubId;
-  public readonly userId: UserId;
+  public readonly userId: ActorId;
   private displayNameValue: AthleteDisplayName;
   private profileValue: AthleteProfile;
 

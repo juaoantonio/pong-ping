@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { type UserId } from "../../../identity/domain";
-import { AggregateRoot } from "../../shared/domain";
+import { AggregateRoot, type ActorId } from "../../shared/domain";
 import { InvitationClaim } from "./invitation-claim";
 import { type InvitationExpiration } from "./invitation-expiration";
 import { InvitationPolicy } from "./invitation-policy";
@@ -17,7 +16,7 @@ export type InvitationState = {
 
 export type ClaimInvitationInput = {
   claimedAt: Date;
-  claimedBy: UserId;
+  claimedBy: ActorId;
 };
 
 export abstract class Invitation extends AggregateRoot<InviteId> {

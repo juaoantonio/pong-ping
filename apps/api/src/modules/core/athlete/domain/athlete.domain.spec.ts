@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ClubId } from "../../club/domain";
-import { UserId } from "../../../identity/domain";
-import { DomainRuleViolation } from "../../shared/domain";
+import { ActorId, DomainRuleViolation } from "../../shared/domain";
 import { Athlete } from "./athlete";
 import { AthleteId } from "./value-objects/athlete-id";
 import { AthleteDisplayName } from "./value-objects/athlete-display-name";
@@ -16,7 +15,7 @@ describe("dominio de atletas", () => {
     const athlete = Athlete.register({
       id: new AthleteId("athlete-1"),
       clubId: new ClubId("club-1"),
-      userId: new UserId("user-1"),
+      userId: new ActorId("user-1"),
       displayName: new AthleteDisplayName("  Nico   Pong  "),
     });
 
@@ -30,7 +29,7 @@ describe("dominio de atletas", () => {
     const athlete = Athlete.register({
       id: new AthleteId("athlete-1"),
       clubId: new ClubId("club-1"),
-      userId: new UserId("user-1"),
+      userId: new ActorId("user-1"),
       displayName: new AthleteDisplayName("Nico"),
     });
 

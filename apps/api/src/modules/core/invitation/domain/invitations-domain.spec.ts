@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ClubId } from "../../club/domain";
-import { UserId } from "../../../identity/domain";
-import { DomainRuleViolation } from "../../shared/domain";
+import { ActorId, DomainRuleViolation } from "../../shared/domain";
 import { TableId } from "../../table/domain";
 import { ClubInvite } from "./club-invite";
 import { InvitationExpiration } from "./invitation-expiration";
@@ -42,14 +41,14 @@ describe("dominio de convites", () => {
 
     invite.claim({
       claimedAt: new Date("2026-05-07T10:00:00.000Z"),
-      claimedBy: new UserId("user-1"),
+      claimedBy: new ActorId("user-1"),
     });
 
     expectInvitationRuleViolation(
       () =>
         invite.claim({
           claimedAt: new Date("2026-05-07T11:00:00.000Z"),
-          claimedBy: new UserId("user-2"),
+          claimedBy: new ActorId("user-2"),
         }),
       "invitation_used",
     );
@@ -65,11 +64,11 @@ describe("dominio de convites", () => {
 
     const firstClaim = invite.claim({
       claimedAt: new Date("2026-05-07T10:00:00.000Z"),
-      claimedBy: new UserId("user-1"),
+      claimedBy: new ActorId("user-1"),
     });
     const secondClaim = invite.claim({
       claimedAt: new Date("2026-05-07T11:00:00.000Z"),
-      claimedBy: new UserId("user-2"),
+      claimedBy: new ActorId("user-2"),
     });
 
     expect(invite.claims).toHaveLength(2);
