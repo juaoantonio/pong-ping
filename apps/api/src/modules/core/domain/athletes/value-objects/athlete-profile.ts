@@ -1,7 +1,7 @@
 import { type AthleteEquipmentText } from "./athlete-equipment-text";
-import { type AthleteGripStyle } from "./athlete-grip-style";
-import { type AthletePlayingStyle } from "./athlete-playing-style";
-import { type AthleteTechnicalLevel } from "./athlete-technical-level";
+import { type AthleteGripStyle } from "./athlete-grip-style.enum";
+import { type AthletePlayingStyle } from "./athlete-playing-style.enum";
+import { type AthleteTechnicalLevel } from "./athlete-technical-level.enum";
 
 type AthleteProfileInput = {
   technicalLevel?: AthleteTechnicalLevel | null;

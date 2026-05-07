@@ -138,7 +138,7 @@ describe("PATCH /api/auth/me", () => {
     expect(mockedPrisma.athleteProfile.upsert).not.toHaveBeenCalled();
   });
 
-  it("rejects invalid enum values before persistence", async () => {
+  it("rejects invalid athlete profile values before persistence", async () => {
     const response = await PATCH(
       request({
         name: "Ana Silva",

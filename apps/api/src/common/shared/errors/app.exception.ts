@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
-import type { AppErrorCode } from "./app-error-code";
+import type { AppErrorCode } from "./app-error-code.enum";
 
 export class AppException extends HttpException {
   constructor(

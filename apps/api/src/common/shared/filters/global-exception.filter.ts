@@ -7,8 +7,9 @@ import {
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { mapPostgresError } from "../db/postgres-error.mapper";
+import { APP_ERROR_CODE } from "../errors/app-error-code.enum";
+import type { AppErrorCode } from "../errors/app-error-code.enum";
 import { AppException } from "../errors/app.exception";
-import { AppErrorCode } from "../errors/app-error-code";
 import type { ApiErrorResponse } from "../http/api-response.types";
 
 @Catch()
@@ -76,18 +77,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
-      code: AppErrorCode.InternalError,
+      code: APP_ERROR_CODE.InternalError,
       message: "An unexpected error occurred.",
       details: [],
     };
   }
 
   private codeForStatus(status: number): AppErrorCode {
-    if (status === HttpStatus.NOT_FOUND) return AppErrorCode.NotFound;
-    if (status === HttpStatus.UNAUTHORIZED) return AppErrorCode.Unauthorized;
-    if (status === HttpStatus.FORBIDDEN) return AppErrorCode.Forbidden;
-    if (status === HttpStatus.CONFLICT) return AppErrorCode.Conflict;
-    if (status === HttpStatus.BAD_REQUEST) return AppErrorCode.InvalidRequest;
-    return AppErrorCode.InternalError;
+    if (status === HttpStatus.NOT_FOUND) return APP_ERROR_CODE.NotFound;
+    if (status === HttpStatus.UNAUTHORIZED) return APP_ERROR_CODE.Unauthorized;
+    if (status === HttpStatus.FORBIDDEN) return APP_ERROR_CODE.Forbidden;
+    if (status === HttpStatus.CONFLICT) return APP_ERROR_CODE.Conflict;
+    if (status === HttpStatus.BAD_REQUEST) return APP_ERROR_CODE.InvalidRequest;
+    return APP_ERROR_CODE.InternalError;
   }
 }

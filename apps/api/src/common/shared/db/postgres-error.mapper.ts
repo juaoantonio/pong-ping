@@ -1,6 +1,6 @@
 import { HttpStatus } from "@nestjs/common";
 import { AppException } from "../errors/app.exception";
-import { AppErrorCode } from "../errors/app-error-code";
+import { APP_ERROR_CODE } from "../errors/app-error-code.enum";
 
 type PostgresError = {
   code?: string;
@@ -12,7 +12,7 @@ export function mapPostgresError(error: unknown): AppException | undefined {
 
   if (pgError.code === "23505") {
     return new AppException(
-      AppErrorCode.Conflict,
+      APP_ERROR_CODE.Conflict,
       "A record with the same unique value already exists.",
       HttpStatus.CONFLICT,
       pgError.detail ? [pgError.detail] : [],
@@ -21,7 +21,7 @@ export function mapPostgresError(error: unknown): AppException | undefined {
 
   if (pgError.code === "23503") {
     return new AppException(
-      AppErrorCode.InvalidRequest,
+      APP_ERROR_CODE.InvalidRequest,
       "The request references a related record that does not exist.",
       HttpStatus.BAD_REQUEST,
       pgError.detail ? [pgError.detail] : [],

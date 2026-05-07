@@ -6,10 +6,10 @@ import { Athlete } from "./athlete";
 import { AthleteId } from "./value-objects/athlete-id";
 import { AthleteDisplayName } from "./value-objects/athlete-display-name";
 import { AthleteEquipmentText } from "./value-objects/athlete-equipment-text";
-import { AthleteGripStyle } from "./value-objects/athlete-grip-style";
-import { AthletePlayingStyle } from "./value-objects/athlete-playing-style";
+import { ATHLETE_GRIP_STYLE } from "./value-objects/athlete-grip-style.enum";
+import { ATHLETE_PLAYING_STYLE } from "./value-objects/athlete-playing-style.enum";
 import { AthleteProfile } from "./value-objects/athlete-profile";
-import { AthleteTechnicalLevel } from "./value-objects/athlete-technical-level";
+import { ATHLETE_TECHNICAL_LEVEL } from "./value-objects/athlete-technical-level.enum";
 
 describe("Athlete domain", () => {
   it("registers an athlete as the sports boundary around a user identity", () => {
@@ -37,9 +37,9 @@ describe("Athlete domain", () => {
     athlete.rename(new AthleteDisplayName("Nico Spin"));
     athlete.updateProfile(
       AthleteProfile.create({
-        technicalLevel: AthleteTechnicalLevel.ADVANCED,
-        gripStyle: AthleteGripStyle.CLASSIC,
-        playingStyle: AthletePlayingStyle.OFFENSIVE,
+        technicalLevel: ATHLETE_TECHNICAL_LEVEL.ADVANCED,
+        gripStyle: ATHLETE_GRIP_STYLE.CLASSIC,
+        playingStyle: ATHLETE_PLAYING_STYLE.OFFENSIVE,
         bladeName: AthleteEquipmentText.optionalName("  Carbon Blade  "),
         forehandRubberName: AthleteEquipmentText.optionalName(" Fast Arc "),
         backhandRubberName: AthleteEquipmentText.optionalName(" Control Arc "),
@@ -48,7 +48,7 @@ describe("Athlete domain", () => {
     );
 
     expect(athlete.displayName.value).toBe("Nico Spin");
-    expect(athlete.profile.technicalLevel).toBe(AthleteTechnicalLevel.ADVANCED);
+    expect(athlete.profile.technicalLevel).toBe(ATHLETE_TECHNICAL_LEVEL.ADVANCED);
     expect(athlete.profile.bladeName?.value).toBe("Carbon Blade");
     expect(athlete.profile.equipmentNotes?.value).toBe("Likes tacky setups.");
   });
