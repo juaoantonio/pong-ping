@@ -2,8 +2,8 @@ import type { Repository } from "typeorm";
 import { describe, expect, it } from "vitest";
 import { PaginationService } from "./pagination.service";
 
-describe("PaginationService", () => {
-  it("returns Spring-style page metadata", async () => {
+describe("servico de paginacao", () => {
+  it("retorna metadados de pagina no estilo Spring", async () => {
     const repository = {
       findAndCount: async () => [["first", "second"], 12],
     } as unknown as Repository<string>;

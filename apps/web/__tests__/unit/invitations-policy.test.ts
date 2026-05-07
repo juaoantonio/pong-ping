@@ -4,10 +4,10 @@ import {
   isInvitationClaimable,
 } from "@/lib/contexts/invitations";
 
-describe("invitation policy", () => {
+describe("politica de convites", () => {
   const now = new Date("2026-05-04T12:00:00.000Z");
 
-  it("treats invitations expiring at or before now as unavailable", () => {
+  it("trata convites que expiram agora ou antes como indisponiveis", () => {
     expect(
       getInvitationUnavailableReason(
         {
@@ -29,7 +29,7 @@ describe("invitation policy", () => {
     ).toBe(true);
   });
 
-  it("blocks used one-time invitations but allows reusable invitations", () => {
+  it("bloqueia convites de uso unico usados e permite convites reutilizaveis", () => {
     const usedAt = new Date("2026-05-04T11:00:00.000Z");
 
     expect(
@@ -55,7 +55,7 @@ describe("invitation policy", () => {
     ).toBeNull();
   });
 
-  it("adds the usedAt gate only for one-time invitations", () => {
+  it("adiciona a trava usedAt apenas para convites de uso unico", () => {
     expect(getInvitationClaimWhereGate({ oneTimeUse: true }, now)).toEqual({
       expiresAt: { gt: now },
       usedAt: null,

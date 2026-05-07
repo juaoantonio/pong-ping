@@ -27,15 +27,15 @@ class TestAggregate extends AggregateRoot<TestId> {
   }
 }
 
-describe("shared domain kernel", () => {
-  it("compares entities by identity object", () => {
+describe("kernel compartilhado de dominio", () => {
+  it("compara entidades por objeto de identidade", () => {
     const id = new TestId("test-1");
 
     expect(new TestEntity(id).equals(new TestEntity(id))).toBe(true);
     expect(new TestEntity(id).equals(new TestEntity(new TestId("test-2")))).toBe(false);
   });
 
-  it("stores and pulls domain events once", () => {
+  it("armazena e retira eventos de dominio uma vez", () => {
     const aggregate = new TestAggregate(new TestId("test-1"));
     aggregate.record({ eventVersion: 1, occurredAt: new Date("2026-01-01") });
 
@@ -43,7 +43,7 @@ describe("shared domain kernel", () => {
     expect(aggregate.pullDomainEvents()).toEqual([]);
   });
 
-  it("rejects blank IDs with stable domain code", () => {
+  it("rejeita IDs em branco com codigo de dominio estavel", () => {
     expect(() => new TestId(" ")).toThrow(DomainRuleViolation);
 
     try {

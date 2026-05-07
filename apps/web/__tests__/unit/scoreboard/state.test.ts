@@ -12,14 +12,14 @@ const players: [ScoreboardPlayer, ScoreboardPlayer] = [
   { id: "user-b", name: "Bia", avatarUrl: null },
 ];
 
-describe("scoreboard state", () => {
-  it("builds the current scoreboard path through the context boundary", () => {
+describe("estado do placar", () => {
+  it("monta caminho atual do placar pelo limite do contexto", () => {
     expect(getCurrentScoreboardPath("table-1")).toBe(
       "scoreboards/table-1/current",
     );
   });
 
-  it("increments and decrements player points without going below zero", () => {
+  it("incrementa e decrementa pontos do jogador sem ficar abaixo de zero", () => {
     const initialState = createInitialScoreboardState({
       now: 100,
       players,
@@ -37,7 +37,7 @@ describe("scoreboard state", () => {
     expect(stillZero.points).toEqual([0, 0]);
   });
 
-  it("awards a new set to the selected player and resets points", () => {
+  it("atribui novo set ao jogador selecionado e reinicia pontos", () => {
     const initialState = createInitialScoreboardState({
       now: 100,
       players,
@@ -58,7 +58,7 @@ describe("scoreboard state", () => {
     expect(nextSet.updatedAt).toBe(400);
   });
 
-  it("detects when the live round no longer matches the current players", () => {
+  it("detecta quando a rodada ao vivo nao corresponde mais aos jogadores atuais", () => {
     const initialState = createInitialScoreboardState({
       players,
       tableId: "table-1",

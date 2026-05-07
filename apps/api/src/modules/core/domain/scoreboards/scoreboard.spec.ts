@@ -15,8 +15,8 @@ function createActiveGame(): ActiveGame {
   });
 }
 
-describe("Scoreboard", () => {
-  it("tracks live points for the active game only and resets them", () => {
+describe("placar", () => {
+  it("acompanha pontos ao vivo apenas do jogo ativo e os reinicia", () => {
     const scoreboard = Scoreboard.create({
       clubId: new ClubId("club-1"),
       tableId: new TableId("table-1"),
@@ -38,7 +38,7 @@ describe("Scoreboard", () => {
     expect(scoreboard.secondSide.points.value).toBe(0);
   });
 
-  it("does not allow live points to become negative", () => {
+  it("nao permite que pontos ao vivo fiquem negativos", () => {
     const scoreboard = Scoreboard.create({
       clubId: new ClubId("club-1"),
       tableId: new TableId("table-1"),
@@ -50,7 +50,7 @@ describe("Scoreboard", () => {
     );
   });
 
-  it("does not import competition or ratings modules", () => {
+  it("nao importa modulos de competicao ou ratings", () => {
     const source = readFileSync(
       join(process.cwd(), "src/modules/core/domain/scoreboards/scoreboard.ts"),
       "utf8",

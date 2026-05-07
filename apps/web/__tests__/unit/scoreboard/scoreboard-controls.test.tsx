@@ -36,12 +36,12 @@ const players: [ScoreboardPlayer, ScoreboardPlayer] = [
   { id: "user-b", name: "Bia", avatarUrl: null },
 ];
 
-describe("ScoreboardControls", () => {
+describe("controles do placar", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("subscribes through the scoreboard context path", () => {
+  it("assina pelo caminho do contexto de placar", () => {
     render(
       <ScoreboardControls
         currentPlayers={players}
@@ -54,7 +54,7 @@ describe("ScoreboardControls", () => {
     expect(ref).toHaveBeenCalledWith({}, "scoreboards/table-1/current");
   });
 
-  it("renders large add and remove point controls for the current player", () => {
+  it("renderiza controles grandes de adicionar e remover ponto para o jogador atual", () => {
     render(
       <ScoreboardControls
         currentPlayers={players}
@@ -73,7 +73,7 @@ describe("ScoreboardControls", () => {
     ).toBeInTheDocument();
   });
 
-  it("updates only the signed-in player's side", async () => {
+  it("atualiza apenas o lado do jogador autenticado", async () => {
     const user = userEvent.setup();
 
     render(

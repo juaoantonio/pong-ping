@@ -54,14 +54,14 @@ function actor() {
   };
 }
 
-describe("invitation routes", () => {
+describe("rotas de convite", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedRequireAdmin.mockResolvedValue({ actor: actor() });
     mockedGetCurrentUser.mockResolvedValue(actor());
   });
 
-  it("creates access invitations through the invitation context", async () => {
+  it("cria convites de acesso pelo contexto de convite", async () => {
     mockedCreateAccessInvitation.mockResolvedValue({
       ok: true,
       value: {
@@ -107,7 +107,7 @@ describe("invitation routes", () => {
     });
   });
 
-  it("claims access invitations through the invitation context", async () => {
+  it("reivindica convites de acesso pelo contexto de convite", async () => {
     mockedClaimAccessInvitation.mockResolvedValue({
       ok: true,
       value: {
@@ -139,7 +139,7 @@ describe("invitation routes", () => {
     });
   });
 
-  it("creates table invitations through the invitation context", async () => {
+  it("cria convites de mesa pelo contexto de convite", async () => {
     mockedCreateTableInvitation.mockResolvedValue({
       ok: true,
       value: {
@@ -171,7 +171,7 @@ describe("invitation routes", () => {
     );
   });
 
-  it("claims table invitations through the invitation context", async () => {
+  it("reivindica convites de mesa pelo contexto de convite", async () => {
     mockedClaimTableInvitation.mockResolvedValue({
       ok: true,
       value: {
@@ -199,7 +199,7 @@ describe("invitation routes", () => {
     });
   });
 
-  it("keeps context-specific unavailable messages for claims", async () => {
+  it("mantem mensagens de indisponibilidade especificas por contexto para reivindicacoes", async () => {
     mockedClaimAccessInvitation.mockResolvedValue({
       ok: false,
       error: { context: "invitations", code: "invitation_unavailable" },

@@ -59,7 +59,7 @@ function authUser(tenantId: string | null = "tenant-1") {
   };
 }
 
-describe("PATCH /api/auth/me", () => {
+describe("rota PATCH /api/auth/me", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedPrisma.$transaction.mockImplementation((operations) =>
@@ -77,7 +77,7 @@ describe("PATCH /api/auth/me", () => {
     mockedPrisma.athleteProfile.upsert.mockResolvedValue({ id: "profile-1" });
   });
 
-  it("updates name and upserts trimmed athlete profile values", async () => {
+  it("atualiza nome e faz upsert de valores aparados do perfil de atleta", async () => {
     const response = await PATCH(
       request({
         name: " Ana Silva ",
@@ -127,7 +127,7 @@ describe("PATCH /api/auth/me", () => {
     expect(mockedToClientAuthenticatedUser).toHaveBeenCalled();
   });
 
-  it("keeps existing name validation behavior", async () => {
+  it("mantem comportamento existente de validacao de nome", async () => {
     const response = await PATCH(request({ name: "A" }));
 
     expect(response.status).toBe(400);
@@ -138,7 +138,7 @@ describe("PATCH /api/auth/me", () => {
     expect(mockedPrisma.athleteProfile.upsert).not.toHaveBeenCalled();
   });
 
-  it("rejects invalid athlete profile values before persistence", async () => {
+  it("rejeita valores invalidos do perfil de atleta antes da persistencia", async () => {
     const response = await PATCH(
       request({
         name: "Ana Silva",
@@ -154,7 +154,7 @@ describe("PATCH /api/auth/me", () => {
     expect(mockedPrisma.athleteProfile.upsert).not.toHaveBeenCalled();
   });
 
-  it("rejects oversized equipment fields", async () => {
+  it("rejeita campos de equipamento grandes demais", async () => {
     const response = await PATCH(
       request({
         name: "Ana Silva",
@@ -169,7 +169,7 @@ describe("PATCH /api/auth/me", () => {
     expect(mockedPrisma.athleteProfile.upsert).not.toHaveBeenCalled();
   });
 
-  it("requires tenant context for athlete profile writes", async () => {
+  it("exige contexto de tenant para escritas no perfil de atleta", async () => {
     mockedRequireAuth.mockResolvedValue(authUser(null));
 
     const response = await PATCH(request({ name: "Ana Silva" }));

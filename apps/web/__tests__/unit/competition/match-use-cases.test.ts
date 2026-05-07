@@ -68,8 +68,8 @@ function createFinishTx() {
   return tx;
 }
 
-describe("competition match use cases", () => {
-  it("lets an admin/non-current actor finish a match with existing side effects", async () => {
+describe("casos de uso de partida de competicao", () => {
+  it("permite que admin ou ator nao atual finalize partida com efeitos colaterais existentes", async () => {
     const tx = createFinishTx();
 
     await expect(
@@ -155,7 +155,7 @@ describe("competition match use cases", () => {
     });
   });
 
-  it("lets a current player with role user finish the match", async () => {
+  it("permite que jogador atual com role user finalize a partida", async () => {
     const tx = createFinishTx();
 
     await expect(
@@ -194,7 +194,7 @@ describe("competition match use cases", () => {
     expect(tx.pingPongTableParticipant.update).toHaveBeenCalled();
   });
 
-  it("rejects same-tenant non-current actors before match writes", async () => {
+  it("rejeita atores nao atuais do mesmo tenant antes de gravar partida", async () => {
     const tx = createFinishTx();
 
     await expect(
@@ -220,7 +220,7 @@ describe("competition match use cases", () => {
     expect(tx.pingPongTableParticipant.update).not.toHaveBeenCalled();
   });
 
-  it("rejects cross-tenant table ids as not found", async () => {
+  it("rejeita ids de mesa entre tenants como nao encontrados", async () => {
     const tx = createFinishTx();
     tx.pingPongTable.findFirst.mockResolvedValueOnce(null);
 
@@ -243,7 +243,7 @@ describe("competition match use cases", () => {
     expect(tx.matchHistory.create).not.toHaveBeenCalled();
   });
 
-  it("rejects matches with fewer than two current players", async () => {
+  it("rejeita partidas com menos de dois jogadores atuais", async () => {
     const tx = createFinishTx();
     tx.pingPongTableParticipant.findMany.mockResolvedValueOnce([
       { id: "participant-1", userId: "user-1", queuePosition: 0 },
@@ -268,7 +268,7 @@ describe("competition match use cases", () => {
     expect(tx.matchHistory.create).not.toHaveBeenCalled();
   });
 
-  it("rejects winners outside the current match", async () => {
+  it("rejeita vencedores fora da partida atual", async () => {
     const tx = createFinishTx();
 
     await expect(
@@ -289,8 +289,8 @@ describe("competition match use cases", () => {
   });
 });
 
-describe("competition error mapping", () => {
-  it("maps finish match forbidden to HTTP 403", () => {
+describe("mapeamento de erros de competicao", () => {
+  it("mapeia finalizacao de partida proibida para HTTP 403", () => {
     expect(
       mapCompetitionErrorToHttp({
         context: "competition",
@@ -306,7 +306,7 @@ describe("competition error mapping", () => {
   });
 });
 
-describe("competition rollback use cases", () => {
+describe("casos de uso de rollback de competicao", () => {
   function createRollbackTx() {
     const tx = {
       matchHistory: {
@@ -360,7 +360,7 @@ describe("competition rollback use cases", () => {
     return tx;
   }
 
-  it("rolls back ranking and records rollback history and audit", async () => {
+  it("reverte ranking e registra historico de rollback e auditoria", async () => {
     const tx = createRollbackTx();
 
     await expect(
@@ -435,7 +435,7 @@ describe("competition rollback use cases", () => {
     });
   });
 
-  it("rejects cross-tenant rollback attempts as match not found", async () => {
+  it("rejeita tentativas de rollback entre tenants como partida nao encontrada", async () => {
     const tx = createRollbackTx();
     tx.matchHistory.findFirst.mockResolvedValueOnce(null);
 
@@ -457,7 +457,7 @@ describe("competition rollback use cases", () => {
     expect(tx.playerRanking.findFirst).not.toHaveBeenCalled();
   });
 
-  it("rejects rollback records and already rolled back matches", async () => {
+  it("rejeita registros de rollback e partidas ja revertidas", async () => {
     const tx = createRollbackTx();
     tx.matchHistory.findFirst.mockResolvedValueOnce({
       id: "rollback-1",

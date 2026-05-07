@@ -22,8 +22,8 @@ function createTable(playMode = "singles"): Table {
   });
 }
 
-describe("tables domain value objects", () => {
-  it("creates singles and doubles sides that match the configured play mode", () => {
+describe("objetos de valor do dominio de mesas", () => {
+  it("cria lados de simples e duplas que combinam com o modo de jogo configurado", () => {
     const singlesGame = ActiveGame.create({
       playMode: new PlayMode("singles"),
       firstSide: GameSide.createSingles(createAthleteId("athlete-1")),
@@ -46,7 +46,7 @@ describe("tables domain value objects", () => {
     ]);
   });
 
-  it("rejects duplicate athletes across an active game and invalid queue positions", () => {
+  it("rejeita atletas duplicados em um jogo ativo e posicoes de fila invalidas", () => {
     expect(() =>
       ActiveGame.create({
         playMode: new PlayMode("doubles"),
@@ -64,8 +64,8 @@ describe("tables domain value objects", () => {
   });
 });
 
-describe("Table", () => {
-  it("enqueues athletes and reports whether membership must be created", () => {
+describe("Mesa", () => {
+  it("coloca atletas na fila e informa se a associacao deve ser criada", () => {
     const table = createTable();
 
     const creatorEnqueue = table.enqueue(createAthleteId("athlete-creator"));
@@ -79,7 +79,7 @@ describe("Table", () => {
     ]);
   });
 
-  it("rejects duplicate active queue entries", () => {
+  it("rejeita entradas duplicadas em fila ativa", () => {
     const table = createTable();
 
     table.enqueue(createAthleteId("athlete-2"));
@@ -87,7 +87,7 @@ describe("Table", () => {
     expect(() => table.enqueue(createAthleteId("athlete-2"))).toThrow(DomainRuleViolation);
   });
 
-  it("forms singles active games from the first two queue entries", () => {
+  it("forma jogos ativos de simples a partir das duas primeiras entradas da fila", () => {
     const table = createTable("singles");
 
     table.enqueue(createAthleteId("athlete-2"));
@@ -99,7 +99,7 @@ describe("Table", () => {
     expect(activeGame.secondSide.athletes[0].value).toBe("athlete-3");
   });
 
-  it("forms doubles active games from the first four queue entries", () => {
+  it("forma jogos ativos de duplas a partir das quatro primeiras entradas da fila", () => {
     const table = createTable("doubles");
 
     table.enqueue(createAthleteId("athlete-2"));
@@ -119,7 +119,7 @@ describe("Table", () => {
     ]);
   });
 
-  it("rotates winner-stays while preserving side order", () => {
+  it("rotaciona vencedor-permanece preservando a ordem dos lados", () => {
     const table = createTable("doubles");
 
     table.enqueue(createAthleteId("athlete-2"));
@@ -147,7 +147,7 @@ describe("Table", () => {
     ]);
   });
 
-  it("keeps current players from leaving the normal queue while a game is playable", () => {
+  it("impede jogadores atuais de sair da fila normal enquanto um jogo pode ser disputado", () => {
     const table = createTable("singles");
 
     table.enqueue(createAthleteId("athlete-2"));

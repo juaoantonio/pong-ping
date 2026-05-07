@@ -37,13 +37,13 @@ function actor(role: "admin" | "superadmin" = "superadmin") {
   };
 }
 
-describe("admin tenants route", () => {
+describe("rota admin de tenants", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedRequireAdmin.mockResolvedValue({ actor: actor("superadmin") });
   });
 
-  it("denies tenant management to tenant admins", async () => {
+  it("nega gerenciamento de tenant para admins de tenant", async () => {
     mockedRequireAdmin.mockResolvedValue({ actor: actor("admin") });
 
     const response = await getTenants();
@@ -55,7 +55,7 @@ describe("admin tenants route", () => {
     expect(mockedPrisma.tenant.findMany).not.toHaveBeenCalled();
   });
 
-  it("lists tenants for superadmins", async () => {
+  it("lista tenants para superadmins", async () => {
     const createdAt = new Date("2026-05-05T12:00:00.000Z");
     mockedPrisma.tenant.findMany.mockResolvedValue([
       {
@@ -97,7 +97,7 @@ describe("admin tenants route", () => {
     });
   });
 
-  it("creates a tenant with a generated slug", async () => {
+  it("cria tenant com slug gerado", async () => {
     const createdAt = new Date("2026-05-05T12:00:00.000Z");
     mockedPrisma.tenant.create.mockResolvedValue({
       id: "tenant-id",

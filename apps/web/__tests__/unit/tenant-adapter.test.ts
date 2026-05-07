@@ -33,8 +33,8 @@ function createPrismaMock() {
   };
 }
 
-describe("TenantAwarePrismaAdapter", () => {
-  it("resolves the same email within the pending tenant only", async () => {
+describe("adaptador Prisma ciente de tenant", () => {
+  it("resolve o mesmo email apenas dentro do tenant pendente", async () => {
     const prisma = createPrismaMock();
     const tenantUsers = {
       "tenant-a": { id: "user-a", tenantId: "tenant-a", email: "same@example.com" },
@@ -82,7 +82,7 @@ describe("TenantAwarePrismaAdapter", () => {
     });
   });
 
-  it("uses tenant-scoped provider account uniqueness", async () => {
+  it("usa unicidade de conta de provedor limitada ao tenant", async () => {
     const prisma = createPrismaMock();
     prisma.account.findUnique.mockResolvedValue({
       id: "account-a",
@@ -113,7 +113,7 @@ describe("TenantAwarePrismaAdapter", () => {
     });
   });
 
-  it("writes tenantId when creating users and linking accounts", async () => {
+  it("grava tenantId ao criar usuarios e vincular contas", async () => {
     const prisma = createPrismaMock();
     prisma.user.create.mockResolvedValue({ id: "user-a" });
     prisma.account.create.mockResolvedValue({ id: "account-a" });
@@ -155,7 +155,7 @@ describe("TenantAwarePrismaAdapter", () => {
     });
   });
 
-  it("fails closed when OAuth adapter methods lack pending tenant context", async () => {
+  it("falha fechado quando metodos do adapter OAuth nao tem contexto de tenant pendente", async () => {
     const adapter = TenantAwarePrismaAdapter(createPrismaMock() as never, {
       getPendingTenant: async () => null,
     });

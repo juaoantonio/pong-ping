@@ -57,7 +57,7 @@ type PublicRankLevel = Prisma.RankLevelGetPayload<{
   };
 }>;
 
-describe("ranking queries", () => {
+describe("consultas de ranking", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedConnection.mockResolvedValue(undefined);
@@ -87,7 +87,7 @@ describe("ranking queries", () => {
     );
   });
 
-  it("scopes public ranking reads to the requested tenant", async () => {
+  it("limita leituras publicas de ranking ao tenant solicitado", async () => {
     await expect(
       getPublicRankings({ page: 1, pageSize: 25 }, "tenant-1"),
     ).resolves.toMatchObject({

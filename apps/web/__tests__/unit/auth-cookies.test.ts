@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("auth cookie config", () => {
+describe("configuracao de cookies de auth", () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalAuthCookieDomain = process.env.AUTH_COOKIE_DOMAIN;
 
@@ -32,13 +32,13 @@ describe("auth cookie config", () => {
     });
   });
 
-  it("does not override Auth.js cookies without a shared domain", async () => {
+  it("nao sobrescreve cookies do Auth.js sem dominio compartilhado", async () => {
     const { sharedAuthCookies } = await import("@/lib/auth/cookies");
 
     expect(sharedAuthCookies()).toBeUndefined();
   });
 
-  it("does not use localhost as a shared cookie domain", async () => {
+  it("nao usa localhost como dominio compartilhado de cookie", async () => {
     process.env.AUTH_COOKIE_DOMAIN = ".localhost";
     const { canShareAuthCookiesAcrossSubdomains, sharedAuthCookies } =
       await import("@/lib/auth/cookies");
@@ -47,7 +47,7 @@ describe("auth cookie config", () => {
     expect(sharedAuthCookies()).toBeUndefined();
   });
 
-  it("scopes Auth.js session cookies to a real configured parent domain", async () => {
+  it("limita cookies de sessao do Auth.js a um dominio pai real configurado", async () => {
     process.env.AUTH_COOKIE_DOMAIN = ".pong.test";
     const { canShareAuthCookiesAcrossSubdomains, sharedAuthCookies } =
       await import("@/lib/auth/cookies");

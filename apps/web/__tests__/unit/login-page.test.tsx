@@ -37,7 +37,7 @@ const mockedFindUnique = (jest.requireMock("@/lib/prisma") as {
   };
 }).prisma.tenant.findUnique;
 
-describe("LoginPage", () => {
+describe("pagina de login", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedFindUnique.mockResolvedValue({
@@ -46,7 +46,7 @@ describe("LoginPage", () => {
     });
   });
 
-  it("uses the tenant query param to show a welcome message without rendering a tenant input", async () => {
+  it("usa o parametro tenant da query para mostrar mensagem de boas-vindas sem renderizar input de tenant", async () => {
     const page = await LoginPage({
       searchParams: Promise.resolve({ tenant: "alpha" }),
     });
@@ -63,7 +63,7 @@ describe("LoginPage", () => {
     expect(document.querySelector('input[name="tenantSlug"]')).toBeNull();
   });
 
-  it("falls back to the default tenant when the query param is absent", async () => {
+  it("usa tenant padrao quando o parametro da query esta ausente", async () => {
     mockedFindUnique.mockResolvedValue({
       name: "Default Club",
       slug: "default",
@@ -82,7 +82,7 @@ describe("LoginPage", () => {
     expect(screen.getByText("Bem-vindo ao Default Club.")).toBeInTheDocument();
   });
 
-  it("renders actionable mapped errors near the login action", async () => {
+  it("renderiza erros mapeados acionaveis perto da acao de login", async () => {
     const page = await LoginPage({
       searchParams: Promise.resolve({ error: "tenant_not_found" }),
     });

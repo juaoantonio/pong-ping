@@ -7,8 +7,8 @@ import {
   parseServerPaginationParams,
 } from "@/lib/pagination";
 
-describe("pagination helpers", () => {
-  it("normalizes invalid server params to defaults", () => {
+describe("helpers de paginacao", () => {
+  it("normaliza parametros de servidor invalidos para padroes", () => {
     expect(
       parseServerPaginationParams({ page: "abc", pageSize: "11" }),
     ).toEqual({
@@ -23,7 +23,7 @@ describe("pagination helpers", () => {
     );
   });
 
-  it("rejects invalid api params", () => {
+  it("rejeita parametros invalidos de api", () => {
     expect(parseApiPaginationParams(new URLSearchParams("page=0"))).toEqual({
       ok: false,
       error: "Parametro page invalido.",
@@ -40,7 +40,7 @@ describe("pagination helpers", () => {
     });
   });
 
-  it("builds clamped page info and offsets", () => {
+  it("monta informacoes de pagina limitadas e offsets", () => {
     const pageInfo = getPageInfo({ page: 9, pageSize: 25 }, 52);
 
     expect(pageInfo).toEqual({

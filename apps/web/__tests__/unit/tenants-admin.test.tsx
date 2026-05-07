@@ -35,7 +35,7 @@ const tenants = [
   },
 ];
 
-describe("TenantsAdmin", () => {
+describe("admin de tenants", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Object.defineProperty(navigator, "clipboard", {
@@ -46,7 +46,7 @@ describe("TenantsAdmin", () => {
     });
   });
 
-  it("renders tenant login links using the tenant slug", () => {
+  it("renderiza links de login do tenant usando o slug do tenant", () => {
     render(<TenantsAdmin tenants={tenants} />);
 
     expect(screen.getByRole("link", { name: /abrir login de alpha club/i })).toHaveAttribute(
@@ -55,7 +55,7 @@ describe("TenantsAdmin", () => {
     );
   });
 
-  it("copies the absolute tenant login link from the current host", async () => {
+  it("copia link absoluto de login do tenant a partir do host atual", async () => {
     writeText.mockResolvedValue(undefined);
 
     render(<TenantsAdmin tenants={tenants} />);
@@ -70,7 +70,7 @@ describe("TenantsAdmin", () => {
     expect(toastSuccess).toHaveBeenCalledWith("Link de login do tenant copiado.");
   });
 
-  it("logs out and redirects to the tenant login path", async () => {
+  it("faz logout e redireciona para caminho de login do tenant", async () => {
     logout.mockResolvedValue(undefined);
 
     render(<TenantsAdmin tenants={tenants} />);

@@ -8,7 +8,7 @@ import {
   isAllowedTenantRedirectUrl,
 } from "@/lib/tenants/hosts";
 
-describe("tenant host helpers", () => {
+describe("helpers de host de tenant", () => {
   const originalTenantRootDomain = process.env.TENANT_ROOT_DOMAIN;
   const originalPublicTenantRootDomain =
     process.env.NEXT_PUBLIC_TENANT_ROOT_DOMAIN;
@@ -38,7 +38,7 @@ describe("tenant host helpers", () => {
     restoreEnv("AUTH_COOKIE_DOMAIN", originalAuthCookieDomain);
   });
 
-  it("resolves tenant slugs from configured root-domain subdomains", () => {
+  it("resolve slugs de tenant a partir de subdominios do dominio raiz configurado", () => {
     process.env.TENANT_ROOT_DOMAIN = "pong.test";
 
     expect(getTenantSlugFromHost("alpha.pong.test")).toBe("alpha");
@@ -47,12 +47,12 @@ describe("tenant host helpers", () => {
     expect(getTenantSlugFromHost("auth.pong.test")).toBeNull();
   });
 
-  it("supports local tenant subdomains without a root-domain setting", () => {
+  it("suporta subdominios locais de tenant sem configuracao de dominio raiz", () => {
     expect(getTenantSlugFromHost("beta.localhost:3000")).toBe("beta");
     expect(getTenantSlugFromHost("localhost:3000")).toBeNull();
   });
 
-  it("builds tenant URLs from the current request host", () => {
+  it("monta URLs de tenant a partir do host da requisicao atual", () => {
     process.env.TENANT_ROOT_DOMAIN = "pong.test";
 
     expect(buildTenantUrl("/tables", "alpha", "auth.pong.test", "https")).toBe(
@@ -63,7 +63,7 @@ describe("tenant host helpers", () => {
     ).toBe("http://alpha.pong.test:3000/tables");
   });
 
-  it("allows post-auth redirects only to valid tenant subdomains", () => {
+  it("permite redirecionamentos pos-auth apenas para subdominios validos de tenant", () => {
     process.env.TENANT_ROOT_DOMAIN = "pong.test";
 
     expect(

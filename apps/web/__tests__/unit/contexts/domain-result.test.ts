@@ -1,14 +1,14 @@
 import { fail, ok, type DomainError } from "@/lib/contexts/shared";
 
-describe("domain result helpers", () => {
-  it("wraps successful values", () => {
+describe("helpers de resultado de dominio", () => {
+  it("encapsula valores de sucesso", () => {
     expect(ok({ id: "table-1" })).toEqual({
       ok: true,
       value: { id: "table-1" },
     });
   });
 
-  it("wraps typed domain errors with stable context and code", () => {
+  it("encapsula erros de dominio tipados com contexto e codigo estaveis", () => {
     type TablePlayError = DomainError<"table_not_found">;
 
     const error: TablePlayError = {

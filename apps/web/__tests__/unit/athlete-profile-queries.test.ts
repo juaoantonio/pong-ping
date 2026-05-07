@@ -35,7 +35,7 @@ jest.mock("@/lib/prisma", () => ({
 const mockedConnection = jest.mocked(connection);
 const mockedPrisma = jest.mocked(prisma);
 
-describe("athlete profile queries", () => {
+describe("consultas de perfil de atleta", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedConnection.mockResolvedValue(undefined);
@@ -70,7 +70,7 @@ describe("athlete profile queries", () => {
     mockedPrisma.matchHistory.findMany.mockResolvedValue([] as never);
   });
 
-  it("returns empty editable fields and fallback ranking values", async () => {
+  it("retorna campos editaveis vazios e valores fallback de ranking", async () => {
     await expect(
       getCurrentAthleteProfile("user-1", "tenant-1"),
     ).resolves.toMatchObject({
@@ -104,7 +104,7 @@ describe("athlete profile queries", () => {
     );
   });
 
-  it("uses public ranking tie-break semantics for internal position", async () => {
+  it("usa semantica de desempate do ranking publico para posicao interna", async () => {
     mockedPrisma.user.findMany.mockResolvedValue([
       {
         id: "user-b",
@@ -140,7 +140,7 @@ describe("athlete profile queries", () => {
     });
   });
 
-  it("queries latest tenant-scoped match history and maps win/loss evolution", async () => {
+  it("consulta historico recente de partidas limitado ao tenant e mapeia evolucao de vitorias/derrotas", async () => {
     const winMatch = {
       id: "match-win",
       winnerId: "user-1",
@@ -210,7 +210,7 @@ describe("athlete profile queries", () => {
     );
   });
 
-  it("maps missing opponent identity to fallback label", () => {
+  it("mapeia identidade ausente do adversario para rotulo fallback", () => {
     expect(
       mapAthleteEvolutionPoint(
         {

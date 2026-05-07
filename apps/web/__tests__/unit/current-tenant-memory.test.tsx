@@ -2,7 +2,7 @@ import { render, waitFor } from "@testing-library/react";
 import { CurrentTenantMemory } from "@/components/auth/current-tenant-memory";
 import { LOGIN_TENANT_STORAGE_KEY } from "@/lib/auth/login-tenant";
 
-describe("CurrentTenantMemory", () => {
+describe("memoria do tenant atual", () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
@@ -11,7 +11,7 @@ describe("CurrentTenantMemory", () => {
     jest.restoreAllMocks();
   });
 
-  it("stores the authenticated tenant slug for future login visits", async () => {
+  it("armazena slug do tenant autenticado para futuras visitas ao login", async () => {
     render(<CurrentTenantMemory tenantSlug="alpha" />);
 
     await waitFor(() => {
@@ -21,7 +21,7 @@ describe("CurrentTenantMemory", () => {
     });
   });
 
-  it("does not overwrite stored tenant when no tenant is available", async () => {
+  it("nao sobrescreve tenant armazenado quando nenhum tenant esta disponivel", async () => {
     window.localStorage.setItem(LOGIN_TENANT_STORAGE_KEY, "alpha");
 
     render(<CurrentTenantMemory tenantSlug={null} />);
@@ -33,7 +33,7 @@ describe("CurrentTenantMemory", () => {
     });
   });
 
-  it("does not fail when browser storage is unavailable", async () => {
+  it("nao falha quando storage do navegador esta indisponivel", async () => {
     jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("storage blocked");
     });

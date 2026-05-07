@@ -11,8 +11,8 @@ import { ATHLETE_PLAYING_STYLE } from "./value-objects/athlete-playing-style.enu
 import { AthleteProfile } from "./value-objects/athlete-profile";
 import { ATHLETE_TECHNICAL_LEVEL } from "./value-objects/athlete-technical-level.enum";
 
-describe("Athlete domain", () => {
-  it("registers an athlete as the sports boundary around a user identity", () => {
+describe("dominio de atletas", () => {
+  it("registra um atleta como limite esportivo em torno de uma identidade de usuario", () => {
     const athlete = Athlete.register({
       id: new AthleteId("athlete-1"),
       clubId: new ClubId("club-1"),
@@ -26,7 +26,7 @@ describe("Athlete domain", () => {
     expect(athlete.profile.technicalLevel).toBeNull();
   });
 
-  it("renames the athlete and updates technical and equipment profile fields", () => {
+  it("renomeia o atleta e atualiza campos tecnicos e de equipamentos do perfil", () => {
     const athlete = Athlete.register({
       id: new AthleteId("athlete-1"),
       clubId: new ClubId("club-1"),
@@ -53,7 +53,7 @@ describe("Athlete domain", () => {
     expect(athlete.profile.equipmentNotes?.value).toBe("Likes tacky setups.");
   });
 
-  it("normalizes blank equipment strings to null and rejects invalid athlete text", () => {
+  it("normaliza textos de equipamento em branco para null e rejeita texto invalido de atleta", () => {
     const emptyProfile = AthleteProfile.create({
       bladeName: AthleteEquipmentText.optionalName("   "),
       equipmentNotes: AthleteEquipmentText.optionalNotes(null),

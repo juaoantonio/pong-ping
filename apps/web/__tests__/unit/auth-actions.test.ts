@@ -57,12 +57,12 @@ const { redirect: mockedRedirect } = jest.requireMock("next/navigation") as {
   redirect: jest.Mock;
 };
 
-describe("signInWithGoogle", () => {
+describe("login com Google", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("uses the bound tenant slug and ignores editable FormData tenantSlug fields", async () => {
+  it("usa slug de tenant vinculado e ignora campos tenantSlug editaveis do FormData", async () => {
     mockedFindUnique.mockResolvedValue({
       id: "tenant-1",
       slug: "acme",
@@ -97,7 +97,7 @@ describe("signInWithGoogle", () => {
     expect(mockedRedirect).not.toHaveBeenCalled();
   });
 
-  it("redirects to tenant_not_found without setting the pending cookie or calling signIn", async () => {
+  it("redireciona para tenant_not_found sem definir cookie pendente nem chamar signIn", async () => {
     mockedFindUnique.mockResolvedValue(null);
 
     await expect(signInWithGoogle(undefined, new FormData())).rejects.toMatchObject({
@@ -120,12 +120,12 @@ describe("signInWithGoogle", () => {
   });
 });
 
-describe("logout", () => {
+describe("saida da conta", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("allows redirecting to a tenant login path", async () => {
+  it("permite redirecionar para caminho de login de tenant", async () => {
     await logout("/login?tenant=alpha");
 
     expect((jest.requireMock("@/auth") as { signOut: jest.Mock }).signOut).toHaveBeenCalledWith({
@@ -133,7 +133,7 @@ describe("logout", () => {
     });
   });
 
-  it("falls back to login for unsafe redirects", async () => {
+  it("usa login como fallback para redirecionamentos inseguros", async () => {
     await logout("https://evil.example/login?tenant=alpha");
 
     expect((jest.requireMock("@/auth") as { signOut: jest.Mock }).signOut).toHaveBeenCalledWith({
@@ -141,7 +141,7 @@ describe("logout", () => {
     });
   });
 
-  it("does not allow lookalike login paths", async () => {
+  it("nao permite caminhos de login parecidos", async () => {
     await logout("/login-redirect?tenant=alpha");
 
     expect((jest.requireMock("@/auth") as { signOut: jest.Mock }).signOut).toHaveBeenCalledWith({

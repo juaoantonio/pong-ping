@@ -43,13 +43,13 @@ function actor(role: "admin" | "superadmin" = "admin") {
   };
 }
 
-describe("admin GET pagination", () => {
+describe("paginacao GET admin", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedRequireAdmin.mockResolvedValue({ actor: actor("superadmin") });
   });
 
-  it("rejects invalid users pagination params", async () => {
+  it("rejeita parametros invalidos de paginacao de usuarios", async () => {
     const response = await getUsers(
       new Request("http://test.local/api/admin/users?pageSize=20"),
     );
@@ -61,7 +61,7 @@ describe("admin GET pagination", () => {
     expect(mockedPrisma.user.findMany).not.toHaveBeenCalled();
   });
 
-  it("paginates users with count, skip, take, and stable order", async () => {
+  it("pagina usuarios com count, skip, take e ordem estavel", async () => {
     mockedPrisma.user.count.mockResolvedValue(80);
     mockedPrisma.user.findMany.mockResolvedValue([]);
 
@@ -94,7 +94,7 @@ describe("admin GET pagination", () => {
     });
   });
 
-  it("rejects invalid access pagination params", async () => {
+  it("rejeita parametros invalidos de paginacao de acesso", async () => {
     const response = await getAccess(
       new Request("http://test.local/api/admin/access?page=-1"),
     );
@@ -106,7 +106,7 @@ describe("admin GET pagination", () => {
     expect(mockedPrisma.allowedEmail.findMany).not.toHaveBeenCalled();
   });
 
-  it("paginates allowed emails while keeping recent invitations capped", async () => {
+  it("pagina emails permitidos mantendo convites recentes limitados", async () => {
     mockedPrisma.allowedEmail.count.mockResolvedValue(101);
     mockedPrisma.allowedEmail.findMany.mockResolvedValue([]);
     mockedPrisma.authInvitation.findMany.mockResolvedValue([]);

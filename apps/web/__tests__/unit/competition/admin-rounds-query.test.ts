@@ -22,7 +22,7 @@ jest.mock("@/lib/prisma", () => ({
 const mockedConnection = jest.mocked(connection);
 const mockedPrisma = jest.mocked(prisma);
 
-describe("competition admin rounds query", () => {
+describe("consulta admin de rodadas de competicao", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedConnection.mockResolvedValue(undefined);
@@ -30,7 +30,7 @@ describe("competition admin rounds query", () => {
     mockedPrisma.matchHistory.findMany.mockResolvedValue([]);
   });
 
-  it("maps admin round filters to the existing Prisma where semantics", async () => {
+  it("mapeia filtros admin de rodada para a semantica where existente do Prisma", async () => {
     await getAdminRoundsReadModel(
       "tenant-1",
       {
@@ -105,7 +105,7 @@ describe("competition admin rounds query", () => {
     );
   });
 
-  it("maps status filters and round rows to the admin DTO shape", async () => {
+  it("mapeia filtros de status e linhas de rodada para o formato DTO admin", async () => {
     const createdAt = new Date("2026-04-30T15:45:00.000Z");
     mockedPrisma.matchHistory.count.mockResolvedValue(1);
     mockedPrisma.matchHistory.findMany.mockResolvedValue([
@@ -184,7 +184,7 @@ describe("competition admin rounds query", () => {
     });
   });
 
-  it("maps rollback_record status independently from kind=all", async () => {
+  it("mapeia status rollback_record independentemente de kind=all", async () => {
     await getAdminRoundsReadModel(
       "tenant-1",
       {

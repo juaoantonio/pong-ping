@@ -30,8 +30,8 @@ function collectDomainFiles(root: string): string[] {
   return files;
 }
 
-describe("domain framework independence", () => {
-  it("keeps domain files free of framework and persistence imports", () => {
+describe("independencia do dominio em relacao a frameworks", () => {
+  it("mantem arquivos de dominio livres de imports de framework e persistencia", () => {
     const files = collectDomainFiles(DOMAIN_ROOT);
     const violations = files.flatMap((file) => {
       const source = readFileSync(file, "utf8");

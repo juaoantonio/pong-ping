@@ -17,8 +17,8 @@ function createDefaultRating(athleteId: string, clubId = "club-1") {
   });
 }
 
-describe("Ratings domain", () => {
-  it("creates default ratings and preserves the legacy Elo formula and K factor", () => {
+describe("dominio de ratings", () => {
+  it("cria ratings padrao e preserva a formula Elo legada e o fator K", () => {
     const winner = createDefaultRating("athlete-1");
     const loser = createDefaultRating("athlete-2");
     const service = new EloRatingService();
@@ -37,7 +37,7 @@ describe("Ratings domain", () => {
     expect(loserDelta.points).toBe(-32);
   });
 
-  it("rounds win rate, applies correction deltas, and restores both sides consistently", () => {
+  it("arredonda taxa de vitoria, aplica deltas de correcao e restaura os dois lados de forma consistente", () => {
     const winner = createDefaultRating("athlete-1");
     const loser = createDefaultRating("athlete-2");
     const service = new EloRatingService();
@@ -63,7 +63,7 @@ describe("Ratings domain", () => {
     expect(rating.winRate.value).toBe(66.67);
   });
 
-  it("orders ladders by points, wins, then athlete id and resolves tiers by thresholds", () => {
+  it("ordena rankings por pontos, vitorias e id do atleta e resolve tiers por limites", () => {
     const tiers = [
       new Tier("Bronze", new TierThreshold(1000)),
       new Tier("Silver", new TierThreshold(1200)),
@@ -105,7 +105,7 @@ describe("Ratings domain", () => {
     expect(Tier.resolve(new RatingPoints(1450), tiers)?.name).toBe("Gold");
   });
 
-  it("rejects mixed-club ladders and corrections that would break rating invariants", () => {
+  it("rejeita rankings com clubes mistos e correcoes que quebrariam invariantes de rating", () => {
     expect(() =>
       ClubLadder.rank([
         createDefaultRating("athlete-1", "club-1"),

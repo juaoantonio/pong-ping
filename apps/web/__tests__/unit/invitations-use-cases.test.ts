@@ -63,14 +63,14 @@ function createTableStore() {
   };
 }
 
-describe("invitation use cases", () => {
+describe("casos de uso de convite", () => {
   const now = new Date("2026-05-04T12:00:00.000Z");
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("claims an access invitation and writes allowlist and audit records", async () => {
+  it("reivindica convite de acesso e grava registros de allowlist e auditoria", async () => {
     const { store, tx } = createAccessStore();
     tx.authInvitation.findUnique.mockResolvedValue({
       id: "invitation-1",
@@ -150,7 +150,7 @@ describe("invitation use cases", () => {
     });
   });
 
-  it("lets reusable access invitations overwrite usage without a usedAt gate", async () => {
+  it("permite que convites de acesso reutilizaveis sobrescrevam uso sem trava usedAt", async () => {
     const { store, tx } = createAccessStore();
     tx.authInvitation.findUnique.mockResolvedValue({
       id: "invitation-1",
@@ -181,7 +181,7 @@ describe("invitation use cases", () => {
     });
   });
 
-  it("returns invitation_unavailable when access claim race gate fails", async () => {
+  it("retorna invitation_unavailable quando trava de corrida da reivindicacao de acesso falha", async () => {
     const { store, tx } = createAccessStore();
     tx.authInvitation.findUnique.mockResolvedValue({
       id: "invitation-1",
@@ -211,7 +211,7 @@ describe("invitation use cases", () => {
     expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it("returns invitation_unavailable for missing or spent access invitations", async () => {
+  it("retorna invitation_unavailable para convites de acesso ausentes ou gastos", async () => {
     const { store, tx } = createAccessStore();
     tx.authInvitation.findUnique.mockResolvedValueOnce(null);
 
@@ -253,7 +253,7 @@ describe("invitation use cases", () => {
     });
   });
 
-  it("creates table invitations inside the actor tenant", async () => {
+  it("cria convites de mesa dentro do tenant do ator", async () => {
     const { store, tx } = createTableStore();
     const expiresAt = new Date("2026-05-11T12:00:00.000Z");
 
@@ -303,7 +303,7 @@ describe("invitation use cases", () => {
     });
   });
 
-  it("claims a table invitation after ensuring membership", async () => {
+  it("reivindica convite de mesa apos garantir associacao", async () => {
     const { store, tx } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValue({
       id: "table-invitation-1",
@@ -367,7 +367,7 @@ describe("invitation use cases", () => {
     });
   });
 
-  it("lets reusable table invitations overwrite usage without a usedAt gate", async () => {
+  it("permite que convites de mesa reutilizaveis sobrescrevam uso sem trava usedAt", async () => {
     const { store, tx } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValue({
       id: "table-invitation-1",
@@ -400,7 +400,7 @@ describe("invitation use cases", () => {
     });
   });
 
-  it("returns invitation_unavailable when table claim race gate fails", async () => {
+  it("retorna invitation_unavailable quando trava de corrida da reivindicacao de mesa falha", async () => {
     const { store, tx } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValue({
       id: "table-invitation-1",
@@ -431,7 +431,7 @@ describe("invitation use cases", () => {
     expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it("does not create membership when a table invitation belongs to another tenant", async () => {
+  it("nao cria associacao quando convite de mesa pertence a outro tenant", async () => {
     const { store } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValue({
       id: "table-invitation-1",
@@ -461,7 +461,7 @@ describe("invitation use cases", () => {
     expect(store.$transaction).not.toHaveBeenCalled();
   });
 
-  it("returns typed errors for unavailable invitations and membership failures", async () => {
+  it("retorna erros tipados para convites indisponiveis e falhas de associacao", async () => {
     const { store } = createTableStore();
     store.pingPongTableInvitation.findUnique.mockResolvedValueOnce(null);
 

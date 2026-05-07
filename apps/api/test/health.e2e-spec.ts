@@ -3,7 +3,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp } from "./test-app";
 
-describe("health", () => {
+describe("saude da aplicacao", () => {
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -14,7 +14,7 @@ describe("health", () => {
     await app?.close();
   });
 
-  it("returns health in a success envelope", async () => {
+  it("retorna saude em um envelope de sucesso", async () => {
     const response = await request(app.getHttpServer()).get("/v1/health").expect(200);
 
     expect(response.body.ok).toBe(true);

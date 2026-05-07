@@ -22,12 +22,12 @@ const players: [ScoreboardPlayer, ScoreboardPlayer] = [
   { id: "user-b", name: "Bia", avatarUrl: null },
 ];
 
-describe("RealtimeScoreboard", () => {
+describe("placar em tempo real", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("subscribes through the scoreboard context path", () => {
+  it("assina pelo caminho do contexto de placar", () => {
     render(
       <RealtimeScoreboard
         currentPlayers={[...players]}
@@ -44,7 +44,7 @@ describe("RealtimeScoreboard", () => {
     expect(ref).toHaveBeenCalledWith({}, "scoreboards/table-1/current");
   });
 
-  it("hides score controls from non-members", () => {
+  it("oculta controles de placar para nao membros", () => {
     render(
       <RealtimeScoreboard
         currentPlayers={[...players]}
@@ -67,7 +67,7 @@ describe("RealtimeScoreboard", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows score controls to table members", () => {
+  it("mostra controles de placar para membros da mesa", () => {
     render(
       <RealtimeScoreboard
         currentPlayers={[...players]}
@@ -92,7 +92,7 @@ describe("RealtimeScoreboard", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows an empty state when fewer than two current players exist", () => {
+  it("mostra estado vazio quando existem menos de dois jogadores atuais", () => {
     render(
       <RealtimeScoreboard
         currentPlayers={[players[0]]}

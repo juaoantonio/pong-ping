@@ -20,7 +20,7 @@ function renderWithSearch(query = "") {
   return render(<LoginTenantMemory />);
 }
 
-describe("LoginTenantMemory", () => {
+describe("memoria do tenant no login", () => {
   beforeEach(() => {
     replace.mockClear();
     pathname = "/login";
@@ -32,7 +32,7 @@ describe("LoginTenantMemory", () => {
     jest.restoreAllMocks();
   });
 
-  it("stores a normalized tenant from exactly one non-empty tenant query", async () => {
+  it("armazena tenant normalizado a partir de exatamente uma query tenant nao vazia", async () => {
     const { container } = renderWithSearch("tenant=%20AcMe%20");
 
     await waitFor(() => {
@@ -42,7 +42,7 @@ describe("LoginTenantMemory", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("redirects to the stored non-default tenant when the query is absent", async () => {
+  it("redireciona para o tenant armazenado nao padrao quando a query esta ausente", async () => {
     window.localStorage.setItem(LOGIN_TENANT_STORAGE_KEY, "alpha");
 
     renderWithSearch();
@@ -52,7 +52,7 @@ describe("LoginTenantMemory", () => {
     });
   });
 
-  it("preserves existing query params when redirecting with the stored tenant", async () => {
+  it("preserva parametros de query existentes ao redirecionar com o tenant armazenado", async () => {
     window.localStorage.setItem(LOGIN_TENANT_STORAGE_KEY, "alpha");
 
     renderWithSearch("error=tenant_context_required");
@@ -64,7 +64,7 @@ describe("LoginTenantMemory", () => {
     });
   });
 
-  it("does nothing when storage is empty or contains the default tenant", async () => {
+  it("nao faz nada quando storage esta vazio ou contem o tenant padrao", async () => {
     renderWithSearch("error=oauth_failed");
 
     await waitFor(() => {
@@ -79,7 +79,7 @@ describe("LoginTenantMemory", () => {
     });
   });
 
-  it("does not overwrite storage for repeated tenant queries", async () => {
+  it("nao sobrescreve storage para queries tenant repetidas", async () => {
     window.localStorage.setItem(LOGIN_TENANT_STORAGE_KEY, "alpha");
 
     renderWithSearch("tenant=beta&tenant=gamma");
@@ -90,7 +90,7 @@ describe("LoginTenantMemory", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("does not overwrite storage for blank tenant queries", async () => {
+  it("nao sobrescreve storage para queries tenant em branco", async () => {
     window.localStorage.setItem(LOGIN_TENANT_STORAGE_KEY, "alpha");
 
     renderWithSearch("tenant=%20%20");
@@ -101,7 +101,7 @@ describe("LoginTenantMemory", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("does not overwrite storage for malformed tenant queries", async () => {
+  it("nao sobrescreve storage para queries tenant malformadas", async () => {
     window.localStorage.setItem(LOGIN_TENANT_STORAGE_KEY, "alpha");
 
     renderWithSearch("tenant=bad%2Fslug");
@@ -112,7 +112,7 @@ describe("LoginTenantMemory", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("clears stale storage instead of restoring it after tenant_not_found", async () => {
+  it("limpa storage obsoleto em vez de restaura-lo apos tenant_not_found", async () => {
     window.localStorage.setItem(LOGIN_TENANT_STORAGE_KEY, "missing-tenant");
 
     renderWithSearch("error=tenant_not_found");
@@ -123,7 +123,7 @@ describe("LoginTenantMemory", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("does not fail when browser storage is unavailable", async () => {
+  it("nao falha quando storage do navegador esta indisponivel", async () => {
     jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("storage blocked");
     });

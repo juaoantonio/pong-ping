@@ -13,12 +13,12 @@ function expiresAt(value: string): InvitationExpiration {
   return new InvitationExpiration(new Date(value));
 }
 
-describe("Invitations domain", () => {
-  it("rejects unsafe invitation tokens", () => {
+describe("dominio de convites", () => {
+  it("rejeita tokens de convite inseguros", () => {
     expect(() => new InvitationToken("bad token")).toThrow(DomainRuleViolation);
   });
 
-  it("makes invites unavailable when they expire at or before now", () => {
+  it("torna convites indisponiveis quando expiram agora ou antes", () => {
     const invite = ClubInvite.create({
       clubId: new ClubId("club-1"),
       token: new InvitationToken("club_invite_1"),
@@ -33,7 +33,7 @@ describe("Invitations domain", () => {
     expect(unavailableReason).toBe("invitation_expired");
   });
 
-  it("rejects a second claim for one-time invites", () => {
+  it("rejeita segunda reivindicacao de convites de uso unico", () => {
     const invite = ClubInvite.create({
       clubId: new ClubId("club-1"),
       token: new InvitationToken("clubinvite1"),
@@ -55,7 +55,7 @@ describe("Invitations domain", () => {
     );
   });
 
-  it("allows reusable invites to be claimed repeatedly until expiration", () => {
+  it("permite reivindicar convites reutilizaveis repetidamente ate expirarem", () => {
     const invite = TableInvite.create({
       tableId: new TableId("table-1"),
       token: new InvitationToken("tableinvite1"),
@@ -77,7 +77,7 @@ describe("Invitations domain", () => {
     expect(secondClaim.claimedBy.value).toBe("user-2");
   });
 
-  it("keeps club and table references on their specific invite types", () => {
+  it("mantem referencias de clube e mesa nos tipos especificos de convite", () => {
     const clubInvite = ClubInvite.create({
       clubId: new ClubId("club-1"),
       token: new InvitationToken("clubinvite2"),

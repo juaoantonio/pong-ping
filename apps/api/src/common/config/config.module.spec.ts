@@ -2,8 +2,8 @@ import Joi from "joi";
 import { describe, expect, it } from "vitest";
 import { appSchema, corsSchema, databaseSchema } from "./config.module";
 
-describe("config schema", () => {
-  it("validates starter environment values", () => {
+describe("schema de configuracao", () => {
+  it("valida valores iniciais de ambiente", () => {
     const schema = Joi.object({
       ...appSchema,
       ...corsSchema,

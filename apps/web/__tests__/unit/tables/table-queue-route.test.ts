@@ -63,12 +63,12 @@ function authenticatedUser() {
   };
 }
 
-describe("table queue route", () => {
+describe("rota de fila da mesa", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("rejects unauthenticated users", async () => {
+  it("rejeita usuarios nao autenticados", async () => {
     mockedGetCurrentUser.mockResolvedValue(null);
 
     const response = await POST(
@@ -82,7 +82,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("queues same-tenant users directly when membership is auto-created", async () => {
+  it("coloca usuarios do mesmo tenant direto na fila quando a associacao e criada automaticamente", async () => {
     const auditCreate = jest.fn();
     const participant = {
       id: "participant-1",
@@ -139,7 +139,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("rejects users who are already queued", async () => {
+  it("rejeita usuarios que ja estao na fila", async () => {
     mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
@@ -161,7 +161,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("queues table members and writes an audit log", async () => {
+  it("coloca membros da mesa na fila e grava log de auditoria", async () => {
     const auditCreate = jest.fn();
     const participant = {
       id: "participant-1",
@@ -217,7 +217,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("rejects unauthenticated users leaving the queue", async () => {
+  it("rejeita usuarios nao autenticados saindo da fila", async () => {
     mockedGetCurrentUser.mockResolvedValue(null);
 
     const response = await DELETE(
@@ -231,7 +231,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("rejects users who are not queued", async () => {
+  it("rejeita usuarios que nao estao na fila", async () => {
     mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
@@ -253,7 +253,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("rejects current players leaving the queue", async () => {
+  it("rejeita jogadores atuais saindo da fila", async () => {
     mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({
@@ -275,7 +275,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("removes queued users and writes an audit log", async () => {
+  it("remove usuarios da fila e grava log de auditoria", async () => {
     const auditCreate = jest.fn();
 
     mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
@@ -315,7 +315,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("lets current players leave the table without finishing the round", async () => {
+  it("permite que jogadores atuais saiam da mesa sem finalizar a rodada", async () => {
     const auditCreate = jest.fn();
 
     mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
@@ -355,7 +355,7 @@ describe("table queue route", () => {
     });
   });
 
-  it("rejects leaving the table when the user is not in the current round", async () => {
+  it("rejeita saida da mesa quando o usuario nao esta na rodada atual", async () => {
     mockedGetCurrentUser.mockResolvedValue(authenticatedUser());
     mockedTransaction.mockImplementation(async (callback) =>
       callback({

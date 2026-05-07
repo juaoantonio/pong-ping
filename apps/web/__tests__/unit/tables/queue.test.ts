@@ -5,8 +5,8 @@ import {
   rotateQueueAfterMatch,
 } from "@/lib/contexts/table-play";
 
-describe("table queue", () => {
-  it("keeps the winner on the table and sends the loser to the back", () => {
+describe("fila da mesa", () => {
+  it("mantem vencedor na mesa e envia perdedor para o fim", () => {
     expect(rotateQueueAfterMatch(["a", "b", "c", "d"], "a")).toEqual([
       "a",
       "c",
@@ -21,13 +21,13 @@ describe("table queue", () => {
     ]);
   });
 
-  it("rejects invalid winners", () => {
+  it("rejeita vencedores invalidos", () => {
     expect(() => rotateQueueAfterMatch(["a", "b"], "c")).toThrow(
       "winner_not_in_current_match",
     );
   });
 
-  it("queues table members at the next position with a domain result", async () => {
+  it("coloca membros da mesa na proxima posicao com resultado de dominio", async () => {
     const participant = {
       id: "participant-1",
       tableId: "table-1",
@@ -76,7 +76,7 @@ describe("table queue", () => {
     });
   });
 
-  it("creates table membership when a same-tenant non-member queues", async () => {
+  it("cria associacao a mesa quando nao membro do mesmo tenant entra na fila", async () => {
     const participant = {
       id: "participant-1",
       tableId: "table-1",
@@ -125,7 +125,7 @@ describe("table queue", () => {
     });
   });
 
-  it("keeps duplicate queue joins from creating membership or participant rows", async () => {
+  it("impede entradas duplicadas na fila de criar associacao ou linhas de participante", async () => {
     const tx = {
       pingPongTable: {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
@@ -157,7 +157,7 @@ describe("table queue", () => {
     expect(tx.pingPongTableParticipant.create).not.toHaveBeenCalled();
   });
 
-  it("denies queue joins through tenant-scoped table lookup", async () => {
+  it("nega entrada na fila pela busca de mesa limitada ao tenant", async () => {
     const tx = {
       pingPongTable: {
         findFirst: jest.fn().mockResolvedValue(null),
@@ -193,7 +193,7 @@ describe("table queue", () => {
     expect(tx.pingPongTableParticipant.create).not.toHaveBeenCalled();
   });
 
-  it("keeps current players from leaving while a match can be played", async () => {
+  it("impede jogadores atuais de sair enquanto uma partida pode ser jogada", async () => {
     const tx = {
       pingPongTable: {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
@@ -222,7 +222,7 @@ describe("table queue", () => {
     expect(tx.pingPongTableParticipant.delete).not.toHaveBeenCalled();
   });
 
-  it("lets current players leave the active round without recording a match", async () => {
+  it("permite que jogadores atuais saiam da rodada ativa sem registrar partida", async () => {
     const tx = {
       pingPongTable: {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),
@@ -265,7 +265,7 @@ describe("table queue", () => {
     });
   });
 
-  it("rejects non-current players leaving the active round", async () => {
+  it("rejeita jogadores que nao estao na rodada atual saindo da rodada ativa", async () => {
     const tx = {
       pingPongTable: {
         findFirst: jest.fn().mockResolvedValue({ id: "table-1" }),

@@ -3,7 +3,7 @@ import {
   normalizeLoginTenantSlug,
 } from "@/lib/auth/login-tenant";
 
-describe("normalizeLoginTenantSlug", () => {
+describe("normalizacao do slug de tenant no login", () => {
   it.each([
     [undefined, DEFAULT_LOGIN_TENANT_SLUG],
     [null, DEFAULT_LOGIN_TENANT_SLUG],

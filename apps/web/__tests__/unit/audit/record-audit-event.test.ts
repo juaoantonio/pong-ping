@@ -4,8 +4,8 @@ import {
   type AuditEvent,
 } from "@/lib/contexts/audit";
 
-describe("audit context", () => {
-  it("maps typed audit events to AuditLog records", async () => {
+describe("contexto de auditoria", () => {
+  it("mapeia eventos de auditoria tipados para registros AuditLog", async () => {
     const create = jest.fn().mockResolvedValue({});
     const client = { auditLog: { create } };
     const event: AuditEvent = {
@@ -39,7 +39,7 @@ describe("audit context", () => {
     });
   });
 
-  it("preserves admin denied metadata semantics", async () => {
+  it("preserva semantica dos metadados de admin negado", async () => {
     const create = jest.fn().mockResolvedValue({});
     const client = { auditLog: { create } };
 
@@ -64,7 +64,7 @@ describe("audit context", () => {
     });
   });
 
-  it("marks admin denial metadata when tenant context is missing", async () => {
+  it("marca metadados de negacao admin quando contexto de tenant esta ausente", async () => {
     const create = jest.fn().mockResolvedValue({});
     const client = { auditLog: { create } };
 
@@ -86,7 +86,7 @@ describe("audit context", () => {
     });
   });
 
-  it("covers table queue and invitation audit event names", async () => {
+  it("cobre nomes de eventos de auditoria de fila de mesa e convite", async () => {
     const create = jest.fn().mockResolvedValue({});
     const client = { auditLog: { create } };
 

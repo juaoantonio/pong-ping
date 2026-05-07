@@ -29,12 +29,12 @@ jest.mock("@/lib/prisma", () => ({
 
 const mockedPrisma = jest.mocked(prisma);
 
-describe("table queries", () => {
+describe("consultas de mesa", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("scopes table lists and nested table data to the actor tenant", async () => {
+  it("limita listas de mesas e dados aninhados ao tenant do ator", async () => {
     mockedPrisma.pingPongTable.count.mockResolvedValue(0);
     mockedPrisma.pingPongTable.findMany.mockResolvedValue([]);
 
@@ -60,7 +60,7 @@ describe("table queries", () => {
     );
   });
 
-  it("returns null for cross-tenant table detail lookups", async () => {
+  it("retorna null para buscas de detalhe de mesa entre tenants", async () => {
     mockedPrisma.pingPongTable.findFirst.mockResolvedValue(null);
 
     await expect(
@@ -74,7 +74,7 @@ describe("table queries", () => {
     );
   });
 
-  it("scopes table user options to the actor tenant", async () => {
+  it("limita opcoes de usuarios da mesa ao tenant do ator", async () => {
     mockedPrisma.user.findMany.mockResolvedValue([]);
 
     await expect(getTableUserOptions("tenant-1")).resolves.toEqual([]);
@@ -86,7 +86,7 @@ describe("table queries", () => {
     );
   });
 
-  it("scopes scoreboard table and membership lookup to the actor tenant", async () => {
+  it("limita busca de mesa do scoreboard e associacao ao tenant do ator", async () => {
     mockedPrisma.pingPongTable.findFirst.mockResolvedValue(null);
 
     await expect(

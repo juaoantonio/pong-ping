@@ -7,8 +7,8 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-describe("PaginationControls", () => {
-  it("preserves query params in previous and next links", () => {
+describe("controles de paginacao", () => {
+  it("preserva parametros de query nos links anterior e proximo", () => {
     render(
       <PaginationControls
         itemLabel="rodadas"
@@ -40,7 +40,7 @@ describe("PaginationControls", () => {
     );
   });
 
-  it("disables previous navigation on the first page", () => {
+  it("desabilita navegacao anterior na primeira pagina", () => {
     render(
       <PaginationControls
         pageInfo={{

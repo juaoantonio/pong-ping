@@ -44,8 +44,8 @@ function createRecord() {
   });
 }
 
-describe("Competition domain", () => {
-  it("records winner and loser as game sides with side rating changes", () => {
+describe("dominio de competicao", () => {
+  it("registra vencedor e perdedor como lados do jogo com mudancas de rating por lado", () => {
     const record = createRecord();
 
     expect(record.winningSide.athletes[0].value).toBe("athlete-1");
@@ -54,7 +54,7 @@ describe("Competition domain", () => {
     expect(record.loserRatingChange.changes[0].delta.points).toBe(-12);
   });
 
-  it("creates compensating corrections that reverse original deltas and reference the original", () => {
+  it("cria correcoes compensatorias que revertem deltas originais e referenciam o original", () => {
     const record = createRecord();
 
     const correction = GameCorrection.createCompensating(
@@ -70,7 +70,7 @@ describe("Competition domain", () => {
     expect(correction.loserRatingChange.changes[0].delta.points).toBe(-12);
   });
 
-  it("allows at most one correction per original record", () => {
+  it("permite no maximo uma correcao por registro original", () => {
     const record = createRecord();
 
     const firstCorrection = record.correct({
@@ -91,7 +91,7 @@ describe("Competition domain", () => {
     );
   });
 
-  it("rejects corrections that target correction records", () => {
+  it("rejeita correcoes que miram registros de correcao", () => {
     const correction = createRecord().correct({
       actorAthleteId: new AthleteId("athlete-8"),
       correctedAt: new Date("2026-05-07T13:00:00.000Z"),
@@ -107,7 +107,7 @@ describe("Competition domain", () => {
     );
   });
 
-  it("rejects winning sides that are not present in the active game", () => {
+  it("rejeita lados vencedores que nao estao presentes no jogo ativo", () => {
     const outsider = createSinglesSide("athlete-3");
 
     expect(() =>

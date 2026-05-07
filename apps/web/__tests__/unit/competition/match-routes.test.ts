@@ -96,7 +96,7 @@ function roundRollbackContext() {
   };
 }
 
-describe("competition match routes", () => {
+describe("rotas de partida de competicao", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedRequireAdmin.mockResolvedValue({
@@ -110,7 +110,7 @@ describe("competition match routes", () => {
     );
   });
 
-  it("finishes a match through the competition use case", async () => {
+  it("finaliza partida pelo caso de uso de competicao", async () => {
     mockedFinishMatch.mockResolvedValue({
       ok: true,
       value: {
@@ -149,7 +149,7 @@ describe("competition match routes", () => {
     });
   });
 
-  it("lets a current player finish a match through the tenant table route", async () => {
+  it("permite que jogador atual finalize partida pela rota de mesa do tenant", async () => {
     mockedGetCurrentUser.mockResolvedValue(actor("user"));
     mockedCanAccessAdmin.mockReturnValue(false);
     mockedFinishMatch.mockResolvedValue({
@@ -190,7 +190,7 @@ describe("competition match routes", () => {
     });
   });
 
-  it("rejects unauthenticated player finish requests", async () => {
+  it("rejeita requisicoes de finalizacao de jogador nao autenticado", async () => {
     mockedGetCurrentUser.mockResolvedValue(null);
 
     const response = await finishPlayerTableMatch(
@@ -208,7 +208,7 @@ describe("competition match routes", () => {
     expect(mockedFinishMatch).not.toHaveBeenCalled();
   });
 
-  it("rejects player finish requests without tenant context", async () => {
+  it("rejeita requisicoes de finalizacao de jogador sem contexto de tenant", async () => {
     mockedGetCurrentUser.mockResolvedValue({
       ...actor("user"),
       tenantId: null,
@@ -229,7 +229,7 @@ describe("competition match routes", () => {
     expect(mockedFinishMatch).not.toHaveBeenCalled();
   });
 
-  it("maps forbidden player finish requests from the competition use case", async () => {
+  it("mapeia requisicoes proibidas de finalizacao de jogador vindas do caso de uso de competicao", async () => {
     mockedGetCurrentUser.mockResolvedValue(actor("user"));
     mockedCanAccessAdmin.mockReturnValue(false);
     mockedFinishMatch.mockResolvedValue({
@@ -254,7 +254,7 @@ describe("competition match routes", () => {
     });
   });
 
-  it("maps competition finish errors without raw message branching", async () => {
+  it("mapeia erros de finalizacao de competicao sem ramificar por mensagem bruta", async () => {
     mockedFinishMatch.mockResolvedValue({
       ok: false,
       error: {
@@ -277,7 +277,7 @@ describe("competition match routes", () => {
     });
   });
 
-  it("rolls back a table match through the competition use case", async () => {
+  it("reverte partida de mesa pelo caso de uso de competicao", async () => {
     mockedRollbackMatch.mockResolvedValue({
       ok: true,
       value: {
@@ -314,7 +314,7 @@ describe("competition match routes", () => {
     });
   });
 
-  it("maps rollback competition errors", async () => {
+  it("mapeia erros de rollback de competicao", async () => {
     mockedRollbackMatch.mockResolvedValue({
       ok: false,
       error: {
@@ -334,7 +334,7 @@ describe("competition match routes", () => {
     });
   });
 
-  it("keeps admin round rollback table-id precheck and uses competition rollback", async () => {
+  it("mantem precheck de table-id no rollback admin de rodada e usa rollback de competicao", async () => {
     mockedPrisma.matchHistory.findFirst.mockResolvedValue({
       tableId: "table-1",
     } as MatchHistoryFindFirstResult);

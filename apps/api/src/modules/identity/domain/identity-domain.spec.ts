@@ -4,8 +4,8 @@ import { User } from "./user";
 import { Email } from "./value-objects/email";
 import { UserId } from "./value-objects/user-id";
 
-describe("Identity domain", () => {
-  it("creates generic users with normalized email and active state", () => {
+describe("dominio de identidade", () => {
+  it("cria usuarios genericos com email normalizado e estado ativo", () => {
     const user = User.create({
       id: new UserId("user-1"),
       email: new Email(" User@Example.COM "),
@@ -17,7 +17,7 @@ describe("Identity domain", () => {
     expect(user.active).toBe(true);
   });
 
-  it("changes email and activation state through identity behavior only", () => {
+  it("altera email e estado de ativacao apenas por comportamento da identidade", () => {
     const user = User.create({
       id: new UserId("user-1"),
       email: new Email("first@example.com"),
@@ -33,7 +33,7 @@ describe("Identity domain", () => {
     expect(user.active).toBe(true);
   });
 
-  it("rejects invalid email addresses and unsupported roles", () => {
+  it("rejeita emails invalidos e roles nao suportadas", () => {
     expect(() => new Email("bad-email")).toThrow(DomainRuleViolation);
     expect(() =>
       User.create({
