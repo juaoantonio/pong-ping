@@ -2,6 +2,21 @@ packages:
   - apps/*
   - packages/*
 
+allowBuilds:
+  '@firebase/util': true
+  '@nestjs/core': false
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  '@swc/core': true
+  better-sqlite3: true
+  cpu-features: true
+  msw: true
+  prisma: true
+  protobufjs: false
+  sharp: false
+  ssh2: true
+  unrs-resolver: false
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
