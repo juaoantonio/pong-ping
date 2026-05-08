@@ -34,6 +34,8 @@ function actor(role: "admin" | "superadmin" = "superadmin") {
     image: null,
     avatarUrl: null,
     createdAt: new Date("2026-04-30T12:00:00.000Z"),
+    tenantId: "tenant-1",
+    tenant: { slug: "tenant-1", name: "Tenant 1" },
   };
 }
 
@@ -65,7 +67,7 @@ describe("rota admin de tenants", () => {
         createdAt,
         _count: { users: 3 },
       },
-    ]);
+    ] as never);
 
     const response = await getTenants();
 
@@ -104,7 +106,7 @@ describe("rota admin de tenants", () => {
       name: "Clube Sao Paulo",
       slug: "clube-sao-paulo",
       createdAt,
-    });
+    } as never);
 
     const response = await postTenants(
       new Request("http://test.local/api/admin/tenants", {

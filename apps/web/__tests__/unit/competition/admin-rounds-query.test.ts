@@ -127,7 +127,7 @@ describe("consulta admin de rodadas de competicao", () => {
         createdBy: { name: "Admin", email: "admin@example.com" },
         rollbacks: [{ id: "rollback-1" }],
       },
-    ]);
+    ] as never);
 
     await expect(
       getAdminRoundsReadModel(

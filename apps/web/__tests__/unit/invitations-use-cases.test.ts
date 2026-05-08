@@ -59,7 +59,7 @@ function createTableStore() {
         findUnique: jest.fn(),
       },
       $transaction: jest.fn(async (callback) => callback(tx as never)),
-    },
+    } as any,
   };
 }
 

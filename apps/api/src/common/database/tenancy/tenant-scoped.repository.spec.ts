@@ -1,6 +1,11 @@
 import { ForbiddenException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
-import { type FindOptionsWhere, type Repository, type SelectQueryBuilder } from "typeorm";
+import {
+  type DeepPartial,
+  type FindOptionsWhere,
+  type Repository,
+  type SelectQueryBuilder,
+} from "typeorm";
 import { TenantOwnedBaseEntity } from "../../shared/entities/tenant-owned-base.entity";
 import { type TenantContextProvider } from "./tenant-context.provider";
 import { assertTenantOwnedEntityTarget } from "./tenant-scoped-repository.provider";
@@ -62,7 +67,7 @@ describe("TenantScopedRepository", () => {
     const { scopedRepository } = tenantRepository("tenant-a", rows);
 
     await expect(
-      scopedRepository.update({ id: "shared-id" }, { name: "updated-a" }),
+      scopedRepository.update({ id: "shared-id" }, { name: "updated-a" } as never),
     ).resolves.toMatchObject({
       affected: 1,
     });
@@ -71,7 +76,7 @@ describe("TenantScopedRepository", () => {
       record("shared-id", "tenant-b", "b"),
     ]);
     await expect(
-      scopedRepository.update({ id: "shared-id" }, { tenantId: "tenant-b" }),
+      scopedRepository.update({ id: "shared-id" }, { tenantId: "tenant-b" } as never),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -123,16 +128,21 @@ function tenantRepository(tenantId: string | undefined, rows: TenantFixture[]) {
     find: async (options) => rows.filter((row) => matchesWhere(row, options?.where)),
     findOne: async (options) => rows.find((row) => matchesWhere(row, options?.where)) ?? null,
     findOneBy: async (where) => rows.find((row) => matchesWhere(row, where)) ?? null,
-    create: (entityLike) => {
+    create: ((entityLike?: DeepPartial<TenantFixture> | DeepPartial<TenantFixture>[]) => {
       if (Array.isArray(entityLike)) {
         return entityLike.map((entity) => ({ ...entity })) as TenantFixture[];
       }
 
       return { ...entityLike } as TenantFixture;
-    },
+    }) as Repository<TenantFixture>["create"],
     save: async (entity) => entity,
     update: async (criteria, partialEntity) => {
-      const matchingRows = rows.filter((row) => matchesWhere(row, criteria));
+      const matchingRows = rows.filter((row) =>
+        matchesWhere(
+          row,
+          criteria as FindOptionsWhere<TenantFixture> | FindOptionsWhere<TenantFixture>[],
+        ),
+      );
 
       for (const row of matchingRows) {
         Object.assign(row, partialEntity);

@@ -60,6 +60,7 @@ function authenticatedUser() {
     avatarUrl: null,
     image: null,
     createdAt: new Date("2026-04-30T12:00:00.000Z"),
+    tenant: { slug: "tenant-1", name: "Tenant 1" },
   };
 }
 

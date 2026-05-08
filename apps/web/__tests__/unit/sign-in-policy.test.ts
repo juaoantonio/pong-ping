@@ -52,6 +52,7 @@ describe("politica de login por email", () => {
   it("autoriza automaticamente apenas o superadmin inicial", async () => {
     mockedAllowEmail.mockResolvedValue({
       id: "allowed-email-id",
+      tenantId: "tenant-1",
       email: "root@example.com",
       createdByUserId: "root-id",
       createdAt: new Date(),

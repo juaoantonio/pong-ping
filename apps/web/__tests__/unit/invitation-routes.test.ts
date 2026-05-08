@@ -51,6 +51,7 @@ function actor() {
     avatarUrl: null,
     image: null,
     createdAt: new Date("2026-05-04T12:00:00.000Z"),
+    tenant: { slug: "tenant-1", name: "Tenant 1" },
   };
 }
 

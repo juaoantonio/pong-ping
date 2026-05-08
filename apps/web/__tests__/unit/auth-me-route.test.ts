@@ -63,7 +63,7 @@ describe("rota PATCH /api/auth/me", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedPrisma.$transaction.mockImplementation((operations) =>
-      Promise.all(operations),
+      Promise.all(operations as unknown as Promise<unknown>[]) as never,
     );
     mockedRequireAuth.mockResolvedValue(authUser());
     mockedPrisma.user.update.mockResolvedValue({
@@ -73,8 +73,8 @@ describe("rota PATCH /api/auth/me", () => {
       image: null,
       avatarUrl: null,
       role: "user",
-    });
-    mockedPrisma.athleteProfile.upsert.mockResolvedValue({ id: "profile-1" });
+    } as never);
+    mockedPrisma.athleteProfile.upsert.mockResolvedValue({ id: "profile-1" } as never);
   });
 
   it("atualiza nome e faz upsert de valores aparados do perfil de atleta", async () => {
