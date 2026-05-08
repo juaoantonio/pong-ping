@@ -15,12 +15,12 @@ pnpm --filter @pong-ping/api dev
 The API listens on `http://127.0.0.1:3001/v1`.
 
 The backend uses the root PostgreSQL service and a separate database named
-`pong_ping_api`. New Docker volumes create that database automatically from
-`docker/postgres/init/01-create-api-database.sql`. If the root Postgres volume
-already exists, create it manually:
+`pong_ping_api`. Start the service through the API workspace so Docker Compose
+receives the API env values and the configured database is created
+idempotently:
 
 ```bash
-docker compose exec postgres psql -U postgres -d mydb -c "CREATE DATABASE pong_ping_api;"
+pnpm --filter @pong-ping/api services:up
 ```
 
 ## Scripts
@@ -30,7 +30,7 @@ docker compose exec postgres psql -U postgres -d mydb -c "CREATE DATABASE pong_p
 - `pnpm lint` runs Biome checks.
 - `pnpm test` runs unit tests.
 - `pnpm test:e2e` runs Supertest/Testcontainers checks.
-- `pnpm services:up` starts the root PostgreSQL service with Docker Compose.
+- `pnpm services:up` starts PostgreSQL, waits for it, and creates the configured database if needed.
 - `pnpm migration:generate` and `pnpm migration:run` use `data-source.ts`.
 
 ## Included

@@ -39,11 +39,12 @@ be passed by the shell when running the app workspace. See
 `apps/web/.env.example` for the expected variables.
 
 The API uses `apps/api/envs/.env` and a separate PostgreSQL database named
-`pong_ping_api` in the root Docker Compose Postgres service. New Docker volumes
-create that database automatically. For an existing volume, run:
+`pong_ping_api` in the root Docker Compose Postgres service. Start the service
+through the API workspace so Docker Compose receives the API env values and the
+configured database is created idempotently:
 
 ```bash
-docker compose exec postgres psql -U postgres -d mydb -c "CREATE DATABASE pong_ping_api;"
+pnpm --filter @pong-ping/api services:up
 ```
 
 ## Deploy on Vercel

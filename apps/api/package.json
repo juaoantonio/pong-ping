@@ -8,6 +8,9 @@
     "pnpm": ">=10"
   },
   "scripts": {
+    "dotenv": "dotenv -e envs/.env -e envs/.env.development -e envs/.env.local",
+    "dotenv:test": "dotenv -e envs/.env -e envs/.env.test -e envs/.env.local",
+    "dotenv:prod": "dotenv -e envs/.env -e envs/.env.production -e envs/.env.local",
     "dev": "nest start --watch",
     "build": "nest build",
     "lint": "eslint . && prettier --check .",
@@ -19,12 +22,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
-    "services:up": "docker compose -f ../../docker-compose.yml up -d --wait postgres",
-    "services:down": "docker compose -f ../../docker-compose.yml down",
-    "services:logs": "docker compose -f ../../docker-compose.yml logs -f postgres",
-    "migration:generate": "pnpm exec typeorm-ts-node-commonjs migration:generate -d ./data-source.ts src/common/database/migrations/migration",
-    "migration:run": "pnpm exec typeorm-ts-node-commonjs migration:run -d ./data-source.ts",
-    "migration:revert": "pnpm exec typeorm-ts-node-commonjs migration:revert -d ./data-source.ts"
+    "services:up": "pnpm run -s dotenv -- ./scripts/services-up.sh",
+    "services:down": "pnpm run -s dotenv -- docker compose -f ../../docker-compose.yml down",
+    "services:logs": "pnpm run -s dotenv -- docker compose -f ../../docker-compose.yml logs -f postgres",
+    "services:ps": "pnpm run -s dotenv -- docker compose -f ../../docker-compose.yml ps",
+    "migration:generate": "pnpm run -s dotenv -- pnpm exec typeorm-ts-node-commonjs migration:generate -d ./data-source.ts src/common/database/migrations/migration",
+    "migration:run": "pnpm run -s dotenv -- pnpm exec typeorm-ts-node-commonjs migration:run -d ./data-source.ts",
+    "migration:revert": "pnpm run -s dotenv -- pnpm exec typeorm-ts-node-commonjs migration:revert -d ./data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.8",
@@ -60,6 +64,7 @@
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/supertest": "^6.0.3",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^16.4.0",
