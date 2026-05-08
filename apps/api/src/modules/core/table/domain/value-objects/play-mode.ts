@@ -1,8 +1,8 @@
 import { DomainRuleViolation } from "../../../shared/domain";
 
-const PLAY_MODE_VALUES = ["singles", "doubles"] as const;
+export const PLAY_MODE_VALUES = ["singles", "doubles"] as const;
 
-type PlayModeValue = (typeof PLAY_MODE_VALUES)[number];
+export type PlayModeValue = (typeof PLAY_MODE_VALUES)[number];
 
 export class PlayMode {
   public readonly value: PlayModeValue;
