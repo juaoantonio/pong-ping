@@ -45,7 +45,13 @@ export default defineConfig([
     },
   },
   {
-    files: ["*.config.ts", "data-source.ts", "test/**/*.ts", "src/**/*.spec.ts"],
+    files: [
+      "*.config.ts",
+      "data-source.ts",
+      "scripts/**/*.spec.ts",
+      "test/**/*.ts",
+      "src/**/*.spec.ts",
+    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
     },

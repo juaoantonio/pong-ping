@@ -17,6 +17,13 @@
     "esModuleInterop": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "data-source.ts", "*.config.ts", "*.config.*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "scripts/**/*.ts",
+    "data-source.ts",
+    "*.config.ts",
+    "*.config.*.ts"
+  ],
   "exclude": ["dist", "node_modules"]
 }

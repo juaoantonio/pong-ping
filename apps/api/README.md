@@ -31,7 +31,22 @@ pnpm --filter @pong-ping/api services:up
 - `pnpm test` runs unit tests.
 - `pnpm test:e2e` runs Supertest/Testcontainers checks.
 - `pnpm services:up` starts PostgreSQL, waits for it, and creates the configured database if needed.
+- `pnpm system-admin:create -- --email admin@example.com` creates or updates a system admin user.
 - `pnpm migration:generate` and `pnpm migration:run` use `data-source.ts`.
+
+Create the first system admin from the repository root:
+
+```bash
+pnpm --filter @pong-ping/api system-admin:create
+```
+
+Or pass values non-interactively:
+
+```bash
+pnpm --filter @pong-ping/api system-admin:create -- --email admin@example.com --display-name "Admin"
+```
+
+The command assigns the `system_admin` role. If `--google-subject` is omitted, the pending user is linked automatically on first Google login with the same email.
 
 ## Included
 
