@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import { CurrentContextService } from "../../../common/context";
 import { Public, RequireTenantRoles } from "../authorization/authorization.decorators";
+import { TENANT_ROLES } from "../identity-roles";
 import { clearSessionCookie, setSessionCookie } from "../session/cookies";
 import { SessionService } from "../session/session.service";
 import { AuthService } from "./auth.service";
@@ -47,7 +48,7 @@ export class AuthController {
   }
 
   @Post("logout")
-  @RequireTenantRoles("owner", "admin", "member")
+  @RequireTenantRoles(...TENANT_ROLES)
   public async logout(@Res({ passthrough: true }) res: Response) {
     const principal = this.context.getPrincipalOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
@@ -61,7 +62,7 @@ export class AuthController {
   }
 
   @Get("me")
-  @RequireTenantRoles("owner", "admin", "member")
+  @RequireTenantRoles(...TENANT_ROLES)
   public me() {
     return this.auth.getMe();
   }

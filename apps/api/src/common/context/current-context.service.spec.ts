@@ -2,12 +2,19 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { ClsService } from "nestjs-cls";
 import { describe, expect, it } from "vitest";
+import { IDENTITY_SYSTEM_ROLE } from "../../modules/identity/identity-roles";
 import { CurrentContextService } from "./current-context.service";
-import type { IdentityPrincipal, IdentityRequestContext, TenantContext } from "./request-context.types";
+import type {
+  IdentityPrincipal,
+  IdentityRequestContext,
+  TenantContext,
+} from "./request-context.types";
 
 describe("CurrentContextService", () => {
   function createSubject() {
-    const cls = new ClsService<IdentityRequestContext>(new AsyncLocalStorage<IdentityRequestContext>());
+    const cls = new ClsService<IdentityRequestContext>(
+      new AsyncLocalStorage<IdentityRequestContext>(),
+    );
     const service = new CurrentContextService(cls);
     return { cls, service };
   }
@@ -53,7 +60,7 @@ describe("CurrentContextService", () => {
       userId: "user-1",
       tenantId: "tenant-1",
       sessionId: "session-1",
-      systemRoles: ["system_admin"],
+      systemRoles: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN],
       tenantRoles: ["tenant_admin"],
     };
 

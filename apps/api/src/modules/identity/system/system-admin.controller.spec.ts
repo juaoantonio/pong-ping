@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { IDENTITY_TENANT_ROLE } from "../identity-roles";
 import { SystemAdminController } from "./system-admin.controller";
 
 describe("SystemAdminController", () => {
@@ -34,7 +35,10 @@ describe("SystemAdminController", () => {
     const service = {
       listMemberships: vi.fn(async () => [{ id: "membership-1" }]),
       upsertMembership: vi.fn(async () => ({ id: "membership-2" })),
-      updateMembership: vi.fn(async () => ({ id: "membership-1", roles: ["admin"] })),
+      updateMembership: vi.fn(async () => ({
+        id: "membership-1",
+        roles: [IDENTITY_TENANT_ROLE.ADMIN],
+      })),
       deactivateMembership: vi.fn(async () => undefined),
     };
     const controller = new SystemAdminController(service as never);
@@ -43,19 +47,21 @@ describe("SystemAdminController", () => {
     await expect(
       controller.createMembership("tenant-1", {
         email: "member@example.test",
-        roles: ["member"],
+        roles: [IDENTITY_TENANT_ROLE.MEMBER],
       }),
     ).resolves.toEqual({ id: "membership-2" });
     await expect(
-      controller.updateMembership("tenant-1", "membership-1", { roles: ["admin"] }),
-    ).resolves.toEqual({ id: "membership-1", roles: ["admin"] });
+      controller.updateMembership("tenant-1", "membership-1", {
+        roles: [IDENTITY_TENANT_ROLE.ADMIN],
+      }),
+    ).resolves.toEqual({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] });
     await expect(controller.deactivateMembership("tenant-1", "membership-1")).resolves.toEqual({
       deactivated: true,
     });
 
     expect(service.upsertMembership).toHaveBeenCalledWith("tenant-1", {
       email: "member@example.test",
-      roles: ["member"],
+      roles: [IDENTITY_TENANT_ROLE.MEMBER],
     });
     expect(service.deactivateMembership).toHaveBeenCalledWith("tenant-1", "membership-1");
   });

@@ -1,7 +1,11 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { CurrentContextService } from "../../../common/context";
-import type { SystemRole, TenantRole } from "../entities";
+import {
+  IDENTITY_SYSTEM_ROLE,
+  type IdentitySystemRole,
+  type IdentityTenantRole,
+} from "../identity-roles";
 import { IS_PUBLIC_KEY, SYSTEM_ROLES_KEY, TENANT_ROLES_KEY } from "./authorization.decorators";
 
 @Injectable()
@@ -19,18 +23,26 @@ export class IdentityAuthorizationGuard implements CanActivate {
     }
 
     const principal = this.context.getPrincipalOrThrow();
-    const tenantRoles = this.reflector.getAllAndOverride<TenantRole[]>(TENANT_ROLES_KEY, targets);
+    const tenantRoles = this.reflector.getAllAndOverride<IdentityTenantRole[]>(
+      TENANT_ROLES_KEY,
+      targets,
+    );
     if (tenantRoles?.length) {
       const tenant = this.context.getTenantOrThrow();
-      if (principal.tenantId !== tenant.id || !tenantRoles.some((role) => principal.tenantRoles.includes(role))) {
+      if (
+        principal.tenantId !== tenant.id ||
+        !tenantRoles.some((role) => principal.tenantRoles.includes(role))
+      ) {
         throw new ForbiddenException("Tenant role is required.");
       }
 
       return true;
     }
 
-    const systemRoles =
-      this.reflector.getAllAndOverride<SystemRole[]>(SYSTEM_ROLES_KEY, targets) ?? (["system_admin"] as SystemRole[]);
+    const systemRoles = this.reflector.getAllAndOverride<IdentitySystemRole[]>(
+      SYSTEM_ROLES_KEY,
+      targets,
+    ) ?? [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN];
     if (!systemRoles.some((role) => principal.systemRoles.includes(role))) {
       throw new ForbiddenException("System role is required.");
     }

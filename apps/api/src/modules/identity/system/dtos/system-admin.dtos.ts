@@ -1,5 +1,14 @@
-import { ArrayNotEmpty, IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, Length } from "class-validator";
-import { TENANT_ROLES, type TenantRole } from "../../entities";
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Length,
+} from "class-validator";
+import { TENANT_ADMIN_ROLES, TENANT_ROLES, type IdentityTenantRole } from "../../identity-roles";
 
 export class CreateSystemTenantDto {
   @IsString()
@@ -14,8 +23,8 @@ export class CreateSystemTenantDto {
   ownerEmail!: string;
 
   @IsOptional()
-  @IsIn(["owner", "admin"])
-  ownerRole?: "owner" | "admin";
+  @IsIn([...TENANT_ADMIN_ROLES])
+  ownerRole?: (typeof TENANT_ADMIN_ROLES)[number];
 }
 
 export class UpdateSystemTenantDto {
@@ -41,7 +50,7 @@ export class CreateSystemMembershipDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsIn([...TENANT_ROLES], { each: true })
-  roles!: TenantRole[];
+  roles!: IdentityTenantRole[];
 }
 
 export class UpdateSystemMembershipDto {
@@ -49,7 +58,7 @@ export class UpdateSystemMembershipDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsIn([...TENANT_ROLES], { each: true })
-  roles?: TenantRole[];
+  roles?: IdentityTenantRole[];
 
   @IsOptional()
   @IsBoolean()

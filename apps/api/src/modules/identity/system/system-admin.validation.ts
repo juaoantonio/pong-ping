@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { TENANT_ROLES, type TenantRole } from "../entities";
+import { TENANT_ADMIN_ROLES, TENANT_ROLES, type IdentityTenantRole } from "../identity-roles";
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
@@ -11,7 +11,10 @@ export function normalizeTenantSlug(slug: string): string {
   return slug.trim().toLowerCase();
 }
 
-export function assertTenantSlugAllowed(slug: string, reservedSubdomains: readonly string[]): string {
+export function assertTenantSlugAllowed(
+  slug: string,
+  reservedSubdomains: readonly string[],
+): string {
   const normalized = normalizeTenantSlug(slug);
   if (!SLUG_PATTERN.test(normalized)) {
     throw new BadRequestException("Tenant slug must be a valid subdomain label.");
@@ -24,7 +27,7 @@ export function assertTenantSlugAllowed(slug: string, reservedSubdomains: readon
   return normalized;
 }
 
-export function assertTenantRoles(roles: readonly TenantRole[]): TenantRole[] {
+export function assertTenantRoles(roles: readonly IdentityTenantRole[]): IdentityTenantRole[] {
   if (!roles.length) {
     throw new BadRequestException("At least one tenant role is required.");
   }
@@ -37,6 +40,6 @@ export function assertTenantRoles(roles: readonly TenantRole[]): TenantRole[] {
   return [...new Set(roles)];
 }
 
-export function hasTenantAdminRole(roles: readonly TenantRole[]): boolean {
-  return roles.includes("owner") || roles.includes("admin");
+export function hasTenantAdminRole(roles: readonly IdentityTenantRole[]): boolean {
+  return roles.some((role) => (TENANT_ADMIN_ROLES as readonly IdentityTenantRole[]).includes(role));
 }

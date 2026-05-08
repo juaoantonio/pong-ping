@@ -2,7 +2,12 @@ import { ConflictException, ForbiddenException, Injectable } from "@nestjs/commo
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CurrentContextService } from "../../../common/context";
-import { IdentityUserEntity, SystemRoleAssignmentEntity, TenantMembershipEntity } from "../entities";
+import {
+  IdentityUserEntity,
+  SystemRoleAssignmentEntity,
+  TenantMembershipEntity,
+} from "../entities";
+import { IDENTITY_SYSTEM_ROLE } from "../identity-roles";
 import { SessionService, type CreatedSession } from "../session/session.service";
 import type { GoogleProfile } from "./google-profile";
 
@@ -47,7 +52,7 @@ export class AuthService {
   ): Promise<CreatedSession> {
     const user = await this.upsertGoogleUser(profile);
     const systemRole = await this.systemRoles.findOne({
-      where: { userId: user.id, role: "system_admin" },
+      where: { userId: user.id, role: IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN },
     });
 
     if (!systemRole) {

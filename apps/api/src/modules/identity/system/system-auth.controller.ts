@@ -6,6 +6,7 @@ import { CurrentContextService } from "../../../common/context";
 import { Public, RequireSystemRoles } from "../authorization/authorization.decorators";
 import { AuthService } from "../auth/auth.service";
 import type { GoogleProfile } from "../auth/google-profile";
+import { IDENTITY_SYSTEM_ROLE } from "../identity-roles";
 import { clearSessionCookie, setSessionCookie } from "../session/cookies";
 import { SessionService } from "../session/session.service";
 import { SystemGoogleOAuthGuard } from "./system-google-oauth.guard";
@@ -49,7 +50,7 @@ export class SystemAuthController {
   }
 
   @Post("logout")
-  @RequireSystemRoles("system_admin")
+  @RequireSystemRoles(IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN)
   public async logout(@Res({ passthrough: true }) res: Response) {
     const principal = this.context.getPrincipalOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
@@ -63,7 +64,7 @@ export class SystemAuthController {
   }
 
   @Get("me")
-  @RequireSystemRoles("system_admin")
+  @RequireSystemRoles(IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN)
   public me() {
     return this.auth.getMe();
   }

@@ -11,13 +11,11 @@ import {
   TenantMembershipEntity,
   TenantEntity,
 } from "../entities";
+import { IDENTITY_SYSTEM_ROLE, IDENTITY_TENANT_ROLE } from "../identity-roles";
 import { clearSessionCookie, readCookie, setSessionCookie } from "./cookies";
 import { SessionMiddleware } from "./session.middleware";
 import { SessionService } from "./session.service";
-import {
-  SESSION_VALIDATION_FAILURE,
-  SessionValidationError,
-} from "./session-validation.error";
+import { SESSION_VALIDATION_FAILURE, SessionValidationError } from "./session-validation.error";
 
 describe("SessionService", () => {
   it("creates high-entropy opaque sessions and persists only token hashes", async () => {
@@ -55,18 +53,22 @@ describe("SessionService", () => {
       userId: "user-1",
       tenantId: "tenant-1",
       sessionId: created.session.id,
-      tenantRoles: ["admin"],
-      systemRoles: ["system_admin"],
+      tenantRoles: [IDENTITY_TENANT_ROLE.ADMIN],
+      systemRoles: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN],
     });
   });
 
   it("rejects missing and unknown tokens", async () => {
     const fixture = createFixture();
 
-    await expect(fixture.service.validateTenantSession(undefined, "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(undefined, "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Missing,
     });
-    await expect(fixture.service.validateTenantSession("unknown", "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession("unknown", "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Unknown,
     });
   });
@@ -75,36 +77,48 @@ describe("SessionService", () => {
     const fixture = createFixture();
     const created = await fixture.service.createSession({ userId: "user-1", tenantId: "tenant-1" });
 
-    await expect(fixture.service.validateTenantSession(created.token, "tenant-2")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(created.token, "tenant-2"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.TenantMismatch,
     });
 
     created.session.revokedAt = new Date();
-    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(created.token, "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Revoked,
     });
 
     created.session.revokedAt = null;
     created.session.expiresAt = new Date(Date.now() - 1);
-    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(created.token, "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Expired,
     });
 
     created.session.expiresAt = new Date(Date.now() + 60_000);
     created.session.user.active = false;
-    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(created.token, "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.InactiveUser,
     });
 
     created.session.user.active = true;
     created.session.tenant!.active = false;
-    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(created.token, "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.InactiveTenant,
     });
 
     created.session.tenant!.active = true;
     fixture.memberships.records[0].active = false;
-    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(created.token, "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.InactiveMembership,
     });
   });
@@ -113,7 +127,9 @@ describe("SessionService", () => {
     const fixture = createFixture();
     const created = await fixture.service.createSystemSession({ userId: "user-1" });
 
-    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(
+      fixture.service.validateTenantSession(created.token, "tenant-1"),
+    ).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.TenantMismatch,
     });
 
@@ -123,7 +139,7 @@ describe("SessionService", () => {
       tenantId: null,
       sessionId: created.session.id,
       tenantRoles: [],
-      systemRoles: ["system_admin"],
+      systemRoles: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN],
     });
   });
 
@@ -188,7 +204,7 @@ describe("SessionMiddleware", () => {
       userId: "user-1",
       tenantId: "tenant-1",
       sessionId: "session-1",
-      tenantRoles: ["admin"],
+      tenantRoles: [IDENTITY_TENANT_ROLE.ADMIN],
       systemRoles: [],
     };
     const sessions = {
@@ -202,11 +218,7 @@ describe("SessionMiddleware", () => {
     );
     const next = vi.fn();
 
-    await middleware.use(
-      { headers: { cookie: "sid=raw-token" } } as Request,
-      {} as Response,
-      next,
-    );
+    await middleware.use({ headers: { cookie: "sid=raw-token" } } as Request, {} as Response, next);
 
     expect(sessions.validateTenantSession).toHaveBeenCalledWith("raw-token", "tenant-1");
     expect(context.principal).toEqual(principal);
@@ -229,11 +241,7 @@ describe("SessionMiddleware", () => {
     );
     const next = vi.fn();
 
-    await middleware.use(
-      { headers: { cookie: "sid=raw-token" } } as Request,
-      {} as Response,
-      next,
-    );
+    await middleware.use({ headers: { cookie: "sid=raw-token" } } as Request, {} as Response, next);
 
     expect(next.mock.calls[0]?.[0]?.getStatus()).toBe(401);
   });
@@ -273,7 +281,7 @@ describe("SessionMiddleware", () => {
       tenantId: null,
       sessionId: "session-1",
       tenantRoles: [],
-      systemRoles: ["system_admin"],
+      systemRoles: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN],
     };
     const sessions = {
       validateSystemSession: vi.fn().mockResolvedValue(principal),
@@ -360,7 +368,9 @@ class FakeSessionRepository {
     return session;
   }
 
-  async findOne(options: FindOneOptions<IdentitySessionEntity>): Promise<IdentitySessionEntity | null> {
+  async findOne(
+    options: FindOneOptions<IdentitySessionEntity>,
+  ): Promise<IdentitySessionEntity | null> {
     const where = options.where as FindOptionsWhere<IdentitySessionEntity>;
     return this.records.find((session) => session.tokenHash === where.tokenHash) ?? null;
   }
@@ -383,12 +393,14 @@ class FakeMembershipRepository {
     Object.assign(new TenantMembershipEntity(), {
       userId: "user-1",
       tenantId: "tenant-1",
-      roles: ["admin"],
+      roles: [IDENTITY_TENANT_ROLE.ADMIN],
       active: true,
     }),
   ];
 
-  async findOne(options: FindOneOptions<TenantMembershipEntity>): Promise<TenantMembershipEntity | null> {
+  async findOne(
+    options: FindOneOptions<TenantMembershipEntity>,
+  ): Promise<TenantMembershipEntity | null> {
     const where = options.where as FindOptionsWhere<TenantMembershipEntity>;
     return (
       this.records.find(
@@ -402,12 +414,14 @@ class FakeMembershipRepository {
 }
 
 class FakeSystemRoleRepository {
-  constructor(private readonly records: SystemRoleAssignmentEntity[] = [
-    Object.assign(new SystemRoleAssignmentEntity(), {
-      userId: "user-1",
-      role: "system_admin",
-    }),
-  ]) {}
+  constructor(
+    private readonly records: SystemRoleAssignmentEntity[] = [
+      Object.assign(new SystemRoleAssignmentEntity(), {
+        userId: "user-1",
+        role: IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN,
+      }),
+    ],
+  ) {}
 
   async find(): Promise<SystemRoleAssignmentEntity[]> {
     return this.records;
@@ -422,7 +436,9 @@ function createFixture(options: { systemRoles?: SystemRoleAssignmentEntity[] } =
     sessions as unknown as Repository<IdentitySessionEntity>,
     {} as Repository<IdentityUserEntity>,
     memberships as unknown as Repository<TenantMembershipEntity>,
-    new FakeSystemRoleRepository(options.systemRoles) as unknown as Repository<SystemRoleAssignmentEntity>,
+    new FakeSystemRoleRepository(
+      options.systemRoles,
+    ) as unknown as Repository<SystemRoleAssignmentEntity>,
   );
 
   return { service, sessions, memberships };
@@ -430,9 +446,7 @@ function createFixture(options: { systemRoles?: SystemRoleAssignmentEntity[] } =
 
 function tenantResolver(status: "missing" | "reserved" | "resolved") {
   return {
-    parseHost: vi.fn(() =>
-      status === "resolved" ? { status, slug: "acme" } : { status },
-    ),
+    parseHost: vi.fn(() => (status === "resolved" ? { status, slug: "acme" } : { status })),
   };
 }
 

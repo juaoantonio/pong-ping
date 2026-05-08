@@ -11,10 +11,8 @@ import {
   SystemRoleAssignmentEntity,
   TenantMembershipEntity,
 } from "../entities";
-import {
-  SESSION_VALIDATION_FAILURE,
-  SessionValidationError,
-} from "./session-validation.error";
+import { IDENTITY_SYSTEM_ROLE } from "../identity-roles";
+import { SESSION_VALIDATION_FAILURE, SessionValidationError } from "./session-validation.error";
 
 export type CreatedSession = {
   session: IdentitySessionEntity;
@@ -54,7 +52,9 @@ export class SessionService {
     return this.createSessionRecord(input);
   }
 
-  public async createSystemSession(input: Omit<CreateSessionRecordInput, "tenantId">): Promise<CreatedSession> {
+  public async createSystemSession(
+    input: Omit<CreateSessionRecordInput, "tenantId">,
+  ): Promise<CreatedSession> {
     return this.createSessionRecord({ ...input, tenantId: null });
   }
 
@@ -77,11 +77,17 @@ export class SessionService {
     return { session: await this.sessions.save(session), token };
   }
 
-  public async validateSession(rawToken: string | undefined, tenantId: string): Promise<IdentityPrincipal> {
+  public async validateSession(
+    rawToken: string | undefined,
+    tenantId: string,
+  ): Promise<IdentityPrincipal> {
     return this.validateTenantSession(rawToken, tenantId);
   }
 
-  public async validateTenantSession(rawToken: string | undefined, tenantId: string): Promise<IdentityPrincipal> {
+  public async validateTenantSession(
+    rawToken: string | undefined,
+    tenantId: string,
+  ): Promise<IdentityPrincipal> {
     if (!rawToken) {
       throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Missing);
     }
@@ -131,7 +137,7 @@ export class SessionService {
     const systemRoles = await this.systemRoles.find({
       where: { userId: session.userId },
     });
-    if (!systemRoles.some((assignment) => assignment.role === "system_admin")) {
+    if (!systemRoles.some((assignment) => assignment.role === IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN)) {
       throw new SessionValidationError(SESSION_VALIDATION_FAILURE.InactiveMembership);
     }
 
@@ -147,10 +153,7 @@ export class SessionService {
   }
 
   public async revokeSession(sessionId: string): Promise<void> {
-    await this.sessions.update(
-      { id: sessionId, revokedAt: IsNull() },
-      { revokedAt: new Date() },
-    );
+    await this.sessions.update({ id: sessionId, revokedAt: IsNull() }, { revokedAt: new Date() });
   }
 
   public async revokeToken(rawToken: string | undefined): Promise<void> {

@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
+import { IDENTITY_SYSTEM_ROLE, IDENTITY_TENANT_ROLE } from "../identity-roles";
 import { AuthService } from "./auth.service";
 
 function repository(existing?: unknown) {
@@ -12,12 +13,19 @@ function repository(existing?: unknown) {
 
 describe("AuthService", () => {
   it("cria sessao para profile google com membership ativo no tenant atual", async () => {
-    const sessions = { createTenantSession: vi.fn(async () => ({ session: { id: "session-1" }, token: "raw-token" })) };
+    const sessions = {
+      createTenantSession: vi.fn(async () => ({
+        session: { id: "session-1" },
+        token: "raw-token",
+      })),
+    };
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
       sessions as never,
       repository() as never,
-      { findOne: vi.fn(async () => ({ id: "membership-1", roles: ["owner"] })) } as never,
+      {
+        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.OWNER] })),
+      } as never,
       { findOne: vi.fn() } as never,
     );
 
@@ -72,7 +80,9 @@ describe("AuthService", () => {
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
       { createTenantSession: vi.fn() } as never,
       users as never,
-      { findOne: vi.fn(async () => ({ id: "membership-1", roles: ["owner"] })) } as never,
+      {
+        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.OWNER] })),
+      } as never,
       { findOne: vi.fn() } as never,
     );
 
@@ -100,9 +110,16 @@ describe("AuthService", () => {
     users.findOne = vi.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce(pendingUser);
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
-      { createTenantSession: vi.fn(async () => ({ session: { id: "session-1" }, token: "raw-token" })) } as never,
+      {
+        createTenantSession: vi.fn(async () => ({
+          session: { id: "session-1" },
+          token: "raw-token",
+        })),
+      } as never,
       users as never,
-      { findOne: vi.fn(async () => ({ id: "membership-1", roles: ["owner"] })) } as never,
+      {
+        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.OWNER] })),
+      } as never,
       { findOne: vi.fn() } as never,
     );
 
@@ -127,14 +144,19 @@ describe("AuthService", () => {
 
   it("cria sessao de sistema apenas para system_admin", async () => {
     const sessions = {
-      createSystemSession: vi.fn(async () => ({ session: { id: "session-1" }, token: "raw-token" })),
+      createSystemSession: vi.fn(async () => ({
+        session: { id: "session-1" },
+        token: "raw-token",
+      })),
     };
     const service = new AuthService(
       {} as never,
       sessions as never,
       repository() as never,
       { findOne: vi.fn() } as never,
-      { findOne: vi.fn(async () => ({ id: "role-1", role: "system_admin" })) } as never,
+      {
+        findOne: vi.fn(async () => ({ id: "role-1", role: IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN })),
+      } as never,
     );
 
     await service.completeSystemGoogleLogin(

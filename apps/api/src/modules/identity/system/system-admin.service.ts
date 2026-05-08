@@ -1,14 +1,15 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Not, Repository } from "typeorm";
 import type { ConfigSchema } from "../../../common/config/config.module";
-import {
-  IdentityUserEntity,
-  TenantEntity,
-  TenantMembershipEntity,
-  type TenantRole,
-} from "../entities";
+import { IdentityUserEntity, TenantEntity, TenantMembershipEntity } from "../entities";
+import { IDENTITY_TENANT_ROLE, type IdentityTenantRole } from "../identity-roles";
 import type {
   CreateSystemMembershipDto,
   CreateSystemTenantDto,
@@ -38,7 +39,7 @@ export type SystemMembershipDto = {
   tenantId: string;
   userId: string;
   email: string;
-  roles: TenantRole[];
+  roles: IdentityTenantRole[];
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -70,7 +71,7 @@ export class SystemAdminService {
   public async createTenant(input: CreateSystemTenantDto): Promise<SystemTenantDto> {
     const slug = this.validateSlug(input.slug);
     const email = normalizeEmail(input.ownerEmail);
-    const ownerRole = input.ownerRole ?? "owner";
+    const ownerRole = input.ownerRole ?? IDENTITY_TENANT_ROLE.OWNER;
 
     return this.dataSource.transaction("SERIALIZABLE", async (manager) => {
       const tenants = manager.getRepository(TenantEntity);
@@ -86,7 +87,10 @@ export class SystemAdminService {
           active: true,
         }),
       );
-      const user = await this.findOrCreatePendingUser(email, manager.getRepository(IdentityUserEntity));
+      const user = await this.findOrCreatePendingUser(
+        email,
+        manager.getRepository(IdentityUserEntity),
+      );
       const memberships = manager.getRepository(TenantMembershipEntity);
       await memberships.save(
         memberships.create({
@@ -155,7 +159,10 @@ export class SystemAdminService {
 
     return this.dataSource.transaction(async (manager) => {
       await this.getTenantOrThrow(tenantId, manager.getRepository(TenantEntity));
-      const user = await this.findOrCreatePendingUser(email, manager.getRepository(IdentityUserEntity));
+      const user = await this.findOrCreatePendingUser(
+        email,
+        manager.getRepository(IdentityUserEntity),
+      );
       const memberships = manager.getRepository(TenantMembershipEntity);
       const existingMembership = await memberships.findOne({
         where: { tenantId, userId: user.id },
@@ -202,7 +209,9 @@ export class SystemAdminService {
 
       await memberships.save(membership);
       await this.assertTenantKeepsAdmin(tenantId, memberships);
-      return this.toMembershipDto(await this.getMembershipOrThrow(tenantId, membershipId, memberships));
+      return this.toMembershipDto(
+        await this.getMembershipOrThrow(tenantId, membershipId, memberships),
+      );
     });
   }
 

@@ -1,12 +1,17 @@
 import { BadRequestException } from "@nestjs/common";
 import { validate } from "class-validator";
 import { describe, expect, it } from "vitest";
+import { IDENTITY_TENANT_ROLE } from "../identity-roles";
 import {
   CreateSystemMembershipDto,
   CreateSystemTenantDto,
   UpdateSystemMembershipDto,
 } from "./dtos/system-admin.dtos";
-import { assertTenantRoles, assertTenantSlugAllowed, normalizeEmail } from "./system-admin.validation";
+import {
+  assertTenantRoles,
+  assertTenantSlugAllowed,
+  normalizeEmail,
+} from "./system-admin.validation";
 
 describe("system admin validation", () => {
   it("normalizes email and tenant slugs", () => {
@@ -24,7 +29,7 @@ describe("system admin validation", () => {
       name: "Acme",
       slug: "acme",
       ownerEmail: "owner@example.test",
-      ownerRole: "admin",
+      ownerRole: IDENTITY_TENANT_ROLE.ADMIN,
     });
 
     expect(await validate(dto)).toHaveLength(0);
@@ -35,14 +40,14 @@ describe("system admin validation", () => {
       name: "Acme",
       slug: "acme",
       ownerEmail: "not-email",
-      ownerRole: "member",
+      ownerRole: IDENTITY_TENANT_ROLE.MEMBER,
     });
     const membershipDto = Object.assign(new CreateSystemMembershipDto(), {
       email: "member@example.test",
       roles: [],
     });
     const updateDto = Object.assign(new UpdateSystemMembershipDto(), {
-      roles: ["owner", "bad-role"],
+      roles: [IDENTITY_TENANT_ROLE.OWNER, "bad-role"],
     });
 
     expect(await validate(tenantDto)).not.toHaveLength(0);

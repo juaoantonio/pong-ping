@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { BaseAuditEntity } from "../../../common/shared/entities/base-audit.entity";
+import { IDENTITY_TENANT_ROLE, TENANT_ROLES, type IdentityTenantRole } from "../identity-roles";
 import { IdentityUserEntity } from "./identity-user.entity";
-import { TENANT_ROLES, type TenantRole } from "./identity-roles";
 import { TenantEntity } from "./tenant.entity";
 
 @Entity("identity_tenant_memberships")
@@ -16,8 +16,13 @@ export class TenantMembershipEntity extends BaseAuditEntity {
   @Column({ name: "user_id", type: "uuid" })
   userId!: string;
 
-  @Column({ type: "enum", enum: [...TENANT_ROLES], array: true, default: [TENANT_ROLES[2]] })
-  roles!: TenantRole[];
+  @Column({
+    type: "enum",
+    enum: [...TENANT_ROLES],
+    array: true,
+    default: [IDENTITY_TENANT_ROLE.MEMBER],
+  })
+  roles!: IdentityTenantRole[];
 
   @Column({ type: "boolean", default: true })
   active!: boolean;

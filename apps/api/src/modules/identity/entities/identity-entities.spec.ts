@@ -4,12 +4,11 @@ import {
   IDENTITY_ENTITIES,
   IdentitySessionEntity,
   IdentityUserEntity,
-  SYSTEM_ROLES,
   SystemRoleAssignmentEntity,
-  TENANT_ROLES,
   TenantEntity,
   TenantMembershipEntity,
 } from ".";
+import { SYSTEM_ROLES, TENANT_ROLES } from "../identity-roles";
 
 function tableName(target: Function): string | undefined {
   return getMetadataArgsStorage().tables.find((table) => table.target === target)?.name;

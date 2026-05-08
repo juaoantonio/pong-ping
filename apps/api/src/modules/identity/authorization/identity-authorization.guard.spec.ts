@@ -2,6 +2,7 @@ import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { describe, expect, it, vi } from "vitest";
 import { CurrentContextService } from "../../../common/context";
+import { IDENTITY_SYSTEM_ROLE, IDENTITY_TENANT_ROLE } from "../identity-roles";
 import { IS_PUBLIC_KEY, SYSTEM_ROLES_KEY, TENANT_ROLES_KEY } from "./authorization.decorators";
 import { IdentityAuthorizationGuard } from "./identity-authorization.guard";
 
@@ -33,43 +34,49 @@ describe("IdentityAuthorizationGuard", () => {
   });
 
   it("rota sem metadata exige system_admin", () => {
-    const guard = new IdentityAuthorizationGuard(reflector({}), currentContext({
-      getPrincipalOrThrow: () => ({
-        userId: "user-1",
-        tenantId: "tenant-1",
-        sessionId: "session-1",
-        tenantRoles: [],
-        systemRoles: ["system_admin"],
-      }),
-    }));
-
-    expect(guard.canActivate(context())).toBe(true);
-  });
-
-  it("nega rota sem metadata para usuario sem system_admin", () => {
-    const guard = new IdentityAuthorizationGuard(reflector({}), currentContext({
-      getPrincipalOrThrow: () => ({
-        userId: "user-1",
-        tenantId: "tenant-1",
-        sessionId: "session-1",
-        tenantRoles: ["owner"],
-        systemRoles: [],
-      }),
-    }));
-
-    expect(() => guard.canActivate(context())).toThrow();
-  });
-
-  it("usa system roles explicitas quando declaradas", () => {
     const guard = new IdentityAuthorizationGuard(
-      reflector({ [SYSTEM_ROLES_KEY]: ["system_admin"] }),
+      reflector({}),
       currentContext({
         getPrincipalOrThrow: () => ({
           userId: "user-1",
           tenantId: "tenant-1",
           sessionId: "session-1",
           tenantRoles: [],
-          systemRoles: ["system_admin"],
+          systemRoles: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN],
+        }),
+      }),
+    );
+
+    expect(guard.canActivate(context())).toBe(true);
+  });
+
+  it("nega rota sem metadata para usuario sem system_admin", () => {
+    const guard = new IdentityAuthorizationGuard(
+      reflector({}),
+      currentContext({
+        getPrincipalOrThrow: () => ({
+          userId: "user-1",
+          tenantId: "tenant-1",
+          sessionId: "session-1",
+          tenantRoles: [IDENTITY_TENANT_ROLE.OWNER],
+          systemRoles: [],
+        }),
+      }),
+    );
+
+    expect(() => guard.canActivate(context())).toThrow();
+  });
+
+  it("usa system roles explicitas quando declaradas", () => {
+    const guard = new IdentityAuthorizationGuard(
+      reflector({ [SYSTEM_ROLES_KEY]: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN] }),
+      currentContext({
+        getPrincipalOrThrow: () => ({
+          userId: "user-1",
+          tenantId: "tenant-1",
+          sessionId: "session-1",
+          tenantRoles: [],
+          systemRoles: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN],
         }),
       }),
     );
@@ -79,14 +86,14 @@ describe("IdentityAuthorizationGuard", () => {
 
   it("exige roles de tenant quando declaradas", () => {
     const guard = new IdentityAuthorizationGuard(
-      reflector({ [TENANT_ROLES_KEY]: ["owner"] }),
+      reflector({ [TENANT_ROLES_KEY]: [IDENTITY_TENANT_ROLE.OWNER] }),
       currentContext({
         getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }),
         getPrincipalOrThrow: () => ({
           userId: "user-1",
           tenantId: "tenant-1",
           sessionId: "session-1",
-          tenantRoles: ["owner"],
+          tenantRoles: [IDENTITY_TENANT_ROLE.OWNER],
           systemRoles: [],
         }),
       }),
@@ -97,14 +104,14 @@ describe("IdentityAuthorizationGuard", () => {
 
   it("nega tenant role incorreta", () => {
     const guard = new IdentityAuthorizationGuard(
-      reflector({ [TENANT_ROLES_KEY]: ["admin"] }),
+      reflector({ [TENANT_ROLES_KEY]: [IDENTITY_TENANT_ROLE.ADMIN] }),
       currentContext({
         getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }),
         getPrincipalOrThrow: () => ({
           userId: "user-1",
           tenantId: "tenant-1",
           sessionId: "session-1",
-          tenantRoles: ["member"],
+          tenantRoles: [IDENTITY_TENANT_ROLE.MEMBER],
           systemRoles: [],
         }),
       }),
@@ -115,7 +122,7 @@ describe("IdentityAuthorizationGuard", () => {
 
   it("propaga unauthenticated quando nao ha principal", () => {
     const guard = new IdentityAuthorizationGuard(
-      reflector({ [SYSTEM_ROLES_KEY]: ["system_admin"] }),
+      reflector({ [SYSTEM_ROLES_KEY]: [IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN] }),
       currentContext({
         getPrincipalOrThrow: () => {
           throw new UnauthorizedException();

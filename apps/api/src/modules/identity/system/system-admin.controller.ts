@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { RequireSystemRoles } from "../authorization/authorization.decorators";
+import { IDENTITY_SYSTEM_ROLE } from "../identity-roles";
 import {
   CreateSystemMembershipDto,
   CreateSystemTenantDto,
@@ -11,7 +12,7 @@ import { SystemHostGuard } from "./system-host.guard";
 
 @Controller("system/admin")
 @UseGuards(SystemHostGuard)
-@RequireSystemRoles("system_admin")
+@RequireSystemRoles(IDENTITY_SYSTEM_ROLE.SYSTEM_ADMIN)
 export class SystemAdminController {
   public constructor(private readonly systemAdmin: SystemAdminService) {}
 

@@ -3,6 +3,7 @@ import type { FindOneOptions, FindOptionsWhere } from "typeorm";
 import { describe, expect, it } from "vitest";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import { IdentityUserEntity, TenantEntity, TenantMembershipEntity } from "../entities";
+import { IDENTITY_TENANT_ROLE } from "../identity-roles";
 import { SystemAdminService } from "./system-admin.service";
 
 describe("SystemAdminService", () => {
@@ -30,7 +31,7 @@ describe("SystemAdminService", () => {
     expect(store.memberships.records[0]).toMatchObject({
       tenantId: tenant.id,
       userId: store.users.records[0].id,
-      roles: ["owner"],
+      roles: [IDENTITY_TENANT_ROLE.OWNER],
       active: true,
     });
   });
@@ -84,7 +85,7 @@ describe("SystemAdminService", () => {
       name: "Acme",
       slug: "acme",
       ownerEmail: "owner@example.test",
-      ownerRole: "admin",
+      ownerRole: IDENTITY_TENANT_ROLE.ADMIN,
     });
 
     await service.updateTenant(created.id, { name: "Acme Club", slug: "acme-club", active: false });
@@ -110,23 +111,33 @@ describe("SystemAdminService", () => {
 
     const created = await service.upsertMembership(tenant.id, {
       email: "member@example.test",
-      roles: ["member"],
+      roles: [IDENTITY_TENANT_ROLE.MEMBER],
     });
-    expect(created).toMatchObject({ email: "member@example.test", roles: ["member"], active: true });
+    expect(created).toMatchObject({
+      email: "member@example.test",
+      roles: [IDENTITY_TENANT_ROLE.MEMBER],
+      active: true,
+    });
 
-    await service.updateMembership(tenant.id, created.id, { roles: ["admin"] });
-    expect(store.memberships.records.find((membership) => membership.id === created.id)?.roles).toEqual([
-      "admin",
-    ]);
+    await service.updateMembership(tenant.id, created.id, { roles: [IDENTITY_TENANT_ROLE.ADMIN] });
+    expect(
+      store.memberships.records.find((membership) => membership.id === created.id)?.roles,
+    ).toEqual([IDENTITY_TENANT_ROLE.ADMIN]);
 
     await service.deactivateMembership(tenant.id, created.id);
-    expect(store.memberships.records.find((membership) => membership.id === created.id)?.active).toBe(false);
+    expect(
+      store.memberships.records.find((membership) => membership.id === created.id)?.active,
+    ).toBe(false);
 
     const reactivated = await service.upsertMembership(tenant.id, {
       email: "member@example.test",
-      roles: ["member"],
+      roles: [IDENTITY_TENANT_ROLE.MEMBER],
     });
-    expect(reactivated).toMatchObject({ id: created.id, roles: ["member"], active: true });
+    expect(reactivated).toMatchObject({
+      id: created.id,
+      roles: [IDENTITY_TENANT_ROLE.MEMBER],
+      active: true,
+    });
   });
 
   it("prevents removing the last active owner or admin", async () => {
@@ -140,7 +151,9 @@ describe("SystemAdminService", () => {
     const ownerMembership = store.memberships.records[0];
 
     await expect(
-      service.updateMembership(tenant.id, ownerMembership.id, { roles: ["member"] }),
+      service.updateMembership(tenant.id, ownerMembership.id, {
+        roles: [IDENTITY_TENANT_ROLE.MEMBER],
+      }),
     ).rejects.toThrow(BadRequestException);
     await expect(service.deactivateMembership(tenant.id, ownerMembership.id)).rejects.toThrow(
       BadRequestException,
@@ -153,7 +166,7 @@ describe("SystemAdminService", () => {
 
     await expect(service.listMemberships("missing")).rejects.toThrow(NotFoundException);
     await expect(
-      service.updateMembership("missing", "membership-1", { roles: ["admin"] }),
+      service.updateMembership("missing", "membership-1", { roles: [IDENTITY_TENANT_ROLE.ADMIN] }),
     ).rejects.toThrow(NotFoundException);
   });
 });
@@ -180,7 +193,9 @@ function createStore() {
 
   users.afterRead = (user) => user;
   memberships.afterRead = (membership) => {
-    membership.user = users.records.find((user) => user.id === membership.userId) as IdentityUserEntity;
+    membership.user = users.records.find(
+      (user) => user.id === membership.userId,
+    ) as IdentityUserEntity;
     return membership;
   };
   tenants.afterRead = (tenant) => {
@@ -196,7 +211,8 @@ function createStore() {
       isolationOrCallback: "SERIALIZABLE" | TransactionCallback,
       maybeCallback?: TransactionCallback,
     ) => {
-      const callback = typeof isolationOrCallback === "function" ? isolationOrCallback : maybeCallback;
+      const callback =
+        typeof isolationOrCallback === "function" ? isolationOrCallback : maybeCallback;
       if (!callback) throw new Error("Missing transaction callback");
       const snapshot = {
         tenants: tenants.cloneRecords(),
@@ -288,5 +304,7 @@ function matches<T>(candidate: T, where: FindOptionsWhere<T>): boolean {
 }
 
 function isNotOperator(value: unknown): value is { _type: "not"; _value: unknown } {
-  return Boolean(value && typeof value === "object" && (value as { _type?: string })._type === "not");
+  return Boolean(
+    value && typeof value === "object" && (value as { _type?: string })._type === "not",
+  );
 }
