@@ -11,6 +11,13 @@ import { GoogleOAuthStrategy } from "./auth/google-oauth.strategy";
 import { IDENTITY_ENTITIES } from "./entities";
 import { SessionMiddleware } from "./session/session.middleware";
 import { SessionService } from "./session/session.service";
+import {
+  SystemAdminController,
+  SystemAdminService,
+  SystemAuthController,
+  SystemGoogleOAuthGuard,
+  SystemHostGuard,
+} from "./system";
 import { TenantMiddleware } from "./tenancy/tenant.middleware";
 import { TenantResolver } from "./tenancy/tenant.resolver";
 
@@ -20,11 +27,14 @@ import { TenantResolver } from "./tenancy/tenant.resolver";
     PassportModule.register({ session: false }),
     TypeOrmModule.forFeature(IDENTITY_ENTITIES),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, SystemAuthController, SystemAdminController],
   providers: [
     TenantResolver,
     SessionService,
     AuthService,
+    SystemAdminService,
+    SystemHostGuard,
+    SystemGoogleOAuthGuard,
     GoogleOAuthGuard,
     GoogleOAuthStrategy,
     {

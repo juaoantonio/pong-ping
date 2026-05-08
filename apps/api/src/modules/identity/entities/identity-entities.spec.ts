@@ -73,6 +73,25 @@ describe("identity entities", () => {
     });
   });
 
+  it("permite usuarios pendentes e sessoes de sistema sem tenant", () => {
+    expect(columnOptions(IdentityUserEntity, "googleSubject")).toMatchObject({
+      name: "google_subject",
+      nullable: true,
+    });
+    expect(columnOptions(IdentitySessionEntity, "tenantId")).toMatchObject({
+      name: "tenant_id",
+      nullable: true,
+    });
+    expect(relationsFor(IdentitySessionEntity)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          propertyName: "tenant",
+          options: expect.objectContaining({ nullable: true }),
+        }),
+      ]),
+    );
+  });
+
   it("separa roles de sistema e tenant", () => {
     const membershipRoles = getMetadataArgsStorage().columns.find(
       (column) => column.target === TenantMembershipEntity && column.propertyName === "roles",

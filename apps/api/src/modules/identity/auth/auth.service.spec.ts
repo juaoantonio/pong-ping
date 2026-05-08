@@ -12,12 +12,13 @@ function repository(existing?: unknown) {
 
 describe("AuthService", () => {
   it("cria sessao para profile google com membership ativo no tenant atual", async () => {
-    const sessions = { createSession: vi.fn(async () => ({ session: { id: "session-1" }, token: "raw-token" })) };
+    const sessions = { createTenantSession: vi.fn(async () => ({ session: { id: "session-1" }, token: "raw-token" })) };
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
       sessions as never,
       repository() as never,
       { findOne: vi.fn(async () => ({ id: "membership-1", roles: ["owner"] })) } as never,
+      { findOne: vi.fn() } as never,
     );
 
     const created = await service.completeGoogleLogin(
@@ -30,7 +31,7 @@ describe("AuthService", () => {
       { userAgent: "vitest", ipAddress: "127.0.0.1" },
     );
 
-    expect(sessions.createSession).toHaveBeenCalledWith({
+    expect(sessions.createTenantSession).toHaveBeenCalledWith({
       userId: "user-1",
       tenantId: "tenant-1",
       userAgent: "vitest",
@@ -42,9 +43,10 @@ describe("AuthService", () => {
   it("rejeita login google sem membership ativo no tenant atual", async () => {
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
-      { createSession: vi.fn() } as never,
+      { createTenantSession: vi.fn() } as never,
       repository() as never,
       { findOne: vi.fn(async () => undefined) } as never,
+      { findOne: vi.fn() } as never,
     );
 
     await expect(
@@ -62,12 +64,16 @@ describe("AuthService", () => {
 
   it("rejeita email ja vinculado a outro subject google", async () => {
     const users = repository();
-    users.findOne = vi.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce({ id: "user-1" });
+    users.findOne = vi.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce({
+      id: "user-1",
+      googleSubject: "google-1",
+    });
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
-      { createSession: vi.fn() } as never,
+      { createTenantSession: vi.fn() } as never,
       users as never,
       { findOne: vi.fn(async () => ({ id: "membership-1", roles: ["owner"] })) } as never,
+      { findOne: vi.fn() } as never,
     );
 
     await expect(
@@ -81,5 +87,92 @@ describe("AuthService", () => {
         {},
       ),
     ).rejects.toThrow(ConflictException);
+  });
+
+  it("vincula usuario pendente por email no primeiro login google", async () => {
+    const pendingUser = {
+      id: "user-1",
+      googleSubject: null,
+      email: "user@example.test",
+      active: true,
+    };
+    const users = repository();
+    users.findOne = vi.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce(pendingUser);
+    const service = new AuthService(
+      { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
+      { createTenantSession: vi.fn(async () => ({ session: { id: "session-1" }, token: "raw-token" })) } as never,
+      users as never,
+      { findOne: vi.fn(async () => ({ id: "membership-1", roles: ["owner"] })) } as never,
+      { findOne: vi.fn() } as never,
+    );
+
+    await service.completeGoogleLogin(
+      {
+        googleSubject: "google-1",
+        email: "USER@example.test",
+        displayName: "User",
+        avatarUrl: null,
+      },
+      {},
+    );
+
+    expect(users.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "user-1",
+        googleSubject: "google-1",
+        displayName: "User",
+      }),
+    );
+  });
+
+  it("cria sessao de sistema apenas para system_admin", async () => {
+    const sessions = {
+      createSystemSession: vi.fn(async () => ({ session: { id: "session-1" }, token: "raw-token" })),
+    };
+    const service = new AuthService(
+      {} as never,
+      sessions as never,
+      repository() as never,
+      { findOne: vi.fn() } as never,
+      { findOne: vi.fn(async () => ({ id: "role-1", role: "system_admin" })) } as never,
+    );
+
+    await service.completeSystemGoogleLogin(
+      {
+        googleSubject: "google-1",
+        email: "operator@example.test",
+        displayName: "Operator",
+        avatarUrl: null,
+      },
+      { userAgent: "vitest" },
+    );
+
+    expect(sessions.createSystemSession).toHaveBeenCalledWith({
+      userId: "user-1",
+      userAgent: "vitest",
+      ipAddress: undefined,
+    });
+  });
+
+  it("rejeita sessao de sistema para usuario sem system_admin", async () => {
+    const service = new AuthService(
+      {} as never,
+      { createSystemSession: vi.fn() } as never,
+      repository() as never,
+      { findOne: vi.fn() } as never,
+      { findOne: vi.fn(async () => undefined) } as never,
+    );
+
+    await expect(
+      service.completeSystemGoogleLogin(
+        {
+          googleSubject: "google-1",
+          email: "operator@example.test",
+          displayName: "Operator",
+          avatarUrl: null,
+        },
+        {},
+      ),
+    ).rejects.toThrow(ForbiddenException);
   });
 });

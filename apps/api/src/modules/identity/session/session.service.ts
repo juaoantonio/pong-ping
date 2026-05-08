@@ -21,11 +21,15 @@ export type CreatedSession = {
   token: string;
 };
 
-type CreateSessionInput = {
+type CreateSessionRecordInput = {
   userId: string;
-  tenantId: string;
+  tenantId: string | null;
   userAgent?: string;
   ipAddress?: string;
+};
+
+type CreateTenantSessionInput = Omit<CreateSessionRecordInput, "tenantId"> & {
+  tenantId: string;
 };
 
 @Injectable()
@@ -42,7 +46,19 @@ export class SessionService {
     private readonly systemRoles: Repository<SystemRoleAssignmentEntity>,
   ) {}
 
-  public async createSession(input: CreateSessionInput): Promise<CreatedSession> {
+  public async createSession(input: CreateTenantSessionInput): Promise<CreatedSession> {
+    return this.createTenantSession(input);
+  }
+
+  public async createTenantSession(input: CreateTenantSessionInput): Promise<CreatedSession> {
+    return this.createSessionRecord(input);
+  }
+
+  public async createSystemSession(input: Omit<CreateSessionRecordInput, "tenantId">): Promise<CreatedSession> {
+    return this.createSessionRecord({ ...input, tenantId: null });
+  }
+
+  private async createSessionRecord(input: CreateSessionRecordInput): Promise<CreatedSession> {
     const token = randomBytes(32).toString("base64url");
     const now = new Date();
     const ttlSeconds = this.config.getOrThrow<number>("SESSION_TTL_SECONDS");
@@ -62,35 +78,17 @@ export class SessionService {
   }
 
   public async validateSession(rawToken: string | undefined, tenantId: string): Promise<IdentityPrincipal> {
+    return this.validateTenantSession(rawToken, tenantId);
+  }
+
+  public async validateTenantSession(rawToken: string | undefined, tenantId: string): Promise<IdentityPrincipal> {
     if (!rawToken) {
       throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Missing);
     }
 
-    const session = await this.sessions.findOne({
-      where: {
-        tokenHash: this.hashToken(rawToken),
-      },
-      relations: { tenant: true, user: true },
-    });
-
-    if (!session) {
-      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Unknown);
-    }
-
+    const session = await this.findLiveSession(rawToken);
     if (session.tenantId !== tenantId) {
       throw new SessionValidationError(SESSION_VALIDATION_FAILURE.TenantMismatch);
-    }
-
-    if (session.revokedAt) {
-      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Revoked);
-    }
-
-    if (session.expiresAt.getTime() <= Date.now()) {
-      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Expired);
-    }
-
-    if (!session.user?.active) {
-      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.InactiveUser);
     }
 
     if (!session.tenant?.active) {
@@ -109,14 +107,41 @@ export class SessionService {
       where: { userId: session.userId },
     });
 
-    session.lastUsedAt = new Date();
-    await this.sessions.save(session);
+    await this.touchSession(session);
 
     return {
       userId: session.userId,
       tenantId,
       systemRoles: systemRoles.map((assignment) => assignment.role),
       tenantRoles: membership.roles,
+      sessionId: session.id,
+    };
+  }
+
+  public async validateSystemSession(rawToken: string | undefined): Promise<IdentityPrincipal> {
+    if (!rawToken) {
+      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Missing);
+    }
+
+    const session = await this.findLiveSession(rawToken);
+    if (session.tenantId !== null) {
+      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.TenantMismatch);
+    }
+
+    const systemRoles = await this.systemRoles.find({
+      where: { userId: session.userId },
+    });
+    if (!systemRoles.some((assignment) => assignment.role === "system_admin")) {
+      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.InactiveMembership);
+    }
+
+    await this.touchSession(session);
+
+    return {
+      userId: session.userId,
+      tenantId: null,
+      systemRoles: systemRoles.map((assignment) => assignment.role),
+      tenantRoles: [],
       sessionId: session.id,
     };
   }
@@ -141,5 +166,37 @@ export class SessionService {
     return createHmac("sha256", this.config.getOrThrow<string>("SESSION_SECRET"))
       .update(rawToken)
       .digest("hex");
+  }
+
+  private async findLiveSession(rawToken: string): Promise<IdentitySessionEntity> {
+    const session = await this.sessions.findOne({
+      where: {
+        tokenHash: this.hashToken(rawToken),
+      },
+      relations: { tenant: true, user: true },
+    });
+
+    if (!session) {
+      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Unknown);
+    }
+
+    if (session.revokedAt) {
+      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Revoked);
+    }
+
+    if (session.expiresAt.getTime() <= Date.now()) {
+      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.Expired);
+    }
+
+    if (!session.user?.active) {
+      throw new SessionValidationError(SESSION_VALIDATION_FAILURE.InactiveUser);
+    }
+
+    return session;
+  }
+
+  private async touchSession(session: IdentitySessionEntity): Promise<void> {
+    session.lastUsedAt = new Date();
+    await this.sessions.save(session);
   }
 }

@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable } from "@nestjs/commo
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CurrentContextService } from "../../../common/context";
-import { IdentityUserEntity, TenantMembershipEntity } from "../entities";
+import { IdentityUserEntity, SystemRoleAssignmentEntity, TenantMembershipEntity } from "../entities";
 import { SessionService, type CreatedSession } from "../session/session.service";
 import type { GoogleProfile } from "./google-profile";
 
@@ -15,6 +15,8 @@ export class AuthService {
     private readonly users: Repository<IdentityUserEntity>,
     @InjectRepository(TenantMembershipEntity)
     private readonly memberships: Repository<TenantMembershipEntity>,
+    @InjectRepository(SystemRoleAssignmentEntity)
+    private readonly systemRoles: Repository<SystemRoleAssignmentEntity>,
   ) {}
 
   public async completeGoogleLogin(
@@ -31,9 +33,29 @@ export class AuthService {
       throw new ForbiddenException("User is not a member of this tenant.");
     }
 
-    return this.sessions.createSession({
+    return this.sessions.createTenantSession({
       userId: user.id,
       tenantId: tenant.id,
+      userAgent: requestInfo.userAgent,
+      ipAddress: requestInfo.ipAddress,
+    });
+  }
+
+  public async completeSystemGoogleLogin(
+    profile: GoogleProfile,
+    requestInfo: { userAgent?: string; ipAddress?: string },
+  ): Promise<CreatedSession> {
+    const user = await this.upsertGoogleUser(profile);
+    const systemRole = await this.systemRoles.findOne({
+      where: { userId: user.id, role: "system_admin" },
+    });
+
+    if (!systemRole) {
+      throw new ForbiddenException("System administrator role is required.");
+    }
+
+    return this.sessions.createSystemSession({
+      userId: user.id,
       userAgent: requestInfo.userAgent,
       ipAddress: requestInfo.ipAddress,
     });
@@ -44,30 +66,50 @@ export class AuthService {
   }
 
   private async upsertGoogleUser(profile: GoogleProfile): Promise<IdentityUserEntity> {
+    const email = normalizeEmail(profile.email);
     const existingBySubject = await this.users.findOne({
       where: { googleSubject: profile.googleSubject },
     });
 
     if (existingBySubject) {
-      existingBySubject.email = profile.email;
+      if (existingBySubject.email !== email) {
+        const existingByEmail = await this.users.findOne({ where: { email } });
+        if (existingByEmail && existingByEmail.id !== existingBySubject.id) {
+          throw new ConflictException("Email is already linked to another Google account.");
+        }
+      }
+
+      existingBySubject.email = email;
       existingBySubject.displayName = profile.displayName;
       existingBySubject.avatarUrl = profile.avatarUrl;
       return this.users.save(existingBySubject);
     }
 
-    const existingByEmail = await this.users.findOne({ where: { email: profile.email } });
+    const existingByEmail = await this.users.findOne({ where: { email } });
     if (existingByEmail) {
-      throw new ConflictException("Email is already linked to another Google account.");
+      if (existingByEmail.googleSubject !== null) {
+        throw new ConflictException("Email is already linked to another Google account.");
+      }
+
+      existingByEmail.googleSubject = profile.googleSubject;
+      existingByEmail.displayName = profile.displayName;
+      existingByEmail.avatarUrl = profile.avatarUrl;
+      existingByEmail.active = true;
+      return this.users.save(existingByEmail);
     }
 
     return this.users.save(
       this.users.create({
         googleSubject: profile.googleSubject,
-        email: profile.email,
+        email,
         displayName: profile.displayName,
         avatarUrl: profile.avatarUrl,
         active: true,
       }),
     );
   }
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }

@@ -36,11 +36,20 @@ describe("SessionService", () => {
     expect("token" in fixture.sessions.saved[0]).toBe(false);
   });
 
+  it("creates system-scoped sessions without a tenant", async () => {
+    const fixture = createFixture();
+
+    const created = await fixture.service.createSystemSession({ userId: "user-1" });
+
+    expect(created.session.tenantId).toBeNull();
+    expect(created.session.tenant).toBeNull();
+  });
+
   it("validates a live session and returns the identity principal", async () => {
     const fixture = createFixture();
     const created = await fixture.service.createSession({ userId: "user-1", tenantId: "tenant-1" });
 
-    const principal = await fixture.service.validateSession(created.token, "tenant-1");
+    const principal = await fixture.service.validateTenantSession(created.token, "tenant-1");
 
     expect(principal).toEqual({
       userId: "user-1",
@@ -54,10 +63,10 @@ describe("SessionService", () => {
   it("rejects missing and unknown tokens", async () => {
     const fixture = createFixture();
 
-    await expect(fixture.service.validateSession(undefined, "tenant-1")).rejects.toMatchObject({
+    await expect(fixture.service.validateTenantSession(undefined, "tenant-1")).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Missing,
     });
-    await expect(fixture.service.validateSession("unknown", "tenant-1")).rejects.toMatchObject({
+    await expect(fixture.service.validateTenantSession("unknown", "tenant-1")).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Unknown,
     });
   });
@@ -66,36 +75,63 @@ describe("SessionService", () => {
     const fixture = createFixture();
     const created = await fixture.service.createSession({ userId: "user-1", tenantId: "tenant-1" });
 
-    await expect(fixture.service.validateSession(created.token, "tenant-2")).rejects.toMatchObject({
+    await expect(fixture.service.validateTenantSession(created.token, "tenant-2")).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.TenantMismatch,
     });
 
     created.session.revokedAt = new Date();
-    await expect(fixture.service.validateSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Revoked,
     });
 
     created.session.revokedAt = null;
     created.session.expiresAt = new Date(Date.now() - 1);
-    await expect(fixture.service.validateSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.Expired,
     });
 
     created.session.expiresAt = new Date(Date.now() + 60_000);
     created.session.user.active = false;
-    await expect(fixture.service.validateSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.InactiveUser,
     });
 
     created.session.user.active = true;
-    created.session.tenant.active = false;
-    await expect(fixture.service.validateSession(created.token, "tenant-1")).rejects.toMatchObject({
+    created.session.tenant!.active = false;
+    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.InactiveTenant,
     });
 
-    created.session.tenant.active = true;
+    created.session.tenant!.active = true;
     fixture.memberships.records[0].active = false;
-    await expect(fixture.service.validateSession(created.token, "tenant-1")).rejects.toMatchObject({
+    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+      reason: SESSION_VALIDATION_FAILURE.InactiveMembership,
+    });
+  });
+
+  it("validates system sessions only when the user has system_admin", async () => {
+    const fixture = createFixture();
+    const created = await fixture.service.createSystemSession({ userId: "user-1" });
+
+    await expect(fixture.service.validateTenantSession(created.token, "tenant-1")).rejects.toMatchObject({
+      reason: SESSION_VALIDATION_FAILURE.TenantMismatch,
+    });
+
+    const principal = await fixture.service.validateSystemSession(created.token);
+    expect(principal).toEqual({
+      userId: "user-1",
+      tenantId: null,
+      sessionId: created.session.id,
+      tenantRoles: [],
+      systemRoles: ["system_admin"],
+    });
+  });
+
+  it("rejects system sessions for users without system_admin", async () => {
+    const fixture = createFixture({ systemRoles: [] });
+    const created = await fixture.service.createSystemSession({ userId: "user-1" });
+
+    await expect(fixture.service.validateSystemSession(created.token)).rejects.toMatchObject({
       reason: SESSION_VALIDATION_FAILURE.InactiveMembership,
     });
   });
@@ -156,9 +192,14 @@ describe("SessionMiddleware", () => {
       systemRoles: [],
     };
     const sessions = {
-      validateSession: vi.fn().mockResolvedValue(principal),
+      validateTenantSession: vi.fn().mockResolvedValue(principal),
     };
-    const middleware = new SessionMiddleware(fakeConfig(), context as never, sessions as never);
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("resolved") as never,
+    );
     const next = vi.fn();
 
     await middleware.use(
@@ -167,7 +208,7 @@ describe("SessionMiddleware", () => {
       next,
     );
 
-    expect(sessions.validateSession).toHaveBeenCalledWith("raw-token", "tenant-1");
+    expect(sessions.validateTenantSession).toHaveBeenCalledWith("raw-token", "tenant-1");
     expect(context.principal).toEqual(principal);
     expect(next).toHaveBeenCalledWith();
   });
@@ -176,11 +217,16 @@ describe("SessionMiddleware", () => {
     const context = new FakeContext();
     context.setTenant({ id: "tenant-1", slug: "acme" });
     const sessions = {
-      validateSession: vi
+      validateTenantSession: vi
         .fn()
         .mockRejectedValue(new SessionValidationError(SESSION_VALIDATION_FAILURE.Unknown)),
     };
-    const middleware = new SessionMiddleware(fakeConfig(), context as never, sessions as never);
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("resolved") as never,
+    );
     const next = vi.fn();
 
     await middleware.use(
@@ -190,6 +236,89 @@ describe("SessionMiddleware", () => {
     );
 
     expect(next.mock.calls[0]?.[0]?.getStatus()).toBe(401);
+  });
+
+  it("lets public system OAuth routes restart when a stale system cookie is present", async () => {
+    const context = new FakeContext();
+    const sessions = {
+      validateSystemSession: vi
+        .fn()
+        .mockRejectedValue(new SessionValidationError(SESSION_VALIDATION_FAILURE.Expired)),
+    };
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("reserved") as never,
+    );
+    const next = vi.fn();
+
+    await middleware.use(
+      {
+        path: "/v1/system/auth/google",
+        url: "/v1/system/auth/google",
+        headers: { host: "api.example.test", cookie: "sid=raw-token" },
+      } as Request,
+      {} as Response,
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("validates system sessions on root or reserved hosts", async () => {
+    const context = new FakeContext();
+    const principal: IdentityPrincipal = {
+      userId: "user-1",
+      tenantId: null,
+      sessionId: "session-1",
+      tenantRoles: [],
+      systemRoles: ["system_admin"],
+    };
+    const sessions = {
+      validateSystemSession: vi.fn().mockResolvedValue(principal),
+    };
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("reserved") as never,
+    );
+    const next = vi.fn();
+
+    await middleware.use(
+      { headers: { host: "api.example.test", cookie: "sid=raw-token" } } as Request,
+      {} as Response,
+      next,
+    );
+
+    expect(sessions.validateSystemSession).toHaveBeenCalledWith("raw-token");
+    expect(context.principal).toEqual(principal);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("does not validate cookies without tenant context on tenant hosts", async () => {
+    const context = new FakeContext();
+    const sessions = {
+      validateSystemSession: vi.fn(),
+    };
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("resolved") as never,
+    );
+    const next = vi.fn();
+
+    await middleware.use(
+      { headers: { host: "acme.example.test", cookie: "sid=raw-token" } } as Request,
+      {} as Response,
+      next,
+    );
+
+    expect(sessions.validateSystemSession).not.toHaveBeenCalled();
+    expect(context.principal).toBeUndefined();
+    expect(next).toHaveBeenCalledWith();
   });
 });
 
@@ -216,11 +345,12 @@ class FakeSessionRepository {
   private nextId = 1;
 
   create(input: Partial<IdentitySessionEntity>): IdentitySessionEntity {
+    const tenantId = input.tenantId ?? null;
     return Object.assign(new IdentitySessionEntity(), {
       id: `session-${this.nextId++}`,
       ...input,
       user: activeUser(),
-      tenant: activeTenant(),
+      tenant: tenantId === null ? null : activeTenant(),
     });
   }
 
@@ -272,17 +402,19 @@ class FakeMembershipRepository {
 }
 
 class FakeSystemRoleRepository {
+  constructor(private readonly records: SystemRoleAssignmentEntity[] = [
+    Object.assign(new SystemRoleAssignmentEntity(), {
+      userId: "user-1",
+      role: "system_admin",
+    }),
+  ]) {}
+
   async find(): Promise<SystemRoleAssignmentEntity[]> {
-    return [
-      Object.assign(new SystemRoleAssignmentEntity(), {
-        userId: "user-1",
-        role: "system_admin",
-      }),
-    ];
+    return this.records;
   }
 }
 
-function createFixture() {
+function createFixture(options: { systemRoles?: SystemRoleAssignmentEntity[] } = {}) {
   const sessions = new FakeSessionRepository();
   const memberships = new FakeMembershipRepository();
   const service = new SessionService(
@@ -290,10 +422,18 @@ function createFixture() {
     sessions as unknown as Repository<IdentitySessionEntity>,
     {} as Repository<IdentityUserEntity>,
     memberships as unknown as Repository<TenantMembershipEntity>,
-    new FakeSystemRoleRepository() as unknown as Repository<SystemRoleAssignmentEntity>,
+    new FakeSystemRoleRepository(options.systemRoles) as unknown as Repository<SystemRoleAssignmentEntity>,
   );
 
   return { service, sessions, memberships };
+}
+
+function tenantResolver(status: "missing" | "reserved" | "resolved") {
+  return {
+    parseHost: vi.fn(() =>
+      status === "resolved" ? { status, slug: "acme" } : { status },
+    ),
+  };
 }
 
 function fakeConfig(): ConfigService<ConfigSchema> {

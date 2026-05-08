@@ -7,7 +7,7 @@ export type TenantContext = {
 
 export type IdentityPrincipal = {
   userId: string;
-  tenantId: string;
+  tenantId: string | null;
   sessionId: string;
   systemRoles: readonly string[];
   tenantRoles: readonly string[];

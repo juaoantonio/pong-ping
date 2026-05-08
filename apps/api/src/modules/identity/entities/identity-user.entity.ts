@@ -9,8 +9,8 @@ import { TenantMembershipEntity } from "./tenant-membership.entity";
 @Index("ux_identity_users_email", ["email"], { unique: true })
 @Index("ix_identity_users_active", ["active"])
 export class IdentityUserEntity extends BaseAuditEntity {
-  @Column({ name: "google_subject", type: "varchar", length: 128 })
-  googleSubject!: string;
+  @Column({ name: "google_subject", type: "varchar", length: 128, nullable: true })
+  googleSubject!: string | null;
 
   @Column({ type: "varchar", length: 320 })
   email!: string;

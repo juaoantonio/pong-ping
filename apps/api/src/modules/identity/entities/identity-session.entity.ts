@@ -15,8 +15,8 @@ export class IdentitySessionEntity extends BaseAuditEntity {
   @Column({ name: "user_id", type: "uuid" })
   userId!: string;
 
-  @Column({ name: "tenant_id", type: "uuid" })
-  tenantId!: string;
+  @Column({ name: "tenant_id", type: "uuid", nullable: true })
+  tenantId!: string | null;
 
   @Column({ name: "expires_at", type: "timestamptz" })
   expiresAt!: Date;
@@ -37,7 +37,10 @@ export class IdentitySessionEntity extends BaseAuditEntity {
   @JoinColumn({ name: "user_id" })
   user!: IdentityUserEntity;
 
-  @ManyToOne(() => TenantEntity, (tenant) => tenant.sessions, { onDelete: "CASCADE" })
+  @ManyToOne(() => TenantEntity, (tenant) => tenant.sessions, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "tenant_id" })
-  tenant!: TenantEntity;
+  tenant!: TenantEntity | null;
 }

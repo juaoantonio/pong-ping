@@ -2,8 +2,8 @@ import "reflect-metadata";
 import { config } from "dotenv";
 import { DataSource } from "typeorm";
 
-config({ path: `envs/.env.${process.env.NODE_ENV ?? "development"}` });
 config({ path: "envs/.env" });
+config({ path: `envs/.env.${process.env.NODE_ENV ?? "development"}` });
 
 export default new DataSource({
   type: "postgres",
