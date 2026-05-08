@@ -113,8 +113,8 @@ export class ConfigModule extends NestConfigModule {
     const { envFilePath, ...otherOptions } = options;
     const envFilePaths = [
       ...(Array.isArray(envFilePath) ? envFilePath : envFilePath ? [envFilePath] : []),
-      join(process.cwd(), "envs", `.env.${process.env.NODE_ENV ?? "development"}`),
       join(process.cwd(), "envs", ".env"),
+      join(process.cwd(), "envs", `.env.${process.env.NODE_ENV ?? "development"}`),
     ];
 
     return NestConfigModule.forRoot({
