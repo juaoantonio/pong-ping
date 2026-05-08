@@ -1,6 +1,7 @@
 import type { INestApplication } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { apiReference } from "@scalar/nestjs-api-reference";
 import type { ConfigSchema } from "./common/config/config.module";
 import { GlobalExceptionFilter } from "./common/shared/filters/global-exception.filter";
 import { SuccessEnvelopeInterceptor } from "./common/shared/interceptors/success-envelope.interceptor";
@@ -28,8 +29,14 @@ export function configureApp(app: INestApplication) {
     .build();
   const document = SwaggerModule.createDocument(app, documentConfig);
 
-  SwaggerModule.setup(`${prefix}/docs`, app, document, {
+  SwaggerModule.setup(`${prefix}/swagger`, app, document, {
     jsonDocumentUrl: `/${prefix}/swagger.json`,
     yamlDocumentUrl: `/${prefix}/swagger.yaml`,
   });
+  app.use(
+    `/${prefix}/docs`,
+    apiReference({
+      url: `/${prefix}/swagger.json`,
+    }),
+  );
 }

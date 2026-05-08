@@ -21,6 +21,7 @@ async function bootstrap() {
   await app.listen(port, host);
   logger.log(`API listening at http://${host}:${port}/${prefix}`);
   logger.log(`OpenAPI JSON at http://${host}:${port}/${prefix}/swagger.json`);
+  logger.log(`Scalar API Reference at http://${host}:${port}/${prefix}/docs`);
 }
 
 bootstrap().catch((error) => {
