@@ -13,11 +13,7 @@ import { TENANT_ROLES } from "../identity-roles";
 import { clearSessionCookie, setSessionCookie } from "../session/cookies";
 import { SessionService } from "../session/session.service";
 import { AuthService } from "./auth.service";
-import {
-  AuthLogoutResponseDto,
-  AuthSessionResponseDto,
-  IdentityPrincipalResponseDto,
-} from "./dtos/auth-response.dtos";
+import { AuthLogoutResponseDto, IdentityPrincipalResponseDto } from "./dtos/auth-response.dtos";
 import { GoogleOAuthGuard } from "./google-oauth.guard";
 import type { GoogleProfile } from "./google-profile";
 
@@ -55,12 +51,12 @@ export class AuthController {
   @UseGuards(GoogleOAuthGuard)
   @ApiOperation({
     summary: "Complete tenant Google login",
-    description: "Creates a tenant session, sets the session cookie, and returns the session id.",
+    description:
+      "Creates a tenant session, sets the session cookie, and redirects to the club frontend.",
   })
-  @ApiSuccessEnvelopeResponse({
-    status: HttpStatus.OK,
-    description: "Tenant session created.",
-    data: AuthSessionResponseDto,
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: "Tenant session created and redirected to the club frontend.",
   })
   @ApiErrorEnvelopeResponses(
     {
@@ -76,7 +72,7 @@ export class AuthController {
       description: "Email is already linked to another Google account.",
     },
   )
-  public async googleCallback(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  public async googleCallback(@Req() req: Request, @Res() res: Response) {
     const created = await this.auth.completeGoogleLogin(req.user as GoogleProfile, {
       userAgent: req.headers["user-agent"],
       ipAddress: req.ip,
@@ -90,7 +86,7 @@ export class AuthController {
       this.config.getOrThrow<string>("NODE_ENV") === "production",
     );
 
-    return { sessionId: created.session.id };
+    return res.redirect(this.config.getOrThrow<string>("TENANT_FRONTEND_URL"));
   }
 
   @Post("logout")

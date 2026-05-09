@@ -34,6 +34,7 @@ describe("schema de configuracao", () => {
     expect(result.value.SESSION_TTL_SECONDS).toBe(60 * 60 * 24 * 14);
     expect(result.value.ROOT_DOMAIN).toBe("localhost");
     expect(result.value.RESERVED_TENANT_SUBDOMAINS).toEqual(["api", "www"]);
+    expect(result.value.TENANT_FRONTEND_URL).toBe("http://localhost:5173/club");
   });
 
   it("exige secrets de oauth e sessao", () => {
