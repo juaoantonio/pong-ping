@@ -3,9 +3,9 @@ import { validate } from "class-validator";
 import { describe, expect, it } from "vitest";
 import { IDENTITY_TENANT_ROLE } from "../identity-roles";
 import {
-  CreateSystemMembershipDto,
-  CreateSystemTenantDto,
-  UpdateSystemMembershipDto,
+  CreateSystemMembershipRequestDto,
+  CreateSystemTenantRequestDto,
+  UpdateSystemMembershipRequestDto,
 } from "./dtos/system-admin.dtos";
 import {
   assertTenantRoles,
@@ -25,7 +25,7 @@ describe("system admin validation", () => {
   });
 
   it("validates tenant create payloads", async () => {
-    const dto = Object.assign(new CreateSystemTenantDto(), {
+    const dto = Object.assign(new CreateSystemTenantRequestDto(), {
       name: "Acme",
       slug: "acme",
       ownerEmail: "owner@example.test",
@@ -36,17 +36,17 @@ describe("system admin validation", () => {
   });
 
   it("rejects invalid emails and roles in DTOs", async () => {
-    const tenantDto = Object.assign(new CreateSystemTenantDto(), {
+    const tenantDto = Object.assign(new CreateSystemTenantRequestDto(), {
       name: "Acme",
       slug: "acme",
       ownerEmail: "not-email",
       ownerRole: IDENTITY_TENANT_ROLE.MEMBER,
     });
-    const membershipDto = Object.assign(new CreateSystemMembershipDto(), {
+    const membershipDto = Object.assign(new CreateSystemMembershipRequestDto(), {
       email: "member@example.test",
       roles: [],
     });
-    const updateDto = Object.assign(new UpdateSystemMembershipDto(), {
+    const updateDto = Object.assign(new UpdateSystemMembershipRequestDto(), {
       roles: [IDENTITY_TENANT_ROLE.OWNER, "bad-role"],
     });
 

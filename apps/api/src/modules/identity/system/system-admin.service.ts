@@ -9,12 +9,14 @@ import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Not, Repository } from "typeorm";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import { IdentityUserEntity, TenantEntity, TenantMembershipEntity } from "../entities";
-import { IDENTITY_TENANT_ROLE, type IdentityTenantRole } from "../identity-roles";
+import { IDENTITY_TENANT_ROLE } from "../identity-roles";
 import type {
-  CreateSystemMembershipDto,
-  CreateSystemTenantDto,
-  UpdateSystemMembershipDto,
-  UpdateSystemTenantDto,
+  CreateSystemMembershipRequestDto,
+  CreateSystemTenantRequestDto,
+  SystemMembershipResponseDto,
+  SystemTenantResponseDto,
+  UpdateSystemMembershipRequestDto,
+  UpdateSystemTenantRequestDto,
 } from "./dtos/system-admin.dtos";
 import {
   assertTenantRoles,
@@ -22,28 +24,6 @@ import {
   hasTenantAdminRole,
   normalizeEmail,
 } from "./system-admin.validation";
-
-export type SystemTenantDto = {
-  id: string;
-  name: string;
-  slug: string;
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  activeMembershipCount: number;
-  ownerAdminEmails: string[];
-};
-
-export type SystemMembershipDto = {
-  id: string;
-  tenantId: string;
-  userId: string;
-  email: string;
-  roles: IdentityTenantRole[];
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 @Injectable()
 export class SystemAdminService {
@@ -59,7 +39,7 @@ export class SystemAdminService {
     private readonly memberships: Repository<TenantMembershipEntity>,
   ) {}
 
-  public async listTenants(): Promise<SystemTenantDto[]> {
+  public async listTenants(): Promise<SystemTenantResponseDto[]> {
     const tenants = await this.tenants.find({
       relations: { memberships: { user: true } },
       order: { createdAt: "DESC" },
@@ -68,7 +48,7 @@ export class SystemAdminService {
     return tenants.map((tenant) => this.toTenantDto(tenant));
   }
 
-  public async createTenant(input: CreateSystemTenantDto): Promise<SystemTenantDto> {
+  public async createTenant(input: CreateSystemTenantRequestDto): Promise<SystemTenantResponseDto> {
     const slug = this.validateSlug(input.slug);
     const email = normalizeEmail(input.ownerEmail);
     const ownerRole = input.ownerRole ?? IDENTITY_TENANT_ROLE.OWNER;
@@ -105,7 +85,10 @@ export class SystemAdminService {
     });
   }
 
-  public async updateTenant(id: string, input: UpdateSystemTenantDto): Promise<SystemTenantDto> {
+  public async updateTenant(
+    id: string,
+    input: UpdateSystemTenantRequestDto,
+  ): Promise<SystemTenantResponseDto> {
     if (input.name === undefined && input.slug === undefined && input.active === undefined) {
       throw new BadRequestException("At least one tenant field is required.");
     }
@@ -139,7 +122,7 @@ export class SystemAdminService {
     });
   }
 
-  public async listMemberships(tenantId: string): Promise<SystemMembershipDto[]> {
+  public async listMemberships(tenantId: string): Promise<SystemMembershipResponseDto[]> {
     await this.getTenantOrThrow(tenantId);
     const memberships = await this.memberships.find({
       where: { tenantId },
@@ -152,8 +135,8 @@ export class SystemAdminService {
 
   public async upsertMembership(
     tenantId: string,
-    input: CreateSystemMembershipDto,
-  ): Promise<SystemMembershipDto> {
+    input: CreateSystemMembershipRequestDto,
+  ): Promise<SystemMembershipResponseDto> {
     const email = normalizeEmail(input.email);
     const roles = assertTenantRoles(input.roles);
 
@@ -189,8 +172,8 @@ export class SystemAdminService {
   public async updateMembership(
     tenantId: string,
     membershipId: string,
-    input: UpdateSystemMembershipDto,
-  ): Promise<SystemMembershipDto> {
+    input: UpdateSystemMembershipRequestDto,
+  ): Promise<SystemMembershipResponseDto> {
     if (input.roles === undefined && input.active === undefined) {
       throw new BadRequestException("At least one membership field is required.");
     }
@@ -268,7 +251,7 @@ export class SystemAdminService {
   private async getTenantDtoOrThrow(
     tenantId: string,
     tenants: Repository<TenantEntity> = this.tenants,
-  ): Promise<SystemTenantDto> {
+  ): Promise<SystemTenantResponseDto> {
     const tenant = await tenants.findOne({
       where: { id: tenantId },
       relations: { memberships: { user: true } },
@@ -306,7 +289,7 @@ export class SystemAdminService {
     }
   }
 
-  private toTenantDto(tenant: TenantEntity): SystemTenantDto {
+  private toTenantDto(tenant: TenantEntity): SystemTenantResponseDto {
     const memberships = tenant.memberships ?? [];
     const activeMemberships = memberships.filter((membership) => membership.active);
     const ownerAdminEmails = activeMemberships
@@ -326,7 +309,7 @@ export class SystemAdminService {
     };
   }
 
-  private toMembershipDto(membership: TenantMembershipEntity): SystemMembershipDto {
+  private toMembershipDto(membership: TenantMembershipEntity): SystemMembershipResponseDto {
     return {
       id: membership.id,
       tenantId: membership.tenantId,

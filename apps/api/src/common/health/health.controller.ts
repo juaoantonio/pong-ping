@@ -1,10 +1,11 @@
-import { Controller, Get, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { DataSource } from "typeorm";
 import { Public } from "../../modules/identity/authorization/authorization.decorators";
 import type { ConfigSchema } from "../config/config.module";
+import { ApiSuccessEnvelopeResponse } from "../shared/http/api-response.swagger";
 import { HealthResponseDto } from "./dtos/health-response.dto";
 
 @ApiTags("health")
@@ -17,8 +18,18 @@ export class HealthController {
 
   @Get()
   @Public()
-  @ApiOkResponse({ type: HealthResponseDto })
-  async check(@Res() response: Response): Promise<void> {
+  @ApiOperation({ summary: "Check API and dependency health" })
+  @ApiSuccessEnvelopeResponse({
+    status: HttpStatus.OK,
+    description: "API and database are healthy.",
+    data: HealthResponseDto,
+  })
+  @ApiSuccessEnvelopeResponse({
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    description: "API is reachable, but one or more dependencies are unhealthy.",
+    data: HealthResponseDto,
+  })
+  async check(@Res({ passthrough: true }) response: Response): Promise<HealthResponseDto> {
     const startedAt = Date.now();
     const base = {
       updated_at: new Date().toISOString(),
@@ -49,7 +60,8 @@ export class HealthController {
         opened_connections: number;
       }>;
 
-      response.status(200).json({
+      response.status(HttpStatus.OK);
+      return {
         ...base,
         status: "healthy",
         dependencies: {
@@ -62,9 +74,10 @@ export class HealthController {
             latency_ms: Date.now() - startedAt,
           },
         },
-      } satisfies HealthResponseDto);
+      } satisfies HealthResponseDto;
     } catch {
-      response.status(503).json({
+      response.status(HttpStatus.SERVICE_UNAVAILABLE);
+      return {
         ...base,
         status: "unhealthy",
         dependencies: {
@@ -77,7 +90,7 @@ export class HealthController {
             latency_ms: Date.now() - startedAt,
           },
         },
-      } satisfies HealthResponseDto);
+      } satisfies HealthResponseDto;
     }
   }
 }
