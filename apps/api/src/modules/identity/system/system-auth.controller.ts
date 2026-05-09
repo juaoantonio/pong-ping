@@ -12,7 +12,6 @@ import { Public, RequireSystemRoles } from "../authorization/authorization.decor
 import { AuthService } from "../auth/auth.service";
 import {
   AuthLogoutResponseDto,
-  AuthSessionResponseDto,
   IdentityPrincipalResponseDto,
 } from "../auth/dtos/auth-response.dtos";
 import type { GoogleProfile } from "../auth/google-profile";
@@ -58,12 +57,11 @@ export class SystemAuthController {
   @ApiOperation({
     summary: "Complete system Google login",
     description:
-      "Creates a system administrator session, sets the session cookie, and returns the session id.",
+      "Creates a system administrator session, sets the session cookie, and redirects to the system admin frontend.",
   })
-  @ApiSuccessEnvelopeResponse({
-    status: HttpStatus.OK,
-    description: "System administrator session created.",
-    data: AuthSessionResponseDto,
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: "System administrator session created and redirected to the frontend.",
   })
   @ApiErrorEnvelopeResponses(
     {
@@ -79,7 +77,7 @@ export class SystemAuthController {
       description: "Email is already linked to another Google account.",
     },
   )
-  public async googleCallback(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  public async googleCallback(@Req() req: Request, @Res() res: Response) {
     const created = await this.auth.completeSystemGoogleLogin(req.user as GoogleProfile, {
       userAgent: req.headers["user-agent"],
       ipAddress: req.ip,
@@ -93,7 +91,7 @@ export class SystemAuthController {
       this.config.getOrThrow<string>("NODE_ENV") === "production",
     );
 
-    return { sessionId: created.session.id };
+    return res.redirect(this.config.getOrThrow<string>("SYSTEM_ADMIN_FRONTEND_URL"));
   }
 
   @Post("logout")

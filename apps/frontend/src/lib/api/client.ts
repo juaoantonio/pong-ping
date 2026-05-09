@@ -1,0 +1,80 @@
+import { z } from "zod";
+import type { ApiSuccessResponseContract } from "@pong-ping/contracts";
+import { ApiClientError, ApiParseError } from "@/lib/api/errors";
+
+const DEFAULT_API_BASE_URL = "http://localhost:3001/v1";
+
+const successEnvelopeSchema = z.object({
+  ok: z.literal(true),
+  data: z.unknown(),
+  meta: z.object({
+    requestId: z.string().optional(),
+    timestamp: z.string(),
+  }),
+});
+
+const errorEnvelopeSchema = z.object({
+  ok: z.literal(false),
+  error: z.object({
+    status: z.number(),
+    code: z.string(),
+    message: z.string(),
+    details: z.array(z.unknown()).optional(),
+    path: z.string().optional(),
+    method: z.string().optional(),
+    requestId: z.string().optional(),
+    timestamp: z.string().optional(),
+  }),
+});
+
+export type ApiRequestOptions<TBody> = Omit<RequestInit, "body" | "credentials"> & {
+  body?: TBody;
+};
+
+export function getApiBaseUrl() {
+  return (import.meta.env.VITE_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
+}
+
+export function getSystemLoginUrl() {
+  return `${getApiBaseUrl()}/system/auth/google`;
+}
+
+export async function apiRequest<TData, TBody = never>(
+  path: string,
+  options: ApiRequestOptions<TBody> = {},
+): Promise<TData> {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    ...options,
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    credentials: "include",
+    headers: {
+      ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...options.headers,
+    },
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const parsed = errorEnvelopeSchema.safeParse(payload);
+    if (parsed.success) {
+      throw new ApiClientError(parsed.data.error.message, {
+        code: parsed.data.error.code,
+        details: parsed.data.error.details,
+        status: parsed.data.error.status,
+      });
+    }
+
+    throw new ApiClientError("Nao foi possivel concluir a acao.", {
+      code: "HTTP_ERROR",
+      status: response.status,
+    });
+  }
+
+  const parsed = successEnvelopeSchema.safeParse(payload);
+  if (!parsed.success) {
+    throw new ApiParseError();
+  }
+
+  return (parsed.data as ApiSuccessResponseContract<TData>).data;
+}

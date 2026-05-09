@@ -6,14 +6,14 @@ import type { SessionService } from "../session/session.service";
 import { SystemAuthController } from "./system-auth.controller";
 
 describe("SystemAuthController", () => {
-  it("creates a system session cookie on Google callback", async () => {
+  it("creates a system session cookie and redirects on Google callback", async () => {
     const auth = {
       completeSystemGoogleLogin: vi.fn(async () => ({
         session: { id: "session-1" },
         token: "raw-token",
       })),
     };
-    const response = { cookie: vi.fn() } as unknown as Response;
+    const response = { cookie: vi.fn(), redirect: vi.fn() } as unknown as Response;
     const controller = new SystemAuthController(
       fakeConfig(),
       auth as never,
@@ -21,7 +21,7 @@ describe("SystemAuthController", () => {
       {} as SessionService,
     );
 
-    const result = await controller.googleCallback(
+    await controller.googleCallback(
       {
         user: {
           googleSubject: "google-1",
@@ -44,7 +44,7 @@ describe("SystemAuthController", () => {
       "raw-token",
       expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
     );
-    expect(result).toEqual({ sessionId: "session-1" });
+    expect(response.redirect).toHaveBeenCalledWith("http://localhost:5173/admin/tenants");
   });
 
   it("revokes the current system session and clears the cookie", async () => {
@@ -72,6 +72,7 @@ function fakeConfig() {
       if (key === "SESSION_COOKIE_NAME") return "sid";
       if (key === "SESSION_TTL_SECONDS") return 3600;
       if (key === "NODE_ENV") return "test";
+      if (key === "SYSTEM_ADMIN_FRONTEND_URL") return "http://localhost:5173/admin/tenants";
       throw new Error(`Missing config key ${key}`);
     },
   } as never;

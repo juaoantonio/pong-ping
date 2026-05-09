@@ -10,6 +10,7 @@ apps/*/generated
 # dependencies
 /node_modules
 apps/*/node_modules
+packages/*/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -36,6 +37,9 @@ apps/*/out/
 # production
 /build
 apps/*/build
+/dist
+apps/*/dist
+packages/*/dist
 
 # misc
 .DS_Store

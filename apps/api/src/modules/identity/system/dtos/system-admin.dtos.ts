@@ -9,9 +9,19 @@ import {
   Length,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import type {
+  CreateSystemMembershipRequestContract,
+  CreateSystemTenantRequestContract,
+  ISODateString,
+  SystemMembershipDeactivationResponseContract,
+  SystemMembershipResponseContract,
+  SystemTenantResponseContract,
+  UpdateSystemMembershipRequestContract,
+  UpdateSystemTenantRequestContract,
+} from "@pong-ping/contracts";
 import { TENANT_ADMIN_ROLES, TENANT_ROLES, type IdentityTenantRole } from "../../identity-roles";
 
-export class CreateSystemTenantRequestDto {
+export class CreateSystemTenantRequestDto implements CreateSystemTenantRequestContract {
   @ApiProperty({ example: "Downtown Table Tennis Club", minLength: 1, maxLength: 160 })
   @IsString()
   @Length(1, 160)
@@ -32,7 +42,7 @@ export class CreateSystemTenantRequestDto {
   ownerRole?: (typeof TENANT_ADMIN_ROLES)[number];
 }
 
-export class UpdateSystemTenantRequestDto {
+export class UpdateSystemTenantRequestDto implements UpdateSystemTenantRequestContract {
   @ApiPropertyOptional({ example: "Downtown Table Tennis Club", minLength: 1, maxLength: 160 })
   @IsOptional()
   @IsString()
@@ -51,7 +61,7 @@ export class UpdateSystemTenantRequestDto {
   active?: boolean;
 }
 
-export class CreateSystemMembershipRequestDto {
+export class CreateSystemMembershipRequestDto implements CreateSystemMembershipRequestContract {
   @ApiProperty({ example: "member@example.com" })
   @IsEmail()
   email!: string;
@@ -63,7 +73,7 @@ export class CreateSystemMembershipRequestDto {
   roles!: IdentityTenantRole[];
 }
 
-export class UpdateSystemMembershipRequestDto {
+export class UpdateSystemMembershipRequestDto implements UpdateSystemMembershipRequestContract {
   @ApiPropertyOptional({ enum: TENANT_ROLES, isArray: true, example: ["admin"] })
   @IsOptional()
   @IsArray()
@@ -77,7 +87,7 @@ export class UpdateSystemMembershipRequestDto {
   active?: boolean;
 }
 
-export class SystemTenantResponseDto {
+export class SystemTenantResponseDto implements SystemTenantResponseContract {
   @ApiProperty({ example: "018f08f1-54a7-7181-8d75-59336a3a6e2b" })
   id!: string;
 
@@ -91,10 +101,10 @@ export class SystemTenantResponseDto {
   active!: boolean;
 
   @ApiProperty({ type: String, format: "date-time", example: "2026-05-08T20:00:00.000Z" })
-  createdAt!: Date;
+  createdAt!: ISODateString;
 
   @ApiProperty({ type: String, format: "date-time", example: "2026-05-08T20:00:00.000Z" })
-  updatedAt!: Date;
+  updatedAt!: ISODateString;
 
   @ApiProperty({ example: 12 })
   activeMembershipCount!: number;
@@ -103,7 +113,7 @@ export class SystemTenantResponseDto {
   ownerAdminEmails!: string[];
 }
 
-export class SystemMembershipResponseDto {
+export class SystemMembershipResponseDto implements SystemMembershipResponseContract {
   @ApiProperty({ example: "018f08f1-62d5-7931-9b7c-3a7e08063f15" })
   id!: string;
 
@@ -123,13 +133,15 @@ export class SystemMembershipResponseDto {
   active!: boolean;
 
   @ApiProperty({ type: String, format: "date-time", example: "2026-05-08T20:00:00.000Z" })
-  createdAt!: Date;
+  createdAt!: ISODateString;
 
   @ApiProperty({ type: String, format: "date-time", example: "2026-05-08T20:00:00.000Z" })
-  updatedAt!: Date;
+  updatedAt!: ISODateString;
 }
 
-export class SystemMembershipDeactivationResponseDto {
+export class SystemMembershipDeactivationResponseDto
+  implements SystemMembershipDeactivationResponseContract
+{
   @ApiProperty({ example: true })
   deactivated!: true;
 }

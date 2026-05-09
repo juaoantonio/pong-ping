@@ -302,8 +302,8 @@ export class SystemAdminService {
       name: tenant.name,
       slug: tenant.slug,
       active: tenant.active,
-      createdAt: tenant.createdAt,
-      updatedAt: tenant.updatedAt,
+      createdAt: tenant.createdAt.toISOString(),
+      updatedAt: tenant.updatedAt.toISOString(),
       activeMembershipCount: activeMemberships.length,
       ownerAdminEmails,
     };
@@ -317,8 +317,8 @@ export class SystemAdminService {
       email: membership.user.email,
       roles: membership.roles,
       active: membership.active,
-      createdAt: membership.createdAt,
-      updatedAt: membership.updatedAt,
+      createdAt: membership.createdAt.toISOString(),
+      updatedAt: membership.updatedAt.toISOString(),
     };
   }
 }

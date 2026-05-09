@@ -1,17 +1,22 @@
 import { ApiProperty } from "@nestjs/swagger";
+import type {
+  AuthLogoutResponseContract,
+  AuthSessionResponseContract,
+  IdentityPrincipalResponseContract,
+} from "@pong-ping/contracts";
 import { SYSTEM_ROLES, TENANT_ROLES } from "../../identity-roles";
 
-export class AuthSessionResponseDto {
+export class AuthSessionResponseDto implements AuthSessionResponseContract {
   @ApiProperty({ example: "018f08f1-4f8c-72db-bf2f-497f2b8e623a" })
   sessionId!: string;
 }
 
-export class AuthLogoutResponseDto {
+export class AuthLogoutResponseDto implements AuthLogoutResponseContract {
   @ApiProperty({ example: true })
   revoked!: true;
 }
 
-export class IdentityPrincipalResponseDto {
+export class IdentityPrincipalResponseDto implements IdentityPrincipalResponseContract {
   @ApiProperty({ example: "018f08f1-5154-7687-9051-48b4cfa13f77" })
   userId!: string;
 
@@ -25,8 +30,8 @@ export class IdentityPrincipalResponseDto {
   sessionId!: string;
 
   @ApiProperty({ enum: SYSTEM_ROLES, isArray: true, example: ["system_admin"] })
-  systemRoles!: string[];
+  systemRoles!: IdentityPrincipalResponseContract["systemRoles"];
 
   @ApiProperty({ enum: TENANT_ROLES, isArray: true, example: ["owner"] })
-  tenantRoles!: string[];
+  tenantRoles!: IdentityPrincipalResponseContract["tenantRoles"];
 }

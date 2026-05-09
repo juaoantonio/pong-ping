@@ -29,6 +29,7 @@ type IdentityAuthConfig = {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_CALLBACK_URL: string;
+  SYSTEM_ADMIN_FRONTEND_URL: string;
   SESSION_SECRET: string;
   SESSION_COOKIE_NAME: string;
   SESSION_TTL_SECONDS: number;
@@ -97,6 +98,7 @@ export const identityAuthSchema: Joi.StrictSchemaMap<IdentityAuthConfig> = {
   GOOGLE_CLIENT_ID: Joi.string().required(),
   GOOGLE_CLIENT_SECRET: Joi.string().required(),
   GOOGLE_CALLBACK_URL: Joi.string().uri().required(),
+  SYSTEM_ADMIN_FRONTEND_URL: Joi.string().uri().default("http://localhost:5173/admin/tenants"),
   SESSION_SECRET: Joi.string().min(32).required(),
   SESSION_COOKIE_NAME: Joi.string().default("pong_ping_session"),
   SESSION_TTL_SECONDS: Joi.number().integer().min(60).default(60 * 60 * 24 * 14),
