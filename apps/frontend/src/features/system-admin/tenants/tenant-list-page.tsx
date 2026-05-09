@@ -24,13 +24,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -46,13 +39,11 @@ import {
   updateSystemTenant,
 } from "@/lib/api/system-admin";
 import { formatDateTime } from "@/lib/format";
-import { tenantOwnerRoles, type TenantOwnerRole } from "@/features/system-admin/roles";
 
 const createTenantSchema = z.object({
   name: z.string().trim().min(1, "Informe o nome.").max(160),
   slug: z.string().trim().min(1, "Informe o slug.").max(63),
-  ownerEmail: z.email("Informe um email valido."),
-  ownerRole: z.enum(["owner", "admin"]).optional(),
+  adminEmail: z.email("Informe um email valido."),
 });
 
 function errorMessage(error: unknown) {
@@ -124,9 +115,8 @@ function CreateTenantForm() {
   });
   const form = useForm({
     defaultValues: {
+      adminEmail: "",
       name: "",
-      ownerEmail: "",
-      ownerRole: "owner" as TenantOwnerRole,
       slug: "",
     },
     onSubmit: async ({ value }) => {
@@ -180,42 +170,19 @@ function CreateTenantForm() {
         )}
       />
       <form.Field
-        name="ownerEmail"
+        name="adminEmail"
         children={(field) => (
           <div className="grid gap-2 md:col-span-2">
-            <Label htmlFor={field.name}>Owner</Label>
+            <Label htmlFor={field.name}>Primeiro admin</Label>
             <Input
               id={field.name}
               onBlur={field.handleBlur}
               onChange={(event) => field.handleChange(event.target.value)}
-              placeholder="owner@example.com"
+              placeholder="admin@example.com"
               required
               type="email"
               value={field.state.value}
             />
-          </div>
-        )}
-      />
-      <form.Field
-        name="ownerRole"
-        children={(field) => (
-          <div className="grid gap-2">
-            <Label>Perfil</Label>
-            <Select
-              onValueChange={(value) => field.handleChange(value as TenantOwnerRole)}
-              value={field.state.value}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {tenantOwnerRoles.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role === "owner" ? "Dono" : "Admin"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         )}
       />
@@ -240,7 +207,7 @@ function TenantOverview({ tenants }: { tenants: SystemTenantResponseContract[] }
     (total, tenant) => total + tenant.activeMembershipCount,
     0,
   );
-  const withoutAdmins = tenants.filter((tenant) => tenant.ownerAdminEmails.length === 0).length;
+  const withoutAdmins = tenants.filter((tenant) => tenant.adminEmails.length === 0).length;
   const recentlyUpdated = tenants[0];
 
   return (
@@ -336,7 +303,7 @@ function TenantRow({ tenant }: { tenant: SystemTenantResponseContract }) {
       </TableCell>
       <TableCell className="text-muted-foreground">{tenant.activeMembershipCount}</TableCell>
       <TableCell className="max-w-60 truncate text-muted-foreground">
-        {tenant.ownerAdminEmails.join(", ") || "Sem admins ativos"}
+        {tenant.adminEmails.join(", ") || "Sem admins ativos"}
       </TableCell>
       <TableCell className="text-muted-foreground">{formatDateTime(tenant.updatedAt)}</TableCell>
       <TableCell>

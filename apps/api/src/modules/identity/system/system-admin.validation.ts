@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { TENANT_ADMIN_ROLES, TENANT_ROLES, type IdentityTenantRole } from "../identity-roles";
+import { IDENTITY_TENANT_ROLE, TENANT_ROLES, type IdentityTenantRole } from "../identity-roles";
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
@@ -41,5 +41,5 @@ export function assertTenantRoles(roles: readonly IdentityTenantRole[]): Identit
 }
 
 export function hasTenantAdminRole(roles: readonly IdentityTenantRole[]): boolean {
-  return roles.some((role) => (TENANT_ADMIN_ROLES as readonly IdentityTenantRole[]).includes(role));
+  return roles.includes(IDENTITY_TENANT_ROLE.ADMIN);
 }

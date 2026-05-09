@@ -50,8 +50,7 @@ export class SystemAdminService {
 
   public async createTenant(input: CreateSystemTenantRequestDto): Promise<SystemTenantResponseDto> {
     const slug = this.validateSlug(input.slug);
-    const email = normalizeEmail(input.ownerEmail);
-    const ownerRole = input.ownerRole ?? IDENTITY_TENANT_ROLE.OWNER;
+    const email = normalizeEmail(input.adminEmail);
 
     return this.dataSource.transaction("SERIALIZABLE", async (manager) => {
       const tenants = manager.getRepository(TenantEntity);
@@ -76,7 +75,7 @@ export class SystemAdminService {
         memberships.create({
           tenantId: tenant.id,
           userId: user.id,
-          roles: [ownerRole],
+          roles: [IDENTITY_TENANT_ROLE.ADMIN],
           active: true,
         }),
       );
@@ -155,7 +154,9 @@ export class SystemAdminService {
       if (existingMembership) {
         existingMembership.roles = roles;
         existingMembership.active = true;
-        return this.toMembershipDto(await memberships.save(existingMembership));
+        const savedMembership = await memberships.save(existingMembership);
+        await this.assertTenantKeepsAdmin(tenantId, memberships);
+        return this.toMembershipDto(savedMembership);
       }
 
       const membership = memberships.create({
@@ -285,14 +286,14 @@ export class SystemAdminService {
   ): Promise<void> {
     const activeMemberships = await memberships.find({ where: { tenantId, active: true } });
     if (!activeMemberships.some((membership) => hasTenantAdminRole(membership.roles))) {
-      throw new BadRequestException("Tenant must keep at least one active owner or admin.");
+      throw new BadRequestException("Tenant must keep at least one active admin.");
     }
   }
 
   private toTenantDto(tenant: TenantEntity): SystemTenantResponseDto {
     const memberships = tenant.memberships ?? [];
     const activeMemberships = memberships.filter((membership) => membership.active);
-    const ownerAdminEmails = activeMemberships
+    const adminEmails = activeMemberships
       .filter((membership) => hasTenantAdminRole(membership.roles))
       .map((membership) => membership.user.email)
       .sort();
@@ -305,7 +306,7 @@ export class SystemAdminService {
       createdAt: tenant.createdAt.toISOString(),
       updatedAt: tenant.updatedAt.toISOString(),
       activeMembershipCount: activeMemberships.length,
-      ownerAdminEmails,
+      adminEmails,
     };
   }
 

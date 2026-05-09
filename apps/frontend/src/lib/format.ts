@@ -8,7 +8,6 @@ export function formatDateTime(value: string | Date) {
 export function formatRoles(roles: readonly string[]) {
   return roles
     .map((role) => {
-      if (role === "owner") return "Dono";
       if (role === "admin") return "Admin";
       return "Membro";
     })

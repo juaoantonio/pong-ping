@@ -46,7 +46,7 @@ import { Route } from "@/routes/admin/tenants.$tenantId.memberships";
 
 const createMembershipSchema = z.object({
   email: z.email("Informe um email valido."),
-  roles: z.array(z.enum(["owner", "admin", "member"])).min(1, "Selecione ao menos um perfil."),
+  roles: z.array(z.enum(["admin", "member"])).min(1, "Selecione ao menos um perfil."),
 });
 
 function errorMessage(error: unknown) {
@@ -211,18 +211,16 @@ function MembershipOverview({
   tenantSlug?: string;
 }) {
   const activeMemberships = memberships.filter((membership) => membership.active).length;
-  const owners = memberships.filter((membership) => membership.roles.includes("owner")).length;
   const admins = memberships.filter((membership) => membership.roles.includes("admin")).length;
   const inactiveMemberships = memberships.length - activeMemberships;
 
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-3">
       <MembershipMetric label="Ativos" value={activeMemberships} />
-      <MembershipMetric label="Owners" value={owners} />
       <MembershipMetric label="Admins" value={admins} />
       <MembershipMetric label="Inativos" value={inactiveMemberships} />
       {tenantSlug ? (
-        <div className="rounded-lg border bg-muted/20 p-4 md:col-span-4">
+        <div className="rounded-lg border bg-muted/20 p-4 md:col-span-3">
           <p className="text-xs font-medium text-muted-foreground">Slug do tenant</p>
           <p className="mt-2 truncate font-mono text-sm">{tenantSlug}</p>
         </div>

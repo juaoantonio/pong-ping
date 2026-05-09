@@ -16,7 +16,7 @@ describe("SystemAdminController", () => {
       controller.createTenant({
         name: "Acme",
         slug: "acme",
-        ownerEmail: "owner@example.test",
+        adminEmail: "admin@example.test",
       }),
     ).resolves.toEqual({ id: "tenant-2" });
     await expect(controller.updateTenant("tenant-1", { active: false })).resolves.toEqual({
@@ -26,7 +26,7 @@ describe("SystemAdminController", () => {
     expect(service.createTenant).toHaveBeenCalledWith({
       name: "Acme",
       slug: "acme",
-      ownerEmail: "owner@example.test",
+      adminEmail: "admin@example.test",
     });
     expect(service.updateTenant).toHaveBeenCalledWith("tenant-1", { active: false });
   });

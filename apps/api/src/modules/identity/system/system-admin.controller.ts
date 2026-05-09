@@ -63,7 +63,7 @@ export class SystemAdminController {
   @ApiOperation({
     summary: "Create a tenant",
     description:
-      "Creates a tenant and initial owner/admin membership. Requires the system administrator role.",
+      "Creates a tenant and initial admin membership. Requires the system administrator role.",
   })
   @ApiBody({ type: CreateSystemTenantRequestDto })
   @ApiSuccessEnvelopeResponse({
@@ -86,7 +86,7 @@ export class SystemAdminController {
     },
     {
       status: HttpStatus.CONFLICT,
-      description: "Tenant slug or owner email conflicts with existing records.",
+      description: "Tenant slug or admin email conflicts with existing records.",
     },
   )
   public createTenant(@Body() body: CreateSystemTenantRequestDto) {
@@ -284,7 +284,7 @@ export class SystemAdminController {
   @ApiErrorEnvelopeResponses(
     {
       status: HttpStatus.BAD_REQUEST,
-      description: "Tenant would lose all active owner/admin memberships.",
+      description: "Tenant would lose all active admin memberships.",
     },
     {
       status: HttpStatus.UNAUTHORIZED,

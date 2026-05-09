@@ -7,14 +7,14 @@ import { IDENTITY_TENANT_ROLE } from "../identity-roles";
 import { SystemAdminService } from "./system-admin.service";
 
 describe("SystemAdminService", () => {
-  it("creates tenant, pending user, and owner membership transactionally", async () => {
+  it("creates tenant, pending user, and admin membership transactionally", async () => {
     const store = createStore();
     const service = createService(store);
 
     const tenant = await service.createTenant({
       name: "Acme",
       slug: "Acme",
-      ownerEmail: "OWNER@example.test",
+      adminEmail: "ADMIN@example.test",
     });
 
     expect(tenant).toMatchObject({
@@ -22,16 +22,16 @@ describe("SystemAdminService", () => {
       slug: "acme",
       active: true,
       activeMembershipCount: 1,
-      ownerAdminEmails: ["owner@example.test"],
+      adminEmails: ["admin@example.test"],
     });
     expect(store.users.records[0]).toMatchObject({
-      email: "owner@example.test",
+      email: "admin@example.test",
       googleSubject: null,
     });
     expect(store.memberships.records[0]).toMatchObject({
       tenantId: tenant.id,
       userId: store.users.records[0].id,
-      roles: [IDENTITY_TENANT_ROLE.OWNER],
+      roles: [IDENTITY_TENANT_ROLE.ADMIN],
       active: true,
     });
   });
@@ -42,21 +42,21 @@ describe("SystemAdminService", () => {
     await service.createTenant({
       name: "Acme",
       slug: "acme",
-      ownerEmail: "owner@example.test",
+      adminEmail: "admin@example.test",
     });
 
     await expect(
       service.createTenant({
         name: "Other",
         slug: "acme",
-        ownerEmail: "owner2@example.test",
+        adminEmail: "admin2@example.test",
       }),
     ).rejects.toThrow(ConflictException);
     await expect(
       service.createTenant({
         name: "API",
         slug: "api",
-        ownerEmail: "owner3@example.test",
+        adminEmail: "admin3@example.test",
       }),
     ).rejects.toThrow(BadRequestException);
   });
@@ -70,7 +70,7 @@ describe("SystemAdminService", () => {
       service.createTenant({
         name: "Acme",
         slug: "acme",
-        ownerEmail: "owner@example.test",
+        adminEmail: "admin@example.test",
       }),
     ).rejects.toThrow("save failed");
     expect(store.tenants.records).toHaveLength(0);
@@ -84,8 +84,7 @@ describe("SystemAdminService", () => {
     const created = await service.createTenant({
       name: "Acme",
       slug: "acme",
-      ownerEmail: "owner@example.test",
-      ownerRole: IDENTITY_TENANT_ROLE.ADMIN,
+      adminEmail: "admin@example.test",
     });
 
     await service.updateTenant(created.id, { name: "Acme Club", slug: "acme-club", active: false });
@@ -96,7 +95,7 @@ describe("SystemAdminService", () => {
       name: "Acme Club",
       slug: "acme-club",
       active: false,
-      ownerAdminEmails: ["owner@example.test"],
+      adminEmails: ["admin@example.test"],
     });
   });
 
@@ -106,7 +105,7 @@ describe("SystemAdminService", () => {
     const tenant = await service.createTenant({
       name: "Acme",
       slug: "acme",
-      ownerEmail: "owner@example.test",
+      adminEmail: "admin@example.test",
     });
 
     const created = await service.upsertMembership(tenant.id, {
@@ -140,22 +139,31 @@ describe("SystemAdminService", () => {
     });
   });
 
-  it("prevents removing the last active owner or admin", async () => {
+  it("prevents removing the last active admin", async () => {
     const store = createStore();
     const service = createService(store);
     const tenant = await service.createTenant({
       name: "Acme",
       slug: "acme",
-      ownerEmail: "owner@example.test",
+      adminEmail: "admin@example.test",
     });
-    const ownerMembership = store.memberships.records[0];
+    const adminMembership = store.memberships.records[0];
 
     await expect(
-      service.updateMembership(tenant.id, ownerMembership.id, {
+      service.updateMembership(tenant.id, adminMembership.id, {
         roles: [IDENTITY_TENANT_ROLE.MEMBER],
       }),
     ).rejects.toThrow(BadRequestException);
-    await expect(service.deactivateMembership(tenant.id, ownerMembership.id)).rejects.toThrow(
+    await expect(
+      service.updateMembership(tenant.id, adminMembership.id, { active: false }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.upsertMembership(tenant.id, {
+        email: "admin@example.test",
+        roles: [IDENTITY_TENANT_ROLE.MEMBER],
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(service.deactivateMembership(tenant.id, adminMembership.id)).rejects.toThrow(
       BadRequestException,
     );
   });

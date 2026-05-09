@@ -58,7 +58,7 @@ describe("IdentityAuthorizationGuard", () => {
           userId: "user-1",
           tenantId: "tenant-1",
           sessionId: "session-1",
-          tenantRoles: [IDENTITY_TENANT_ROLE.OWNER],
+          tenantRoles: [IDENTITY_TENANT_ROLE.ADMIN],
           systemRoles: [],
         }),
       }),
@@ -86,14 +86,14 @@ describe("IdentityAuthorizationGuard", () => {
 
   it("exige roles de tenant quando declaradas", () => {
     const guard = new IdentityAuthorizationGuard(
-      reflector({ [TENANT_ROLES_KEY]: [IDENTITY_TENANT_ROLE.OWNER] }),
+      reflector({ [TENANT_ROLES_KEY]: [IDENTITY_TENANT_ROLE.ADMIN] }),
       currentContext({
         getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }),
         getPrincipalOrThrow: () => ({
           userId: "user-1",
           tenantId: "tenant-1",
           sessionId: "session-1",
-          tenantRoles: [IDENTITY_TENANT_ROLE.OWNER],
+          tenantRoles: [IDENTITY_TENANT_ROLE.ADMIN],
           systemRoles: [],
         }),
       }),

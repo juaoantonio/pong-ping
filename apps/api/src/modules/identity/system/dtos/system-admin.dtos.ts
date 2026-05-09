@@ -19,7 +19,7 @@ import type {
   UpdateSystemMembershipRequestContract,
   UpdateSystemTenantRequestContract,
 } from "@pong-ping/contracts";
-import { TENANT_ADMIN_ROLES, TENANT_ROLES, type IdentityTenantRole } from "../../identity-roles";
+import { TENANT_ROLES, type IdentityTenantRole } from "../../identity-roles";
 
 export class CreateSystemTenantRequestDto implements CreateSystemTenantRequestContract {
   @ApiProperty({ example: "Downtown Table Tennis Club", minLength: 1, maxLength: 160 })
@@ -32,14 +32,9 @@ export class CreateSystemTenantRequestDto implements CreateSystemTenantRequestCo
   @Length(1, 63)
   slug!: string;
 
-  @ApiProperty({ example: "owner@example.com" })
+  @ApiProperty({ example: "admin@example.com" })
   @IsEmail()
-  ownerEmail!: string;
-
-  @ApiPropertyOptional({ enum: TENANT_ADMIN_ROLES, example: "owner" })
-  @IsOptional()
-  @IsIn([...TENANT_ADMIN_ROLES])
-  ownerRole?: (typeof TENANT_ADMIN_ROLES)[number];
+  adminEmail!: string;
 }
 
 export class UpdateSystemTenantRequestDto implements UpdateSystemTenantRequestContract {
@@ -109,8 +104,8 @@ export class SystemTenantResponseDto implements SystemTenantResponseContract {
   @ApiProperty({ example: 12 })
   activeMembershipCount!: number;
 
-  @ApiProperty({ type: [String], example: ["owner@example.com", "admin@example.com"] })
-  ownerAdminEmails!: string[];
+  @ApiProperty({ type: [String], example: ["admin@example.com"] })
+  adminEmails!: string[];
 }
 
 export class SystemMembershipResponseDto implements SystemMembershipResponseContract {

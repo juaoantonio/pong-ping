@@ -39,20 +39,12 @@ export type IdentitySystemRoleContract =
   (typeof IDENTITY_SYSTEM_ROLE_CONTRACT)[keyof typeof IDENTITY_SYSTEM_ROLE_CONTRACT];
 
 export const IDENTITY_TENANT_ROLE_CONTRACT = {
-  OWNER: "owner",
   ADMIN: "admin",
   MEMBER: "member",
 } as const;
 
 export type IdentityTenantRoleContract =
   (typeof IDENTITY_TENANT_ROLE_CONTRACT)[keyof typeof IDENTITY_TENANT_ROLE_CONTRACT];
-
-export const TENANT_ADMIN_ROLE_CONTRACTS = [
-  IDENTITY_TENANT_ROLE_CONTRACT.OWNER,
-  IDENTITY_TENANT_ROLE_CONTRACT.ADMIN,
-] as const;
-
-export type IdentityTenantAdminRoleContract = (typeof TENANT_ADMIN_ROLE_CONTRACTS)[number];
 
 export interface AuthSessionResponseContract {
   sessionId: string;
@@ -73,8 +65,7 @@ export interface IdentityPrincipalResponseContract {
 export interface CreateSystemTenantRequestContract {
   name: string;
   slug: string;
-  ownerEmail: string;
-  ownerRole?: IdentityTenantAdminRoleContract;
+  adminEmail: string;
 }
 
 export interface UpdateSystemTenantRequestContract {
@@ -91,7 +82,7 @@ export interface SystemTenantResponseContract {
   createdAt: ISODateString;
   updatedAt: ISODateString;
   activeMembershipCount: number;
-  ownerAdminEmails: string[];
+  adminEmails: string[];
 }
 
 export interface CreateSystemMembershipRequestContract {

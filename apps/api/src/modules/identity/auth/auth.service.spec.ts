@@ -24,7 +24,7 @@ describe("AuthService", () => {
       sessions as never,
       repository() as never,
       {
-        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.OWNER] })),
+        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
       } as never,
       { findOne: vi.fn() } as never,
     );
@@ -81,7 +81,7 @@ describe("AuthService", () => {
       { createTenantSession: vi.fn() } as never,
       users as never,
       {
-        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.OWNER] })),
+        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
       } as never,
       { findOne: vi.fn() } as never,
     );
@@ -118,7 +118,7 @@ describe("AuthService", () => {
       } as never,
       users as never,
       {
-        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.OWNER] })),
+        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
       } as never,
       { findOne: vi.fn() } as never,
     );

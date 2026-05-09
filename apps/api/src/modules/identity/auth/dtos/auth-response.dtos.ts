@@ -32,6 +32,6 @@ export class IdentityPrincipalResponseDto implements IdentityPrincipalResponseCo
   @ApiProperty({ enum: SYSTEM_ROLES, isArray: true, example: ["system_admin"] })
   systemRoles!: IdentityPrincipalResponseContract["systemRoles"];
 
-  @ApiProperty({ enum: TENANT_ROLES, isArray: true, example: ["owner"] })
+  @ApiProperty({ enum: TENANT_ROLES, isArray: true, example: ["admin"] })
   tenantRoles!: IdentityPrincipalResponseContract["tenantRoles"];
 }
