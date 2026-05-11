@@ -54,31 +54,27 @@ export function isAllowedCorsOrigin(origin: string | undefined, allowedOrigins: 
       return true;
     }
 
-    return isSamePortSubdomain(origin, allowedOrigin);
+    return isWildcardOriginMatch(origin, allowedOrigin);
   });
 }
 
-function isSamePortSubdomain(origin: string, allowedOrigin: string) {
+function isWildcardOriginMatch(origin: string, allowedOrigin: string) {
   try {
+    if (!allowedOrigin.includes("://*.")) {
+      return false;
+    }
+
     const requested = new URL(origin);
-    const allowed = new URL(allowedOrigin);
-    const rootHostname = getRootHostname(allowed.hostname);
+    const allowed = new URL(allowedOrigin.replace("://*.", "://wildcard."));
+    const rootHostname = allowed.hostname.replace(/^wildcard\./, "");
 
     return (
       requested.protocol === allowed.protocol &&
       requested.port === allowed.port &&
+      requested.hostname !== rootHostname &&
       requested.hostname.endsWith(`.${rootHostname}`)
     );
   } catch {
     return false;
   }
-}
-
-function getRootHostname(hostname: string) {
-  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
-    return "localhost";
-  }
-
-  const labels = hostname.split(".");
-  return labels.length > 2 ? labels.slice(1).join(".") : hostname;
 }
