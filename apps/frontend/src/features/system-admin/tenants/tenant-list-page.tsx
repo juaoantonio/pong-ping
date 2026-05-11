@@ -3,7 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { z } from "zod";
-import { Building2, Pencil, Plus, RefreshCw, UsersRound } from "lucide-react";
+import { Building2, Copy, ExternalLink, Pencil, Plus, RefreshCw, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import type {
   CreateSystemTenantRequestContract,
@@ -48,6 +48,29 @@ const createTenantSchema = z.object({
 
 function errorMessage(error: unknown) {
   return error instanceof ApiClientError ? error.message : "Nao foi possivel concluir a acao.";
+}
+
+export function getTenantBaseUrl(slug: string, origin = window.location.origin) {
+  const url = new URL(origin);
+  const labels = url.hostname.split(".");
+  const rootDomain =
+    url.hostname === "localhost" || url.hostname.endsWith(".localhost")
+      ? "localhost"
+      : labels.length > 2
+        ? labels.slice(1).join(".")
+        : url.hostname;
+
+  url.hostname = `${slug}.${rootDomain}`;
+  url.pathname = "/club";
+  url.search = "";
+  url.hash = "";
+
+  return url.toString().replace(/\/$/, "");
+}
+
+async function copyTenantBaseUrl(url: string) {
+  await navigator.clipboard.writeText(url);
+  toast.success("URL do tenant copiada.");
 }
 
 export function TenantListPage() {
@@ -283,6 +306,8 @@ function TenantTable({ tenants }: { tenants: SystemTenantResponseContract[] }) {
 }
 
 function TenantRow({ tenant }: { tenant: SystemTenantResponseContract }) {
+  const tenantBaseUrl = getTenantBaseUrl(tenant.slug);
+
   return (
     <TableRow>
       <TableCell>
@@ -308,6 +333,26 @@ function TenantRow({ tenant }: { tenant: SystemTenantResponseContract }) {
       <TableCell className="text-muted-foreground">{formatDateTime(tenant.updatedAt)}</TableCell>
       <TableCell>
         <div className="flex justify-end gap-2">
+          <Button
+            onClick={() => {
+              void copyTenantBaseUrl(tenantBaseUrl).catch(() =>
+                toast.error("Nao foi possivel copiar a URL."),
+              );
+            }}
+            size="icon-sm"
+            title={`Copiar URL de ${tenant.name}`}
+            type="button"
+            variant="ghost"
+          >
+            <Copy className="size-4" />
+            <span className="sr-only">Copiar URL de {tenant.name}</span>
+          </Button>
+          <Button asChild size="icon-sm" title={`Abrir ${tenant.name}`} variant="ghost">
+            <a href={tenantBaseUrl} rel="noreferrer" target="_blank">
+              <ExternalLink className="size-4" />
+              <span className="sr-only">Abrir {tenant.name}</span>
+            </a>
+          </Button>
           <Button asChild size="sm" variant="outline">
             <Link
               params={{ tenantId: tenant.id }}
