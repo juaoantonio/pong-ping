@@ -86,7 +86,12 @@ export class AuthController {
       this.config.getOrThrow<string>("NODE_ENV") === "production",
     );
 
-    return res.redirect(this.config.getOrThrow<string>("TENANT_FRONTEND_URL"));
+    return res.redirect(
+      getTenantFrontendRedirectUrl(
+        this.config.getOrThrow<string>("TENANT_FRONTEND_URL"),
+        req.headers.host,
+      ),
+    );
   }
 
   @Post("logout")
@@ -146,4 +151,19 @@ export class AuthController {
   public me() {
     return this.auth.getMe();
   }
+}
+
+function getTenantFrontendRedirectUrl(frontendUrl: string, requestHost: string | undefined) {
+  const url = new URL(frontendUrl);
+  const hostname = requestHost?.split(",")[0]?.trim().replace(/:\d+$/, "");
+
+  if (hostname && isTenantHostname(hostname)) {
+    url.hostname = hostname;
+  }
+
+  return url.toString();
+}
+
+function isTenantHostname(hostname: string) {
+  return hostname.endsWith(".localhost") || hostname.split(".").length > 2;
 }

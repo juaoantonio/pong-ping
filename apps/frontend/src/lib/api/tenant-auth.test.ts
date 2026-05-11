@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@/lib/api/errors";
 import { authKeys } from "@/lib/api/system-admin";
 import {
+  getTenantApiBaseUrl,
   getTenantLoginUrl,
   getTenantMe,
   logoutTenantSession,
@@ -26,6 +27,11 @@ function mockResponse(body: unknown, init: ResponseInit = {}) {
 }
 
 describe("tenant auth api", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it("uses a tenant auth query key separate from system auth", () => {
     expect(tenantAuthKeys.me).toEqual(["tenant-auth", "me"]);
     expect(tenantAuthKeys.me).not.toEqual(authKeys.me);
@@ -50,6 +56,23 @@ describe("tenant auth api", () => {
     await expect(getTenantMe()).resolves.toEqual(tenantPrincipal);
     expect(fetchMock).toHaveBeenCalledWith(
       "http://localhost:3001/v1/auth/me",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
+  it("fetches tenant auth through the tenant API host when the frontend is tenant-scoped", async () => {
+    vi.stubGlobal("location", new URL("http://teste.localhost:5173/club"));
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      mockResponse({
+        ok: true,
+        data: tenantPrincipal,
+        meta: { timestamp: "2026-05-09T12:00:00.000Z" },
+      }),
+    );
+
+    await expect(getTenantMe()).resolves.toEqual(tenantPrincipal);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://teste.localhost:3001/v1/auth/me",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -92,6 +115,18 @@ describe("tenant auth api", () => {
     );
     expect(getTenantLoginUrl("https://example.com/club")).toBe(
       "http://localhost:3001/v1/auth/google",
+    );
+  });
+
+  it("builds tenant API URLs from the current tenant frontend host", () => {
+    expect(getTenantApiBaseUrl("http://localhost:3001/v1", "teste.localhost")).toBe(
+      "http://teste.localhost:3001/v1",
+    );
+    expect(getTenantApiBaseUrl("https://api.pongping.example/v1", "teste.pongping.example")).toBe(
+      "https://teste.pongping.example/v1",
+    );
+    expect(getTenantApiBaseUrl("http://localhost:3001/v1", "localhost")).toBe(
+      "http://localhost:3001/v1",
     );
   });
 

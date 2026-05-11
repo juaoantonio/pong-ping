@@ -29,7 +29,7 @@ describe("AuthController", () => {
           displayName: "Member",
           avatarUrl: null,
         },
-        headers: { "user-agent": "vitest" },
+        headers: { host: "teste.localhost:3001", "user-agent": "vitest" },
         ip: "127.0.0.1",
       } as never,
       response,
@@ -44,7 +44,7 @@ describe("AuthController", () => {
       "raw-token",
       expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
     );
-    expect(response.redirect).toHaveBeenCalledWith("http://localhost:5173/club");
+    expect(response.redirect).toHaveBeenCalledWith("http://teste.localhost:5173/club");
   });
 });
 

@@ -19,16 +19,21 @@ export function tenantMeQueryOptions() {
 }
 
 export async function getTenantMe() {
-  const principal = await apiRequest<IdentityPrincipalResponseContract>("/auth/me");
+  const principal = await apiRequest<IdentityPrincipalResponseContract>("/auth/me", {
+    baseUrl: getTenantApiBaseUrl(),
+  });
   return validateTenantPrincipal(principal);
 }
 
 export function logoutTenantSession() {
-  return apiRequest<AuthLogoutResponseContract>("/auth/logout", { method: "POST" });
+  return apiRequest<AuthLogoutResponseContract>("/auth/logout", {
+    baseUrl: getTenantApiBaseUrl(),
+    method: "POST",
+  });
 }
 
 export function getTenantLoginUrl(redirect?: string) {
-  const url = new URL(`${getApiBaseUrl()}/auth/google`);
+  const url = new URL(`${getTenantApiBaseUrl()}/auth/google`);
   const safeRedirect = getSafeInternalRedirect(redirect);
 
   if (safeRedirect) {
@@ -36,6 +41,19 @@ export function getTenantLoginUrl(redirect?: string) {
   }
 
   return url.toString();
+}
+
+export function getTenantApiBaseUrl(
+  baseUrl = getApiBaseUrl(),
+  frontendHostname = window.location.hostname,
+) {
+  const url = new URL(baseUrl);
+
+  if (isTenantFrontendHostname(frontendHostname)) {
+    url.hostname = frontendHostname;
+  }
+
+  return url.toString().replace(/\/$/, "");
 }
 
 function validateTenantPrincipal(principal: IdentityPrincipalResponseContract) {
@@ -55,4 +73,8 @@ function getSafeInternalRedirect(redirect?: string) {
   }
 
   return redirect;
+}
+
+function isTenantFrontendHostname(hostname: string) {
+  return hostname.endsWith(".localhost") || hostname.split(".").length > 2;
 }

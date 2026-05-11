@@ -28,6 +28,7 @@ const errorEnvelopeSchema = z.object({
 });
 
 export type ApiRequestOptions<TBody> = Omit<RequestInit, "body" | "credentials"> & {
+  baseUrl?: string;
   body?: TBody;
 };
 
@@ -43,12 +44,13 @@ export async function apiRequest<TData, TBody = never>(
   path: string,
   options: ApiRequestOptions<TBody> = {},
 ): Promise<TData> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    ...options,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  const { baseUrl = getApiBaseUrl(), body, ...requestOptions } = options;
+  const response = await fetch(`${baseUrl.replace(/\/+$/, "")}${path}`, {
+    ...requestOptions,
+    body: body === undefined ? undefined : JSON.stringify(body),
     credentials: "include",
     headers: {
-      ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...options.headers,
     },
   });
