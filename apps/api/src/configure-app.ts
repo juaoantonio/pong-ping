@@ -17,8 +17,11 @@ export function configureApp(app: INestApplication) {
   app.useGlobalPipes(createValidationPipe());
   app.useGlobalInterceptors(new SuccessEnvelopeInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
+  const allowedOrigins = config.getOrThrow<string[]>("CORS_ORIGIN");
   app.enableCors({
-    origin: config.getOrThrow<string[]>("CORS_ORIGIN"),
+    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+      callback(null, isAllowedCorsOrigin(origin, allowedOrigins));
+    },
     credentials: true,
   });
 
@@ -39,4 +42,43 @@ export function configureApp(app: INestApplication) {
       url: `/${prefix}/swagger.json`,
     }),
   );
+}
+
+export function isAllowedCorsOrigin(origin: string | undefined, allowedOrigins: readonly string[]) {
+  if (!origin) {
+    return true;
+  }
+
+  return allowedOrigins.some((allowedOrigin) => {
+    if (origin === allowedOrigin) {
+      return true;
+    }
+
+    return isSamePortSubdomain(origin, allowedOrigin);
+  });
+}
+
+function isSamePortSubdomain(origin: string, allowedOrigin: string) {
+  try {
+    const requested = new URL(origin);
+    const allowed = new URL(allowedOrigin);
+    const rootHostname = getRootHostname(allowed.hostname);
+
+    return (
+      requested.protocol === allowed.protocol &&
+      requested.port === allowed.port &&
+      requested.hostname.endsWith(`.${rootHostname}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getRootHostname(hostname: string) {
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+    return "localhost";
+  }
+
+  const labels = hostname.split(".");
+  return labels.length > 2 ? labels.slice(1).join(".") : hostname;
 }
