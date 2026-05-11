@@ -38,6 +38,7 @@ import {
   tenantKeys,
   updateSystemTenant,
 } from "@/lib/api/system-admin";
+import { getApiBaseUrl } from "@/lib/api/client";
 import { formatDateTime } from "@/lib/format";
 
 const createTenantSchema = z.object({
@@ -46,12 +47,14 @@ const createTenantSchema = z.object({
   adminEmail: z.email("Informe um email valido."),
 });
 
+const DEFAULT_TENANT_FRONTEND_URL = "http://localhost:5173/club";
+
 function errorMessage(error: unknown) {
   return error instanceof ApiClientError ? error.message : "Nao foi possivel concluir a acao.";
 }
 
-export function getTenantBaseUrl(slug: string, origin = window.location.origin) {
-  const url = new URL(origin);
+export function getTenantBaseUrl(slug: string, frontendUrl = getTenantFrontendUrl()) {
+  const url = new URL(frontendUrl);
   const labels = url.hostname.split(".");
   const rootDomain =
     url.hostname === "localhost" || url.hostname.endsWith(".localhost")
@@ -66,6 +69,24 @@ export function getTenantBaseUrl(slug: string, origin = window.location.origin) 
   url.hash = "";
 
   return url.toString().replace(/\/$/, "");
+}
+
+function getTenantFrontendUrl() {
+  const configured = import.meta.env.VITE_TENANT_FRONTEND_URL?.trim();
+  if (configured) {
+    return configured;
+  }
+
+  const currentOrigin = window.location.origin;
+  try {
+    if (currentOrigin === new URL(getApiBaseUrl()).origin) {
+      return DEFAULT_TENANT_FRONTEND_URL;
+    }
+  } catch {
+    return currentOrigin;
+  }
+
+  return currentOrigin;
 }
 
 async function copyTenantBaseUrl(url: string) {
