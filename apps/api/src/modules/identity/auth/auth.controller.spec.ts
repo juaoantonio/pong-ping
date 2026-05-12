@@ -2,6 +2,7 @@ import type { Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import type { CurrentContextService } from "../../../common/context";
+import { SessionCookieService } from "../session/session-cookie.service";
 import type { SessionService } from "../session/session.service";
 import { AuthController } from "./auth.controller";
 
@@ -26,6 +27,7 @@ describe("AuthController", () => {
       {} as CurrentContextService,
       {} as SessionService,
       oauthState as never,
+      new SessionCookieService(fakeConfig()),
     );
 
     await controller.googleCallback(

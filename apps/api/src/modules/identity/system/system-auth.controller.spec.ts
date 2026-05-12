@@ -2,6 +2,7 @@ import type { Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import type { CurrentContextService } from "../../../common/context";
+import { SessionCookieService } from "../session/session-cookie.service";
 import type { SessionService } from "../session/session.service";
 import { SystemAuthController } from "./system-auth.controller";
 
@@ -19,6 +20,7 @@ describe("SystemAuthController", () => {
       auth as never,
       {} as CurrentContextService,
       {} as SessionService,
+      new SessionCookieService(fakeConfig()),
     );
 
     await controller.googleCallback(
@@ -55,6 +57,7 @@ describe("SystemAuthController", () => {
       { getMe: vi.fn() } as never,
       { getPrincipalOrThrow: () => ({ sessionId: "session-1" }) } as never,
       sessions as never,
+      new SessionCookieService(fakeConfig()),
     );
 
     await expect(controller.logout(response)).resolves.toEqual({ revoked: true });
