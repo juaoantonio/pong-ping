@@ -2,9 +2,14 @@ import { DomainRuleViolation } from "../../../shared/domain";
 import { type GameSide } from "../../../table/domain";
 import { ScorePoints } from "./score-points";
 
-type ScoreboardSideInput = {
+export type ScoreboardSideInput = {
   side: GameSide;
   points?: ScorePoints;
+};
+
+export type ScoreboardSideData = {
+  side: GameSide;
+  points?: number | ScorePoints;
 };
 
 export class ScoreboardSide {
@@ -18,6 +23,15 @@ export class ScoreboardSide {
 
   public static create(input: ScoreboardSideInput): ScoreboardSide {
     return new ScoreboardSide(input);
+  }
+
+  public static from(input: ScoreboardSide | ScoreboardSideData): ScoreboardSide {
+    return input instanceof ScoreboardSide
+      ? input
+      : ScoreboardSide.create({
+          side: input.side,
+          points: input.points === undefined ? undefined : ScorePoints.from(input.points),
+        });
   }
 
   public get side(): GameSide {

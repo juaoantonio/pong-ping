@@ -5,6 +5,10 @@ const INVITATION_TOKEN_PATTERN = /^[A-Za-z0-9_-]+$/;
 export class InvitationToken {
   public readonly value: string;
 
+  public static from(value: string | InvitationToken): InvitationToken {
+    return value instanceof InvitationToken ? value : new InvitationToken(value);
+  }
+
   public constructor(value: string) {
     const normalized = value.trim();
 

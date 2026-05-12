@@ -5,6 +5,7 @@ import { DatabaseModule } from "./common/database/database.module";
 import { HealthModule } from "./common/health/health.module";
 import { LoggingModule } from "./common/logging/logging.module";
 import { SharedModule } from "./common/shared/shared.module";
+import { CoreModule } from "./modules/core/core.module";
 import { IdentityModule } from "./modules/identity/identity.module";
 
 @Module({
@@ -15,6 +16,7 @@ import { IdentityModule } from "./modules/identity/identity.module";
     RequestContextModule,
     DatabaseModule,
     IdentityModule,
+    CoreModule,
     HealthModule,
   ],
 })

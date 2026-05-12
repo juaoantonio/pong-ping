@@ -3,6 +3,10 @@ import { DomainRuleViolation } from "../../../shared/domain";
 export class AthleteDisplayName {
   public readonly value: string;
 
+  public static from(value: string | AthleteDisplayName): AthleteDisplayName {
+    return value instanceof AthleteDisplayName ? value : new AthleteDisplayName(value);
+  }
+
   public constructor(value: string) {
     const normalized = value.trim().replace(/\s+/g, " ");
 

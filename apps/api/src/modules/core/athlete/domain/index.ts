@@ -7,7 +7,11 @@ export {
   ATHLETE_PLAYING_STYLE,
   type AthletePlayingStyle,
 } from "./value-objects/athlete-playing-style.enum";
-export { AthleteProfile } from "./value-objects/athlete-profile";
+export {
+  AthleteProfile,
+  type AthleteProfileData,
+  type AthleteProfileInput,
+} from "./value-objects/athlete-profile";
 export {
   ATHLETE_TECHNICAL_LEVEL,
   type AthleteTechnicalLevel,

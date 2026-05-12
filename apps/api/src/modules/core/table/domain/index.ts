@@ -1,7 +1,7 @@
-export { ActiveGame } from "./active-game";
-export { GameSide } from "./game-side";
-export { QueueEntry } from "./queue-entry";
+export { ActiveGame, type ActiveGameData, type ActiveGameInput } from "./active-game";
+export { GameSide, type GameSideData } from "./game-side";
+export { QueueEntry, type QueueEntryData } from "./queue-entry";
 export { Table } from "./table";
-export { TableMember } from "./table-member";
+export { TableMember, type TableMemberData } from "./table-member";
 export { TableQueue } from "./table-queue";
 export { PlayMode, QueuePosition, TableId, TableName } from "./value-objects";

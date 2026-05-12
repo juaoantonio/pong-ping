@@ -10,22 +10,21 @@ export class AthleteEquipmentText {
     this.value = value;
   }
 
-  public static optionalName(value: string | null | undefined): AthleteEquipmentText | null {
-    return AthleteEquipmentText.optional(value, EQUIPMENT_NAME_MAX_LENGTH);
-  }
+  public static from(
+    value: string | AthleteEquipmentText,
+    maxLength = EQUIPMENT_NOTES_MAX_LENGTH,
+  ): AthleteEquipmentText {
+    if (value instanceof AthleteEquipmentText) {
+      return value;
+    }
 
-  public static optionalNotes(value: string | null | undefined): AthleteEquipmentText | null {
-    return AthleteEquipmentText.optional(value, EQUIPMENT_NOTES_MAX_LENGTH);
-  }
-
-  private static optional(
-    value: string | null | undefined,
-    maxLength: number,
-  ): AthleteEquipmentText | null {
-    const normalized = value?.trim() ?? "";
+    const normalized = value.trim();
 
     if (!normalized) {
-      return null;
+      throw new DomainRuleViolation(
+        "invalid_athlete_equipment_text",
+        "Athlete equipment text cannot be blank.",
+      );
     }
 
     if (normalized.length > maxLength) {
@@ -36,5 +35,34 @@ export class AthleteEquipmentText {
     }
 
     return new AthleteEquipmentText(normalized);
+  }
+
+  public static optionalName(
+    value: string | AthleteEquipmentText | null | undefined,
+  ): AthleteEquipmentText | null {
+    return AthleteEquipmentText.optional(value, EQUIPMENT_NAME_MAX_LENGTH);
+  }
+
+  public static optionalNotes(
+    value: string | AthleteEquipmentText | null | undefined,
+  ): AthleteEquipmentText | null {
+    return AthleteEquipmentText.optional(value, EQUIPMENT_NOTES_MAX_LENGTH);
+  }
+
+  private static optional(
+    value: string | AthleteEquipmentText | null | undefined,
+    maxLength: number,
+  ): AthleteEquipmentText | null {
+    if (value instanceof AthleteEquipmentText) {
+      return value;
+    }
+
+    const normalized = value?.trim() ?? "";
+
+    if (!normalized) {
+      return null;
+    }
+
+    return AthleteEquipmentText.from(normalized, maxLength);
   }
 }

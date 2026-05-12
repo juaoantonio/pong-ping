@@ -3,6 +3,10 @@ import { DomainRuleViolation } from "../../../shared/domain";
 export class ScorePoints {
   public readonly value: number;
 
+  public static from(value: number | ScorePoints): ScorePoints {
+    return value instanceof ScorePoints ? value : new ScorePoints(value);
+  }
+
   public constructor(value = 0) {
     if (!Number.isInteger(value) || value < 0) {
       throw new DomainRuleViolation(

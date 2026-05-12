@@ -4,11 +4,11 @@
 The `apps/api` core module has a well-defined domain layer (entities and value objects), but lacks the application layer (use cases) and infrastructure layer (persistence with TypeORM) required to perform actual operations. We need to implement these layers following a "Pragmatic DDD" approach, where the domain remains pure and persistence is handled via TypeORM `EntitySchema`.
 
 ## Goals
-- [ ] Implement TypeORM `EntitySchema` for all core aggregates: `Club`, `Athlete`, `Table`, and `GameRecord`.
-- [ ] Implement concrete TypeORM repositories in the infrastructure layer.
-- [ ] Implement pure Use Cases in the application layer for all core business operations.
-- [ ] Ensure the domain layer remains free of framework (NestJS/TypeORM) dependencies.
-- [ ] Maintain consistent ubiquitous language from `CONTEXT.md`.
+- [x] Implement TypeORM `EntitySchema` for all core aggregates: `Club`, `Athlete`, `Table`, and `GameRecord`.
+- [x] Implement concrete TypeORM repositories in the infrastructure layer.
+- [x] Implement pure Use Cases in the application layer for all core business operations.
+- [x] Ensure the domain layer remains free of framework (NestJS/TypeORM) dependencies.
+- [x] Maintain consistent ubiquitous language from `CONTEXT.md`.
 
 ## Out of Scope
 - [ ] HTTP Controllers and DTOs (to be implemented in a later phase).
@@ -55,14 +55,14 @@ The `apps/api` core module has a well-defined domain layer (entities and value o
 
 | ID | Feature | Status |
 | --- | --- | --- |
-| CORE-APP-01 | Club Application & Infrastructure | Planned |
-| CORE-APP-02 | Athlete Application & Infrastructure | Planned |
-| CORE-APP-03 | Table Application & Infrastructure | Planned |
-| CORE-APP-04 | Competition Application & Infrastructure | Planned |
+| CORE-APP-01 | Club Application & Infrastructure | Done |
+| CORE-APP-02 | Athlete Application & Infrastructure | Done |
+| CORE-APP-03 | Table Application & Infrastructure | Done |
+| CORE-APP-04 | Competition Application & Infrastructure | Done |
 
 ## Success Criteria
-- [ ] All use cases are implemented as pure classes with an `execute` method.
-- [ ] Concrete repositories are implemented and injected into use cases.
-- [ ] `EntitySchema` files correctly map domain objects to the database.
-- [ ] Domain layer remains framework-independent.
-- [ ] Unit tests for use cases pass using repository mocks.
+- [x] All use cases are implemented as pure classes with an `execute` method.
+- [x] Concrete repositories are implemented and injected into use cases.
+- [x] `EntitySchema` files correctly map domain objects to the database.
+- [x] Domain layer remains framework-independent.
+- [x] Unit tests for use cases pass using repository mocks.

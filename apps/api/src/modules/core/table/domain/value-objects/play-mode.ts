@@ -7,6 +7,10 @@ export type PlayModeValue = (typeof PLAY_MODE_VALUES)[number];
 export class PlayMode {
   public readonly value: PlayModeValue;
 
+  public static from(value: string | PlayMode): PlayMode {
+    return value instanceof PlayMode ? value : new PlayMode(value);
+  }
+
   public constructor(value: string) {
     const normalized = value.trim().toLowerCase();
 

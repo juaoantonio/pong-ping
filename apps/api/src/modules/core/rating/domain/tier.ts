@@ -1,6 +1,11 @@
 import { DomainRuleViolation } from "../../shared/domain";
 import { RatingPoints } from "./value-objects/rating-points";
-import { type TierThreshold } from "./value-objects/tier-threshold";
+import { TierThreshold } from "./value-objects/tier-threshold";
+
+export type TierInput = {
+  name: string;
+  threshold: number | TierThreshold;
+};
 
 export class Tier {
   public readonly name: string;
@@ -17,9 +22,14 @@ export class Tier {
     this.threshold = threshold;
   }
 
+  public static from(input: Tier | TierInput): Tier {
+    return input instanceof Tier
+      ? input
+      : new Tier(input.name, TierThreshold.from(input.threshold));
+  }
+
   public static resolve(points: RatingPoints | number, tiers: Tier[]): Tier | null {
-    const resolvedPoints =
-      points instanceof RatingPoints ? points.value : new RatingPoints(points).value;
+    const resolvedPoints = RatingPoints.from(points).value;
 
     return (
       [...tiers]

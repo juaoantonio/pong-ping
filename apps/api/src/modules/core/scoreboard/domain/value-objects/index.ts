@@ -1,2 +1,6 @@
 export { ScorePoints } from "./score-points";
-export { ScoreboardSide } from "./scoreboard-side";
+export {
+  ScoreboardSide,
+  type ScoreboardSideData,
+  type ScoreboardSideInput,
+} from "./scoreboard-side";

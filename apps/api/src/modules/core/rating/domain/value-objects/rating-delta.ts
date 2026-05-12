@@ -1,6 +1,6 @@
 import { DomainRuleViolation } from "../../../shared/domain";
 
-type RatingDeltaInput = {
+export type RatingDeltaInput = {
   points: number;
   wins: number;
   totalMatches: number;
@@ -10,6 +10,10 @@ export class RatingDelta {
   public readonly points: number;
   public readonly wins: number;
   public readonly totalMatches: number;
+
+  public static from(input: RatingDelta | RatingDeltaInput): RatingDelta {
+    return input instanceof RatingDelta ? input : new RatingDelta(input);
+  }
 
   public constructor(input: RatingDeltaInput) {
     if (

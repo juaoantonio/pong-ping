@@ -5,6 +5,10 @@ export class WinRate {
     this.value = value;
   }
 
+  public static from(value: number | WinRate): WinRate {
+    return value instanceof WinRate ? value : new WinRate(value);
+  }
+
   public static fromRecord(wins: number, totalMatches: number): WinRate {
     if (totalMatches <= 0) {
       return new WinRate(0);

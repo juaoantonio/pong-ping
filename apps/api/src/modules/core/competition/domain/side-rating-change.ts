@@ -1,11 +1,21 @@
-import { type AthleteId } from "../../athlete/domain";
+import { AthleteId } from "../../athlete/domain";
 import { DomainRuleViolation } from "../../shared/domain";
-import { type RatingDelta } from "../../rating/domain";
+import { RatingDelta, type RatingDeltaInput } from "../../rating/domain";
 import { type GameSide } from "../../table/domain";
 
 export type AthleteRatingDelta = {
   athleteId: AthleteId;
   delta: RatingDelta;
+};
+
+export type AthleteRatingDeltaData = {
+  athleteId: string | AthleteId;
+  delta: RatingDelta | RatingDeltaInput;
+};
+
+export type SideRatingChangeInput = {
+  side: GameSide;
+  changes: readonly (AthleteRatingDelta | AthleteRatingDeltaData)[];
 };
 
 export class SideRatingChange {
@@ -46,6 +56,18 @@ export class SideRatingChange {
 
       return change;
     });
+  }
+
+  public static from(input: SideRatingChange | SideRatingChangeInput): SideRatingChange {
+    return input instanceof SideRatingChange
+      ? input
+      : new SideRatingChange(
+          input.side,
+          input.changes.map((change) => ({
+            athleteId: AthleteId.from(change.athleteId),
+            delta: RatingDelta.from(change.delta),
+          })),
+        );
   }
 
   public appliesTo(side: GameSide): boolean {

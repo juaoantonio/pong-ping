@@ -6,6 +6,6 @@ export type IdentityPrincipalForCore = {
 
 export class CoreIdentityTranslator {
   public toActorId(principal: IdentityPrincipalForCore): ActorId {
-    return new ActorId(principal.userId);
+    return ActorId.from(principal.userId);
   }
 }

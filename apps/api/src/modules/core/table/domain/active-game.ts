@@ -1,12 +1,18 @@
-import { type AthleteId } from "../../athlete/domain";
+import { AthleteId } from "../../athlete/domain";
 import { DomainRuleViolation } from "../../shared/domain";
-import { type GameSide } from "./game-side";
-import { type PlayMode } from "./value-objects";
+import { GameSide } from "./game-side";
+import { PlayMode } from "./value-objects";
 
-type ActiveGameInput = {
+export type ActiveGameInput = {
   playMode: PlayMode;
   firstSide: GameSide;
   secondSide: GameSide;
+};
+
+export type ActiveGameData = {
+  playMode: string | PlayMode;
+  firstSide: GameSide | readonly (string | AthleteId)[];
+  secondSide: GameSide | readonly (string | AthleteId)[];
 };
 
 export class ActiveGame {
@@ -37,6 +43,26 @@ export class ActiveGame {
     }
 
     return new ActiveGame(input);
+  }
+
+  public static from(input: ActiveGame | ActiveGameData): ActiveGame {
+    if (input instanceof ActiveGame) {
+      return input;
+    }
+
+    const playMode = PlayMode.from(input.playMode);
+
+    return ActiveGame.create({
+      playMode,
+      firstSide:
+        input.firstSide instanceof GameSide
+          ? input.firstSide
+          : GameSide.from({ playMode, athleteIds: input.firstSide }),
+      secondSide:
+        input.secondSide instanceof GameSide
+          ? input.secondSide
+          : GameSide.from({ playMode, athleteIds: input.secondSide }),
+    });
   }
 
   public get firstSide(): GameSide {

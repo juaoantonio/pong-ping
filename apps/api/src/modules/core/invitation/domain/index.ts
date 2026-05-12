@@ -1,5 +1,9 @@
 export { ClubInvite } from "./club-invite";
-export { InvitationClaim } from "./invitation-claim";
+export {
+  InvitationClaim,
+  type InvitationClaimData,
+  type InvitationClaimInput,
+} from "./invitation-claim";
 export { InvitationExpiration } from "./invitation-expiration";
 export { InvitationPolicy } from "./invitation-policy";
 export type { InvitationAvailability, InvitationUnavailableReason } from "./invitation-policy";

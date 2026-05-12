@@ -3,7 +3,6 @@ import { type AthleteId } from "../../athlete/domain";
 import { type ClubId } from "../../club/domain";
 import { AggregateRoot, DomainRuleViolation } from "../../shared/domain";
 import { type ActiveGame, type GameSide } from "../../table/domain";
-import { GameCorrection } from "./game-correction";
 import { GameResult } from "./game-result";
 import { type SideRatingChange } from "./side-rating-change";
 import { GameRecordId } from "./value-objects/game-record-id";
@@ -148,6 +147,37 @@ export class GameRecord extends AggregateRoot<GameRecordId> {
     this.correctionIdValue = correction.id;
 
     return correction;
+  }
+}
+
+export class GameCorrection extends GameRecord {
+  private constructor(input: GameRecordState) {
+    super(input);
+  }
+
+  public static createCompensating(
+    originalRecord: GameRecord,
+    actorAthleteId: AthleteId,
+    correctedAt: Date = new Date(),
+  ): GameCorrection {
+    if (originalRecord.isCorrection) {
+      throw new DomainRuleViolation(
+        "game_correction_target_is_correction",
+        "Game correction cannot target another correction record.",
+      );
+    }
+
+    return new GameCorrection({
+      clubId: originalRecord.clubId,
+      tableId: originalRecord.tableId,
+      result: new GameResult(originalRecord.losingSide, originalRecord.winningSide),
+      winnerRatingChange: originalRecord.loserRatingChange.reverse(),
+      loserRatingChange: originalRecord.winnerRatingChange.reverse(),
+      actorAthleteId,
+      finishedAt: correctedAt,
+      originalRecordId: originalRecord.id,
+      id: new GameRecordId(`${originalRecord.id.value}:correction`),
+    });
   }
 }
 

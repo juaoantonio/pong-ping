@@ -1,9 +1,9 @@
-import { type AthleteEquipmentText } from "./athlete-equipment-text";
+import { AthleteEquipmentText } from "./athlete-equipment-text";
 import { type AthleteGripStyle } from "./athlete-grip-style.enum";
 import { type AthletePlayingStyle } from "./athlete-playing-style.enum";
 import { type AthleteTechnicalLevel } from "./athlete-technical-level.enum";
 
-type AthleteProfileInput = {
+export type AthleteProfileInput = {
   technicalLevel?: AthleteTechnicalLevel | null;
   gripStyle?: AthleteGripStyle | null;
   playingStyle?: AthletePlayingStyle | null;
@@ -11,6 +11,16 @@ type AthleteProfileInput = {
   forehandRubberName?: AthleteEquipmentText | null;
   backhandRubberName?: AthleteEquipmentText | null;
   equipmentNotes?: AthleteEquipmentText | null;
+};
+
+export type AthleteProfileData = Omit<
+  AthleteProfileInput,
+  "bladeName" | "forehandRubberName" | "backhandRubberName" | "equipmentNotes"
+> & {
+  bladeName?: string | AthleteEquipmentText | null;
+  forehandRubberName?: string | AthleteEquipmentText | null;
+  backhandRubberName?: string | AthleteEquipmentText | null;
+  equipmentNotes?: string | AthleteEquipmentText | null;
 };
 
 export class AthleteProfile {
@@ -34,6 +44,26 @@ export class AthleteProfile {
 
   public static create(input: AthleteProfileInput = {}): AthleteProfile {
     return new AthleteProfile(input);
+  }
+
+  public static from(profile?: AthleteProfile | AthleteProfileData): AthleteProfile {
+    if (profile instanceof AthleteProfile) {
+      return profile;
+    }
+
+    if (!profile) {
+      return AthleteProfile.empty();
+    }
+
+    return AthleteProfile.create({
+      technicalLevel: profile.technicalLevel ?? null,
+      gripStyle: profile.gripStyle ?? null,
+      playingStyle: profile.playingStyle ?? null,
+      bladeName: AthleteEquipmentText.optionalName(profile.bladeName),
+      forehandRubberName: AthleteEquipmentText.optionalName(profile.forehandRubberName),
+      backhandRubberName: AthleteEquipmentText.optionalName(profile.backhandRubberName),
+      equipmentNotes: AthleteEquipmentText.optionalNotes(profile.equipmentNotes),
+    });
   }
 
   public static empty(): AthleteProfile {

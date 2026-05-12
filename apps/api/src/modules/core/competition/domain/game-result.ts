@@ -1,6 +1,11 @@
 import { DomainRuleViolation } from "../../shared/domain";
 import { type ActiveGame, type GameSide } from "../../table/domain";
 
+export type GameResultInput = {
+  winner: GameSide;
+  loser: GameSide;
+};
+
 export class GameResult {
   private readonly winnerValue: GameSide;
   private readonly loserValue: GameSide;
@@ -15,6 +20,10 @@ export class GameResult {
 
     this.winnerValue = winner;
     this.loserValue = loser;
+  }
+
+  public static from(input: GameResult | GameResultInput): GameResult {
+    return input instanceof GameResult ? input : new GameResult(input.winner, input.loser);
   }
 
   public static fromActiveGame(activeGame: ActiveGame, winningSide: GameSide): GameResult {

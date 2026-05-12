@@ -5,6 +5,10 @@ const CLUB_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export class ClubSlug {
   public readonly value: string;
 
+  public static from(value: string | ClubSlug): ClubSlug {
+    return value instanceof ClubSlug ? value : new ClubSlug(value);
+  }
+
   public constructor(value: string) {
     const normalized = value.trim().toLowerCase();
 

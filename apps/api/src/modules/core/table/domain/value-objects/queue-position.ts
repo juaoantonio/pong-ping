@@ -3,6 +3,10 @@ import { DomainRuleViolation } from "../../../shared/domain";
 export class QueuePosition {
   public readonly value: number;
 
+  public static from(value: number | QueuePosition): QueuePosition {
+    return value instanceof QueuePosition ? value : new QueuePosition(value);
+  }
+
   public constructor(value: number) {
     if (!Number.isInteger(value) || value < 0) {
       throw new DomainRuleViolation(

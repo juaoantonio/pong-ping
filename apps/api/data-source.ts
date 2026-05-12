@@ -12,7 +12,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME ?? "postgres",
   password: process.env.DB_PASSWORD ?? "postgres",
   database: process.env.DB_DATABASE ?? "pong_ping_api",
-  entities: ["src/**/*.entity.ts"],
+  entities: ["src/**/*.entity.ts", "src/**/*.schema.ts"],
   migrations: ["src/common/database/migrations/**/*{.ts,.js}"],
   synchronize: false,
   logging: process.env.DB_LOGGING === "true",

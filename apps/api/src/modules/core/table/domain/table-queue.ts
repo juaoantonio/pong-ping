@@ -2,7 +2,7 @@ import { type AthleteId } from "../../athlete/domain";
 import { DomainRuleViolation } from "../../shared/domain";
 import { ActiveGame } from "./active-game";
 import { GameSide } from "./game-side";
-import { QueueEntry } from "./queue-entry";
+import { QueueEntry, type QueueEntryData } from "./queue-entry";
 import { type PlayMode, QueuePosition } from "./value-objects";
 
 export class TableQueue {
@@ -15,6 +15,14 @@ export class TableQueue {
 
   public static create(entries: QueueEntry[] = []): TableQueue {
     return new TableQueue(entries);
+  }
+
+  public static from(
+    input: TableQueue | readonly (QueueEntry | QueueEntryData)[] = [],
+  ): TableQueue {
+    return input instanceof TableQueue
+      ? input
+      : TableQueue.create(input.map((entry) => QueueEntry.from(entry)));
   }
 
   public get entries(): readonly QueueEntry[] {
@@ -39,7 +47,7 @@ export class TableQueue {
 
     const entry = QueueEntry.create({
       athleteId,
-      position: new QueuePosition(this.entriesValue.length),
+      position: QueuePosition.from(this.entriesValue.length),
       joinedAt,
     });
 
@@ -135,7 +143,7 @@ function sortAndReindexEntries(entries: QueueEntry[]): QueueEntry[] {
 }
 
 function reindexEntries(entries: QueueEntry[]): QueueEntry[] {
-  return entries.map((entry, index) => entry.moveTo(new QueuePosition(index)));
+  return entries.map((entry, index) => entry.moveTo(QueuePosition.from(index)));
 }
 
 function ensureDistinctQueuedAthletes(entries: readonly QueueEntry[]): void {

@@ -1,12 +1,28 @@
-import { type AthleteId } from "../../athlete/domain";
+import { AthleteId } from "../../athlete/domain";
 import { DomainRuleViolation } from "../../shared/domain";
-import { type PlayMode } from "./value-objects";
+import { PlayMode } from "./value-objects";
+
+export type GameSideData = {
+  playMode: string | PlayMode;
+  athleteIds: readonly (string | AthleteId)[];
+};
 
 export class GameSide {
   private readonly athletesValue: AthleteId[];
 
   private constructor(athletes: AthleteId[]) {
     this.athletesValue = athletes;
+  }
+
+  public static from(input: GameSide | GameSideData): GameSide {
+    if (input instanceof GameSide) {
+      return input;
+    }
+
+    return GameSide.forPlayMode(
+      PlayMode.from(input.playMode),
+      input.athleteIds.map((athleteId) => AthleteId.from(athleteId)),
+    );
   }
 
   public static createSingles(athleteId: AthleteId): GameSide {
