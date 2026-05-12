@@ -5,9 +5,12 @@ import { DomainRuleViolation } from "../../../shared/domain";
 import { Table } from "../../domain";
 import { PlayMode, TableId, TableName } from "../../domain/value-objects";
 import { type TableRepository } from "../../infrastructure/typeorm/repositories/table.repository";
+import { CreateTableUseCase } from "./create-table.use-case";
 import { EnqueueTableUseCase } from "./enqueue-table.use-case";
 import { FormActiveGameUseCase } from "./form-active-game.use-case";
+import { RemoveFromActiveGameUseCase } from "./remove-from-active-game.use-case";
 import { RemoveFromQueueUseCase } from "./remove-from-queue.use-case";
+import { RenameTableUseCase } from "./rename-table.use-case";
 import { RotateWinnerStaysUseCase } from "./rotate-winner-stays.use-case";
 
 class InMemoryTableRepository implements Pick<TableRepository, "findById" | "save"> {
@@ -35,6 +38,34 @@ function createTable(playMode = "singles"): Table {
 }
 
 describe("use cases de mesa", () => {
+  it("cria mesa e persiste membro criador", async () => {
+    const repository = new InMemoryTableRepository();
+    const useCase = new CreateTableUseCase(repository as TableRepository);
+
+    const table = await useCase.execute({
+      id: "table-1",
+      clubId: "club-1",
+      name: "Mesa 1",
+      playMode: "singles",
+      createdByAthleteId: "athlete-creator",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+
+    expect(table.createdByAthleteId.value).toBe("athlete-creator");
+    expect(table.members[0]?.athleteId.value).toBe("athlete-creator");
+    expect(await repository.findById(new TableId("table-1"))).toBe(table);
+  });
+
+  it("renomeia mesa existente", async () => {
+    const repository = new InMemoryTableRepository();
+    await repository.save(createTable());
+    const useCase = new RenameTableUseCase(repository as TableRepository);
+
+    const table = await useCase.execute({ tableId: "table-1", name: "Mesa Central" });
+
+    expect(table.name.value).toBe("Mesa Central");
+  });
+
   it("coloca atleta na fila e persiste mesa", async () => {
     const repository = new InMemoryTableRepository();
     await repository.save(createTable());
@@ -73,6 +104,24 @@ describe("use cases de mesa", () => {
 
     expect(output.activeGame.firstSide.athletes[0]?.value).toBe("athlete-1");
     expect(output.activeGame.secondSide.athletes[0]?.value).toBe("athlete-2");
+  });
+
+  it("remove atleta do jogo ativo e persiste fila", async () => {
+    const repository = new InMemoryTableRepository();
+    const table = createTable();
+    table.enqueue(new AthleteId("athlete-1"));
+    table.enqueue(new AthleteId("athlete-2"));
+    table.enqueue(new AthleteId("athlete-3"));
+    await repository.save(table);
+    const useCase = new RemoveFromActiveGameUseCase(repository as TableRepository);
+
+    const output = await useCase.execute({ tableId: "table-1", athleteId: "athlete-1" });
+
+    expect(output.removedEntry.athleteId.value).toBe("athlete-1");
+    expect(output.table.queue.entries.map((entry) => entry.athleteId.value)).toEqual([
+      "athlete-2",
+      "athlete-3",
+    ]);
   });
 
   it("rotaciona vencedor permanece e persiste nova ordem", async () => {

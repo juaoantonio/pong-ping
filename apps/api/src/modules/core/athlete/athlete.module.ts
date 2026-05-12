@@ -1,13 +1,18 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { RequestContextModule } from "../../../common/context";
+import { CoreIdentityTranslator } from "../application/identity";
 import { RegisterAthleteUseCase, UpdateAthleteProfileUseCase } from "./application/use-cases";
+import { AthleteCommandController } from "./athlete-command.controller";
 import { AthleteRepository } from "./infrastructure/typeorm/repositories/athlete.repository";
 import { AthleteSchema } from "./infrastructure/typeorm/schemas/athlete.schema";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AthleteSchema])],
+  imports: [RequestContextModule, TypeOrmModule.forFeature([AthleteSchema])],
+  controllers: [AthleteCommandController],
   providers: [
     AthleteRepository,
+    CoreIdentityTranslator,
     {
       provide: RegisterAthleteUseCase,
       inject: [AthleteRepository],
@@ -19,6 +24,11 @@ import { AthleteSchema } from "./infrastructure/typeorm/schemas/athlete.schema";
       useFactory: (athletes: AthleteRepository) => new UpdateAthleteProfileUseCase(athletes),
     },
   ],
-  exports: [AthleteRepository, RegisterAthleteUseCase, UpdateAthleteProfileUseCase],
+  exports: [
+    AthleteRepository,
+    CoreIdentityTranslator,
+    RegisterAthleteUseCase,
+    UpdateAthleteProfileUseCase,
+  ],
 })
 export class AthleteModule {}

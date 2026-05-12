@@ -1,3 +1,4 @@
+export { CreateTableUseCase, type CreateTableInput } from "./create-table.use-case";
 export {
   EnqueueTableUseCase,
   type EnqueueTableInput,
@@ -9,10 +10,16 @@ export {
   type FormActiveGameOutput,
 } from "./form-active-game.use-case";
 export {
+  RemoveFromActiveGameUseCase,
+  type RemoveFromActiveGameInput,
+  type RemoveFromActiveGameOutput,
+} from "./remove-from-active-game.use-case";
+export {
   RemoveFromQueueUseCase,
   type RemoveFromQueueInput,
   type RemoveFromQueueOutput,
 } from "./remove-from-queue.use-case";
+export { RenameTableUseCase, type RenameTableInput } from "./rename-table.use-case";
 export {
   RotateWinnerStaysUseCase,
   type RotateWinnerStaysInput,

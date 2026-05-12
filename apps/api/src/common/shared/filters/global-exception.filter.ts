@@ -11,6 +11,7 @@ import { APP_ERROR_CODE } from "../errors/app-error-code.enum";
 import type { AppErrorCode } from "../errors/app-error-code.enum";
 import { AppException } from "../errors/app.exception";
 import type { ApiErrorResponse } from "../http/api-response.types";
+import { DomainRuleViolation } from "../../../modules/core/shared/domain";
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -45,6 +46,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   } {
     const mappedPostgres = mapPostgresError(exception);
     if (mappedPostgres) return this.normalize(mappedPostgres);
+
+    if (exception instanceof DomainRuleViolation) {
+      const status = this.statusForDomainCode(exception.code);
+      return {
+        status,
+        code: exception.code,
+        message: exception.message,
+        details: [],
+      };
+    }
 
     if (exception instanceof AppException) {
       const response = exception.getResponse() as {
@@ -90,5 +101,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (status === HttpStatus.CONFLICT) return APP_ERROR_CODE.Conflict;
     if (status === HttpStatus.BAD_REQUEST) return APP_ERROR_CODE.InvalidRequest;
     return APP_ERROR_CODE.InternalError;
+  }
+
+  private statusForDomainCode(code: string): number {
+    if (code.endsWith("_not_found")) return HttpStatus.NOT_FOUND;
+    if (code.includes("already") || code.includes("duplicate") || code.endsWith("_conflict")) {
+      return HttpStatus.CONFLICT;
+    }
+
+    return HttpStatus.BAD_REQUEST;
   }
 }
