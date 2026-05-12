@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ActorId } from "./shared/domain";
 import { CoreIdentityTranslator } from "./application/identity";
-import { ClubCommandController } from "./club/club-command.controller";
-import { Club, ClubId, ClubName, ClubSlug } from "./club/domain";
+import { ClubId } from "./club/domain";
 import { AthleteCommandController } from "./athlete/athlete-command.controller";
 import { Athlete, AthleteDisplayName, AthleteId } from "./athlete/domain";
 import { TableCommandController } from "./table/table-command.controller";
@@ -27,15 +26,6 @@ function contextStub() {
   };
 }
 
-function createClub(): Club {
-  return Club.create({
-    id: new ClubId("club-1"),
-    name: new ClubName("Central Pong"),
-    slug: new ClubSlug("central-pong"),
-    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-  });
-}
-
 function createAthlete(): Athlete {
   return Athlete.register({
     id: new AthleteId("athlete-1"),
@@ -57,44 +47,17 @@ function createTable(): Table {
 }
 
 describe("controllers de comandos core", () => {
-  it("cria clube usando tenant atual e serializa resposta", async () => {
-    const createClubUseCase = { execute: vi.fn().mockResolvedValue(createClub()) };
-    const controller = new ClubCommandController(
-      contextStub() as never,
-      createClubUseCase as never,
-      { execute: vi.fn() } as never,
-      { execute: vi.fn() } as never,
-      { execute: vi.fn() } as never,
-      { execute: vi.fn() } as never,
-    );
+  it("atualiza perfil de atleta", async () => {
+    const updateAthleteProfile = { execute: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new AthleteCommandController(updateAthleteProfile as never);
 
-    const response = await controller.create({
-      name: "Central Pong",
-      slug: "central-pong",
+    const response = await controller.updateProfile("athlete-1", { displayName: "Nico Pong" });
+
+    expect(updateAthleteProfile.execute).toHaveBeenCalledWith({
+      athleteId: "athlete-1",
+      displayName: "Nico Pong",
+      profile: undefined,
     });
-
-    expect(createClubUseCase.execute).toHaveBeenCalledWith({
-      id: "club-1",
-      name: "Central Pong",
-      slug: "central-pong",
-    });
-    expect(response).toMatchObject({ id: "club-1", name: "Central Pong" });
-  });
-
-  it("registra atleta com tenant e principal atuais", async () => {
-    const registerAthlete = { execute: vi.fn().mockResolvedValue(createAthlete()) };
-    const controller = new AthleteCommandController(
-      contextStub() as never,
-      new CoreIdentityTranslator(),
-      registerAthlete as never,
-      { execute: vi.fn() } as never,
-    );
-
-    const response = await controller.register({ displayName: "Nico Pong" });
-    const input = registerAthlete.execute.mock.calls[0]?.[0];
-
-    expect(input).toMatchObject({ clubId: "club-1", displayName: "Nico Pong" });
-    expect(input.userId.value).toBe("user-1");
     expect(response).toMatchObject({ id: "athlete-1", userId: "user-1" });
   });
 

@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ConfigModule } from "./common/config/config.module";
 import { RequestContextModule } from "./common/context";
 import { DatabaseModule } from "./common/database/database.module";
@@ -10,6 +11,7 @@ import { IdentityModule } from "./modules/identity/identity.module";
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ConfigModule.forRoot(),
     LoggingModule,
     SharedModule,

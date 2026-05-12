@@ -8,13 +8,11 @@ import {
   DeactivateClubUseCase,
   RenameClubUseCase,
 } from "./application/use-cases";
-import { ClubCommandController } from "./club-command.controller";
 import { ClubRepository } from "./infrastructure/typeorm/repositories/club.repository";
 import { ClubSchema } from "./infrastructure/typeorm/schemas/club.schema";
 
 @Module({
   imports: [RequestContextModule, TypeOrmModule.forFeature([ClubSchema])],
-  controllers: [ClubCommandController],
   providers: [
     ClubRepository,
     {

@@ -5,9 +5,11 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Not, Repository } from "typeorm";
 import type { ConfigSchema } from "../../../common/config/config.module";
+import { IDENTITY_EVENT } from "../../../common/events/identity.events";
 import { IdentityUserEntity, TenantEntity, TenantMembershipEntity } from "../entities";
 import { IDENTITY_TENANT_ROLE } from "../identity-roles";
 import type {
@@ -29,6 +31,7 @@ import {
 export class SystemAdminService {
   public constructor(
     private readonly config: ConfigService<ConfigSchema>,
+    private readonly eventEmitter: EventEmitter2,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     @InjectRepository(TenantEntity)
@@ -52,7 +55,7 @@ export class SystemAdminService {
     const slug = this.validateSlug(input.slug);
     const email = normalizeEmail(input.adminEmail);
 
-    return this.dataSource.transaction("SERIALIZABLE", async (manager) => {
+    const tenant = await this.dataSource.transaction("SERIALIZABLE", async (manager) => {
       const tenants = manager.getRepository(TenantEntity);
       const existingTenant = await tenants.findOne({ where: { slug } });
       if (existingTenant) {
@@ -82,6 +85,16 @@ export class SystemAdminService {
 
       return this.getTenantDtoOrThrow(tenant.id, tenants);
     });
+
+    await this.eventEmitter.emitAsync(IDENTITY_EVENT.TENANT_CREATED, {
+      tenantId: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      active: tenant.active,
+      occurredAt: new Date(),
+    });
+
+    return tenant;
   }
 
   public async updateTenant(
@@ -92,7 +105,7 @@ export class SystemAdminService {
       throw new BadRequestException("At least one tenant field is required.");
     }
 
-    return this.dataSource.transaction("SERIALIZABLE", async (manager) => {
+    const tenant = await this.dataSource.transaction("SERIALIZABLE", async (manager) => {
       const tenants = manager.getRepository(TenantEntity);
       const tenant = await tenants.findOne({ where: { id } });
       if (!tenant) {
@@ -119,6 +132,16 @@ export class SystemAdminService {
       await tenants.save(tenant);
       return this.getTenantDtoOrThrow(id, tenants);
     });
+
+    await this.eventEmitter.emitAsync(IDENTITY_EVENT.TENANT_UPDATED, {
+      tenantId: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      active: tenant.active,
+      occurredAt: new Date(),
+    });
+
+    return tenant;
   }
 
   public async listMemberships(tenantId: string): Promise<SystemMembershipResponseDto[]> {

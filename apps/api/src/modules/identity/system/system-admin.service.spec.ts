@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
 import type { FindOneOptions, FindOptionsWhere } from "typeorm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { IDENTITY_EVENT } from "../../../common/events/identity.events";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import { IdentityUserEntity, TenantEntity, TenantMembershipEntity } from "../entities";
 import { IDENTITY_TENANT_ROLE } from "../identity-roles";
@@ -9,7 +10,8 @@ import { SystemAdminService } from "./system-admin.service";
 describe("SystemAdminService", () => {
   it("creates tenant, pending user, and admin membership transactionally", async () => {
     const store = createStore();
-    const service = createService(store);
+    const eventEmitter = createEventEmitter();
+    const service = createService(store, eventEmitter);
 
     const tenant = await service.createTenant({
       name: "Acme",
@@ -34,6 +36,16 @@ describe("SystemAdminService", () => {
       roles: [IDENTITY_TENANT_ROLE.ADMIN],
       active: true,
     });
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      IDENTITY_EVENT.TENANT_CREATED,
+      expect.objectContaining({
+        tenantId: tenant.id,
+        name: "Acme",
+        slug: "acme",
+        active: true,
+        occurredAt: expect.any(Date),
+      }),
+    );
   });
 
   it("rejects duplicate and reserved slugs", async () => {
@@ -63,7 +75,8 @@ describe("SystemAdminService", () => {
 
   it("rolls back tenant creation when membership creation fails", async () => {
     const store = createStore();
-    const service = createService(store);
+    const eventEmitter = createEventEmitter();
+    const service = createService(store, eventEmitter);
     store.memberships.failNextSave = true;
 
     await expect(
@@ -76,11 +89,13 @@ describe("SystemAdminService", () => {
     expect(store.tenants.records).toHaveLength(0);
     expect(store.users.records).toHaveLength(0);
     expect(store.memberships.records).toHaveLength(0);
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 
   it("lists and updates tenant lifecycle fields", async () => {
     const store = createStore();
-    const service = createService(store);
+    const eventEmitter = createEventEmitter();
+    const service = createService(store, eventEmitter);
     const created = await service.createTenant({
       name: "Acme",
       slug: "acme",
@@ -97,6 +112,16 @@ describe("SystemAdminService", () => {
       active: false,
       adminEmails: ["admin@example.test"],
     });
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      IDENTITY_EVENT.TENANT_UPDATED,
+      expect.objectContaining({
+        tenantId: created.id,
+        name: "Acme Club",
+        slug: "acme-club",
+        active: false,
+        occurredAt: expect.any(Date),
+      }),
+    );
   });
 
   it("creates, reactivates, updates, and deactivates memberships", async () => {
@@ -179,7 +204,10 @@ describe("SystemAdminService", () => {
   });
 });
 
-function createService(store: ReturnType<typeof createStore>): SystemAdminService {
+function createService(
+  store: ReturnType<typeof createStore>,
+  eventEmitter = createEventEmitter(),
+): SystemAdminService {
   return new SystemAdminService(
     {
       getOrThrow: (key: keyof ConfigSchema) => {
@@ -187,11 +215,18 @@ function createService(store: ReturnType<typeof createStore>): SystemAdminServic
         throw new Error(`Missing config key ${key}`);
       },
     } as never,
+    eventEmitter as never,
     store.dataSource as never,
     store.tenants as never,
     store.users as never,
     store.memberships as never,
   );
+}
+
+function createEventEmitter() {
+  return {
+    emitAsync: vi.fn(async () => []),
+  };
 }
 
 function createStore() {
@@ -213,7 +248,10 @@ function createStore() {
     return tenant;
   };
 
-  type TransactionCallback = (manager: { getRepository: (entity: Function) => unknown }) => unknown;
+  type EntityToken = new () => unknown;
+  type TransactionCallback = (manager: {
+    getRepository: (entity: EntityToken) => unknown;
+  }) => unknown;
   const dataSource = {
     transaction: async (
       isolationOrCallback: "SERIALIZABLE" | TransactionCallback,
@@ -230,7 +268,7 @@ function createStore() {
 
       try {
         return await callback({
-          getRepository: (entity: Function) => {
+          getRepository: (entity: EntityToken) => {
             if (entity === TenantEntity) return tenants;
             if (entity === IdentityUserEntity) return users;
             if (entity === TenantMembershipEntity) return memberships;

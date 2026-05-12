@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
+import { IDENTITY_EVENT } from "../../../common/events/identity.events";
 import { IDENTITY_SYSTEM_ROLE, IDENTITY_TENANT_ROLE } from "../identity-roles";
 import { AuthService } from "./auth.service";
 
@@ -19,9 +20,11 @@ describe("AuthService", () => {
         token: "raw-token",
       })),
     };
+    const eventEmitter = createEventEmitter();
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
       sessions as never,
+      eventEmitter as never,
       repository() as never,
       {
         findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
@@ -45,6 +48,16 @@ describe("AuthService", () => {
       userAgent: "vitest",
       ipAddress: "127.0.0.1",
     });
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      IDENTITY_EVENT.TENANT_USER_AUTHENTICATED,
+      expect.objectContaining({
+        tenantId: "tenant-1",
+        userId: "user-1",
+        displayName: "User",
+        email: "user@example.test",
+        occurredAt: expect.any(Date),
+      }),
+    );
     expect(created.token).toBe("raw-token");
   });
 
@@ -58,6 +71,7 @@ describe("AuthService", () => {
     const service = new AuthService(
       { getTenantOrThrow: vi.fn() } as never,
       sessions as never,
+      createEventEmitter() as never,
       repository() as never,
       {
         findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
@@ -86,9 +100,11 @@ describe("AuthService", () => {
   });
 
   it("rejeita login google sem membership ativo no tenant atual", async () => {
+    const eventEmitter = createEventEmitter();
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
       { createTenantSession: vi.fn() } as never,
+      eventEmitter as never,
       repository() as never,
       { findOne: vi.fn(async () => undefined) } as never,
       { findOne: vi.fn() } as never,
@@ -105,6 +121,7 @@ describe("AuthService", () => {
         {},
       ),
     ).rejects.toThrow(ForbiddenException);
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 
   it("rejeita email ja vinculado a outro subject google", async () => {
@@ -116,6 +133,7 @@ describe("AuthService", () => {
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,
       { createTenantSession: vi.fn() } as never,
+      createEventEmitter() as never,
       users as never,
       {
         findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
@@ -153,6 +171,7 @@ describe("AuthService", () => {
           token: "raw-token",
         })),
       } as never,
+      createEventEmitter() as never,
       users as never,
       {
         findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
@@ -189,6 +208,7 @@ describe("AuthService", () => {
     const service = new AuthService(
       {} as never,
       sessions as never,
+      createEventEmitter() as never,
       repository() as never,
       { findOne: vi.fn() } as never,
       {
@@ -217,6 +237,7 @@ describe("AuthService", () => {
     const service = new AuthService(
       {} as never,
       { createSystemSession: vi.fn() } as never,
+      createEventEmitter() as never,
       repository() as never,
       { findOne: vi.fn() } as never,
       { findOne: vi.fn(async () => undefined) } as never,
@@ -235,3 +256,9 @@ describe("AuthService", () => {
     ).rejects.toThrow(ForbiddenException);
   });
 });
+
+function createEventEmitter() {
+  return {
+    emitAsync: vi.fn(async () => []),
+  };
+}

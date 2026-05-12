@@ -1,7 +1,9 @@
 import { ConflictException, ForbiddenException, Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CurrentContextService } from "../../../common/context";
+import { IDENTITY_EVENT } from "../../../common/events/identity.events";
 import {
   IdentityUserEntity,
   SystemRoleAssignmentEntity,
@@ -17,6 +19,7 @@ export class AuthService {
   public constructor(
     private readonly context: CurrentContextService,
     private readonly sessions: SessionService,
+    private readonly eventEmitter: EventEmitter2,
     @InjectRepository(IdentityUserEntity)
     private readonly users: Repository<IdentityUserEntity>,
     @InjectRepository(TenantMembershipEntity)
@@ -50,6 +53,14 @@ export class AuthService {
     if (!membership) {
       throw new ForbiddenException("User is not a member of this tenant.");
     }
+
+    await this.eventEmitter.emitAsync(IDENTITY_EVENT.TENANT_USER_AUTHENTICATED, {
+      tenantId: tenant.id,
+      userId: user.id,
+      displayName: user.displayName,
+      email: user.email,
+      occurredAt: new Date(),
+    });
 
     return this.sessions.createTenantSession({
       userId: user.id,
@@ -94,7 +105,7 @@ export class AuthService {
     }
 
     const existingByEmail = await this.users.findOne({ where: { email } });
-    
+
     if (existingByEmail) {
       return this.linkPendingGoogleUser(existingByEmail, profile);
     }
