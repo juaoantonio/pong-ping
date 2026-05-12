@@ -16,7 +16,7 @@ import {
 } from "../auth/dtos/auth-response.dtos";
 import type { GoogleProfile } from "../auth/google-profile";
 import { IDENTITY_SYSTEM_ROLE } from "../identity-roles";
-import { clearSessionCookie, getSystemSessionCookieName, setSessionCookie } from "../session/cookies";
+import { SessionCookieService } from "../session/session-cookie.service";
 import { SessionService } from "../session/session.service";
 import { SystemGoogleOAuthGuard } from "./system-google-oauth.guard";
 import { SystemHostGuard } from "./system-host.guard";
@@ -30,6 +30,7 @@ export class SystemAuthController {
     private readonly auth: AuthService,
     private readonly context: CurrentContextService,
     private readonly sessions: SessionService,
+    private readonly sessionCookies: SessionCookieService,
   ) {}
 
   @Get("google")
@@ -83,15 +84,10 @@ export class SystemAuthController {
       ipAddress: req.ip,
     });
 
-    setSessionCookie(
+    this.sessionCookies.setSessionCookie(
       res,
-      getSystemSessionCookieName(this.config.getOrThrow<string>("SESSION_COOKIE_NAME")),
+      this.sessionCookies.getSystemSessionCookieName(),
       created.token,
-      this.config.getOrThrow<number>("SESSION_TTL_SECONDS"),
-      {
-        secure: this.config.getOrThrow<string>("NODE_ENV") === "production",
-        rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
-      },
     );
 
     return res.redirect(this.config.getOrThrow<string>("SYSTEM_ADMIN_FRONTEND_URL"));
@@ -121,14 +117,7 @@ export class SystemAuthController {
   public async logout(@Res({ passthrough: true }) res: Response) {
     const principal = this.context.getPrincipalOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
-    clearSessionCookie(
-      res,
-      getSystemSessionCookieName(this.config.getOrThrow<string>("SESSION_COOKIE_NAME")),
-      {
-        secure: this.config.getOrThrow<string>("NODE_ENV") === "production",
-        rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
-      },
-    );
+    this.sessionCookies.clearSessionCookie(res, this.sessionCookies.getSystemSessionCookieName());
 
     return { revoked: true };
   }

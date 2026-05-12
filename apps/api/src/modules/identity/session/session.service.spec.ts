@@ -12,15 +12,10 @@ import {
   TenantEntity,
 } from "../entities";
 import { IDENTITY_SYSTEM_ROLE, IDENTITY_TENANT_ROLE } from "../identity-roles";
-import {
-  clearSessionCookie,
-  getSessionCookieDomain,
-  readCookie,
-  setSessionCookie,
-} from "./cookies";
+import { SESSION_VALIDATION_FAILURE, SessionValidationError } from "./session-validation.error";
+import { SessionCookieService } from "./session-cookie.service";
 import { SessionMiddleware } from "./session.middleware";
 import { SessionService } from "./session.service";
-import { SESSION_VALIDATION_FAILURE, SessionValidationError } from "./session-validation.error";
 
 describe("SessionService", () => {
   it("creates high-entropy opaque sessions and persists only token hashes", async () => {
@@ -172,16 +167,14 @@ describe("SessionService", () => {
 
 describe("session cookie helpers", () => {
   it("sets, reads, and clears the HTTP-only session cookie", () => {
+    const fixture = createFixture();
     const response = {
       cookie: vi.fn(),
       clearCookie: vi.fn(),
     } as unknown as Response;
 
-    setSessionCookie(response, "sid", "raw-token", 3600, {
-      secure: false,
-      rootDomain: "localhost",
-    });
-    clearSessionCookie(response, "sid", { secure: false, rootDomain: "localhost" });
+    fixture.sessionCookies.setSessionCookie(response, "sid", "raw-token", { maxAgeSeconds: 3600 });
+    fixture.sessionCookies.clearSessionCookie(response, "sid");
 
     expect(response.cookie).toHaveBeenCalledWith(
       "sid",
@@ -198,30 +191,41 @@ describe("session cookie helpers", () => {
       "sid",
       expect.objectContaining({ httpOnly: true, maxAge: 0, path: "/" }),
     );
-    expect(readCookie({ headers: { cookie: "other=1; sid=raw-token" } } as Request, "sid")).toBe(
-      "raw-token",
-    );
+    expect(
+      fixture.sessionCookies.parseCookie(
+        { headers: { cookie: "other=1; sid=raw-token" } } as Request,
+        "sid",
+      ),
+    ).toBe("raw-token");
   });
 
   it("usa dominio raiz apenas para cookies seguros fora de localhost", () => {
+    const fixture = createFixture();
+    vi.spyOn(fixture.config, "getOrThrow").mockImplementation((key: string) => {
+      if (key === "NODE_ENV") return "production";
+      if (key === "ROOT_DOMAIN") return "pongping.example";
+      return (fixture.config as any).getOrThrow(key);
+    });
+
     const response = {
       cookie: vi.fn(),
       clearCookie: vi.fn(),
     } as unknown as Response;
 
-    setSessionCookie(response, "sid", "raw-token", 3600, {
-      secure: true,
-      rootDomain: "pongping.example",
-    });
-    clearSessionCookie(response, "sid", {
-      secure: true,
-      rootDomain: "pongping.example",
-    });
+    fixture.sessionCookies.setSessionCookie(response, "sid", "raw-token", { maxAgeSeconds: 3600 });
+    fixture.sessionCookies.clearSessionCookie(response, "sid");
 
-    expect(getSessionCookieDomain("pongping.example", true)).toBe(".pongping.example");
-    expect(getSessionCookieDomain("localhost.me", false)).toBe(".localhost.me");
-    expect(getSessionCookieDomain("localhost", true)).toBeUndefined();
-    expect(getSessionCookieDomain("localhost", false)).toBeUndefined();
+    expect(fixture.sessionCookies.getCookieDomain()).toBe(".pongping.example");
+    expect(
+      new SessionCookieService(fakeConfigWithDomain("localhost.me", "test")).getCookieDomain(),
+    ).toBe(".localhost.me");
+    expect(
+      new SessionCookieService(fakeConfigWithDomain("localhost", "production")).getCookieDomain(),
+    ).toBeUndefined();
+    expect(
+      new SessionCookieService(fakeConfigWithDomain("localhost", "test")).getCookieDomain(),
+    ).toBeUndefined();
+
     expect(response.cookie).toHaveBeenCalledWith(
       "sid",
       "raw-token",
@@ -232,7 +236,25 @@ describe("session cookie helpers", () => {
       expect.objectContaining({ domain: ".pongping.example", secure: true }),
     );
   });
+});
 
+function fakeConfigWithDomain(domain: string, env: string): ConfigService<ConfigSchema> {
+  const values: Record<string, any> = {
+    SESSION_SECRET: "unit-test-session-secret",
+    SESSION_COOKIE_NAME: "sid",
+    SESSION_TTL_SECONDS: 3600,
+    NODE_ENV: env,
+    ROOT_DOMAIN: domain,
+  };
+
+  return {
+    getOrThrow: (key: string) => {
+      if (key in values) return values[key];
+      throw new Error(`Missing config key ${key}`);
+    },
+  } as unknown as ConfigService<ConfigSchema>;
+}
+describe("SessionMiddleware", () => {
   it("lets public tenant OAuth routes restart when a stale tenant cookie is present", async () => {
     const context = new FakeContext();
     const sessions = {
@@ -245,6 +267,7 @@ describe("session cookie helpers", () => {
       context as never,
       sessions as never,
       tenantResolver("missing") as never,
+      new SessionCookieService(fakeConfig()),
     );
     const next = vi.fn();
 
@@ -261,9 +284,7 @@ describe("session cookie helpers", () => {
     expect(next).toHaveBeenCalledWith();
     expect(sessions.validateSystemSession).not.toHaveBeenCalled();
   });
-});
 
-describe("SessionMiddleware", () => {
   it("writes the validated principal to context when a cookie is present", async () => {
     const context = new FakeContext();
     context.setTenant({ id: "tenant-1", slug: "acme" });
@@ -282,6 +303,7 @@ describe("SessionMiddleware", () => {
       context as never,
       sessions as never,
       tenantResolver("resolved") as never,
+      new SessionCookieService(fakeConfig()),
     );
     const next = vi.fn();
 
@@ -305,6 +327,7 @@ describe("SessionMiddleware", () => {
       context as never,
       sessions as never,
       tenantResolver("resolved") as never,
+      new SessionCookieService(fakeConfig()),
     );
     const next = vi.fn();
 
@@ -325,6 +348,7 @@ describe("SessionMiddleware", () => {
       context as never,
       sessions as never,
       tenantResolver("reserved") as never,
+      new SessionCookieService(fakeConfig()),
     );
     const next = vi.fn();
 
@@ -358,6 +382,7 @@ describe("SessionMiddleware", () => {
       context as never,
       sessions as never,
       tenantResolver("reserved") as never,
+      new SessionCookieService(fakeConfig()),
     );
     const next = vi.fn();
 
@@ -382,6 +407,7 @@ describe("SessionMiddleware", () => {
       context as never,
       sessions as never,
       tenantResolver("resolved") as never,
+      new SessionCookieService(fakeConfig()),
     );
     const next = vi.fn();
 
@@ -496,10 +522,11 @@ class FakeSystemRoleRepository {
 }
 
 function createFixture(options: { systemRoles?: SystemRoleAssignmentEntity[] } = {}) {
+  const config = fakeConfig();
   const sessions = new FakeSessionRepository();
   const memberships = new FakeMembershipRepository();
   const service = new SessionService(
-    fakeConfig(),
+    config,
     sessions as unknown as Repository<IdentitySessionEntity>,
     {} as Repository<IdentityUserEntity>,
     memberships as unknown as Repository<TenantMembershipEntity>,
@@ -507,8 +534,9 @@ function createFixture(options: { systemRoles?: SystemRoleAssignmentEntity[] } =
       options.systemRoles,
     ) as unknown as Repository<SystemRoleAssignmentEntity>,
   );
+  const sessionCookies = new SessionCookieService(config);
 
-  return { service, sessions, memberships };
+  return { service, sessions, memberships, sessionCookies, config };
 }
 
 function tenantResolver(status: "missing" | "reserved" | "resolved") {
@@ -518,15 +546,21 @@ function tenantResolver(status: "missing" | "reserved" | "resolved") {
 }
 
 function fakeConfig(): ConfigService<ConfigSchema> {
+  const values: Record<string, any> = {
+    SESSION_SECRET: "unit-test-session-secret",
+    SESSION_COOKIE_NAME: "sid",
+    SESSION_TTL_SECONDS: 3600,
+    NODE_ENV: "test",
+    ROOT_DOMAIN: "localhost",
+  };
+
   return {
     getOrThrow: (key: string) => {
-      if (key === "SESSION_SECRET") return "unit-test-session-secret";
-      if (key === "SESSION_COOKIE_NAME") return "sid";
-      if (key === "SESSION_TTL_SECONDS") return 3600;
-      if (key === "NODE_ENV") return "test";
+      if (key in values) return values[key];
       throw new Error(`Missing config key ${key}`);
     },
-  } as ConfigService<ConfigSchema>;
+    get: (key: string) => values[key],
+  } as unknown as ConfigService<ConfigSchema>;
 }
 
 function activeUser(): IdentityUserEntity {

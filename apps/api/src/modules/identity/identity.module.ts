@@ -12,6 +12,7 @@ import { OAuthStateService } from "./auth/oauth-state.service";
 import { IDENTITY_ENTITIES } from "./entities";
 import { SessionMiddleware } from "./session/session.middleware";
 import { SessionService } from "./session/session.service";
+import { SessionCookieService } from "./session/session-cookie.service";
 import {
   SystemAdminController,
   SystemAdminService,
@@ -32,6 +33,7 @@ import { TenantResolver } from "./tenancy/tenant.resolver";
   providers: [
     TenantResolver,
     SessionService,
+    SessionCookieService,
     AuthService,
     OAuthStateService,
     SystemAdminService,
@@ -44,7 +46,7 @@ import { TenantResolver } from "./tenancy/tenant.resolver";
       useClass: IdentityAuthorizationGuard,
     },
   ],
-  exports: [AuthService, SessionService, TenantResolver, OAuthStateService],
+  exports: [AuthService, SessionService, SessionCookieService, TenantResolver, OAuthStateService],
 })
 export class IdentityModule implements NestModule {
   public configure(consumer: MiddlewareConsumer): void {

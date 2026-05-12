@@ -4,7 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import { CurrentContextService } from "../../../common/context";
 import { TenantResolver } from "../tenancy/tenant.resolver";
-import { getSystemSessionCookieName, getTenantSessionCookieName, readCookie } from "./cookies";
+import { SessionCookieService } from "./session-cookie.service";
 import { SessionService } from "./session.service";
 import { SessionValidationError } from "./session-validation.error";
 
@@ -15,6 +15,7 @@ export class SessionMiddleware implements NestMiddleware {
     private readonly context: CurrentContextService,
     private readonly sessions: SessionService,
     private readonly tenantResolver: TenantResolver,
+    private readonly sessionCookies: SessionCookieService,
   ) {}
 
   public async use(req: Request, _res: Response, next: NextFunction): Promise<void> {
@@ -23,13 +24,12 @@ export class SessionMiddleware implements NestMiddleware {
       return;
     }
 
-    const cookieBaseName = this.config.getOrThrow<string>("SESSION_COOKIE_NAME");
     const tenant = this.context.getTenant();
 
     try {
       if (tenant) {
-        const cookieName = getTenantSessionCookieName(cookieBaseName, tenant.slug);
-        const rawToken = readCookie(req, cookieName);
+        const cookieName = this.sessionCookies.getTenantSessionCookieName(tenant.slug);
+        const rawToken = this.sessionCookies.parseCookie(req, cookieName);
         if (rawToken) {
           const principal = await this.sessions.validateTenantSession(rawToken, tenant.id);
           if (principal) this.context.setPrincipal(principal);
@@ -38,8 +38,8 @@ export class SessionMiddleware implements NestMiddleware {
         const host = req.headers.host;
         const hostResolution = this.tenantResolver.parseHost(host);
         if (hostResolution.status === "missing" || hostResolution.status === "reserved") {
-          const cookieName = getSystemSessionCookieName(cookieBaseName);
-          const rawToken = readCookie(req, cookieName);
+          const cookieName = this.sessionCookies.getSystemSessionCookieName();
+          const rawToken = this.sessionCookies.parseCookie(req, cookieName);
           if (rawToken) {
             const principal = await this.sessions.validateSystemSession(rawToken);
             if (principal) this.context.setPrincipal(principal);

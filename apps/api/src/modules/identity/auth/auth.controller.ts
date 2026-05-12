@@ -10,7 +10,7 @@ import {
 } from "../../../common/shared/http/api-response.swagger";
 import { Public, RequireTenantRoles } from "../authorization/authorization.decorators";
 import { TENANT_ROLES } from "../identity-roles";
-import { clearSessionCookie, getTenantSessionCookieName, setSessionCookie } from "../session/cookies";
+import { SessionCookieService } from "../session/session-cookie.service";
 import { SessionService } from "../session/session.service";
 import { AuthService } from "./auth.service";
 import { AuthLogoutResponseDto, IdentityPrincipalResponseDto } from "./dtos/auth-response.dtos";
@@ -22,11 +22,8 @@ import { buildTenantFrontendRedirectUrl } from "./tenant-redirect";
 @ApiTags("tenant auth")
 @Controller("auth")
 export class AuthController {
-  private readonly sessionCookieName: string;
-  private readonly sessionTtlSeconds: number;
   private readonly rootDomain: string;
   private readonly tenantFrontendUrl: string;
-  private readonly isProduction: boolean;
 
   public constructor(
     private readonly config: ConfigService<ConfigSchema>,
@@ -34,12 +31,10 @@ export class AuthController {
     private readonly context: CurrentContextService,
     private readonly sessions: SessionService,
     private readonly oauthState: OAuthStateService,
+    private readonly sessionCookies: SessionCookieService,
   ) {
-    this.sessionCookieName = this.config.getOrThrow<string>("SESSION_COOKIE_NAME");
-    this.sessionTtlSeconds = this.config.getOrThrow<number>("SESSION_TTL_SECONDS");
     this.rootDomain = this.config.getOrThrow<string>("ROOT_DOMAIN");
     this.tenantFrontendUrl = this.config.getOrThrow<string>("TENANT_FRONTEND_URL");
-    this.isProduction = this.config.getOrThrow<string>("NODE_ENV") === "production";
   }
 
   @Get("google")
@@ -98,15 +93,10 @@ export class AuthController {
       },
     );
 
-    setSessionCookie(
+    this.sessionCookies.setSessionCookie(
       res,
-      getTenantSessionCookieName(this.sessionCookieName, validatedState.tenant.slug),
+      this.sessionCookies.getTenantSessionCookieName(validatedState.tenant.slug),
       created.token,
-      this.sessionTtlSeconds,
-      {
-        secure: this.isProduction,
-        rootDomain: this.rootDomain,
-      },
     );
 
     return res.redirect(
@@ -144,13 +134,9 @@ export class AuthController {
     const principal = this.context.getPrincipalOrThrow();
     const tenant = this.context.getTenantOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
-    clearSessionCookie(
+    this.sessionCookies.clearSessionCookie(
       res,
-      getTenantSessionCookieName(this.sessionCookieName, tenant.slug),
-      {
-        secure: this.isProduction,
-        rootDomain: this.rootDomain,
-      },
+      this.sessionCookies.getTenantSessionCookieName(tenant.slug),
     );
 
     return { revoked: true };
