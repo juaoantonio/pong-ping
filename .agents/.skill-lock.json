@@ -1,4 +1,155 @@
 {
   "version": 2,
-  "skills": {}
+  "skills": {
+    "codenavi": {
+      "name": "codenavi",
+      "source": "local",
+      "contentHash": "23ac05b7f2d8df8311129d41432eba248bdcf14e9ace3f17c581976f7d888ada",
+      "installedAt": "2026-05-12T15:08:32.036Z",
+      "updatedAt": "2026-05-12T15:33:27.219Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "coding-guidelines": {
+      "name": "coding-guidelines",
+      "source": "local",
+      "contentHash": "28a414c715d3c41aae28a25e2f109813ec3f246f76b5567c1e7d6a128cd289ff",
+      "installedAt": "2026-05-12T15:08:32.040Z",
+      "updatedAt": "2026-05-12T15:33:27.222Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "coupling-analysis": {
+      "name": "coupling-analysis",
+      "source": "local",
+      "contentHash": "a33a142a73ac2e6b8db300acb3d13dba5077e225cbfad7599b0ac431290ab5c7",
+      "installedAt": "2026-05-12T15:08:32.044Z",
+      "updatedAt": "2026-05-12T15:33:27.225Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "domain-analysis": {
+      "name": "domain-analysis",
+      "source": "local",
+      "contentHash": "5914beeaf1aa1fe57cd95cf0afb60ee1cccc58eedaddd123a43cad32d6a70077",
+      "installedAt": "2026-05-12T15:08:32.046Z",
+      "updatedAt": "2026-05-12T15:33:27.227Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "frontend-design": {
+      "name": "frontend-design",
+      "source": "local",
+      "contentHash": "b20162c8d6bcdd9137c4afceaeb4f9dce2c1ba3ccb57a96a3228b8cb33104ec4",
+      "installedAt": "2026-05-12T15:08:32.048Z",
+      "updatedAt": "2026-05-12T15:33:27.228Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "nestjs-modular-monolith": {
+      "name": "nestjs-modular-monolith",
+      "source": "local",
+      "contentHash": "0bf9fee4b6a151866c38204557b13452feefb315b7d982a36c79125bcc3d076a",
+      "installedAt": "2026-05-12T15:08:32.051Z",
+      "updatedAt": "2026-05-12T15:33:27.230Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "react-best-practices": {
+      "name": "react-best-practices",
+      "source": "local",
+      "contentHash": "e96f99e13dc2acc75efc1793aee08fe244802a97a4e190af38bd5a871a5c9636",
+      "installedAt": "2026-05-12T15:08:32.061Z",
+      "updatedAt": "2026-05-12T15:33:27.235Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "tactical-ddd": {
+      "name": "tactical-ddd",
+      "source": "local",
+      "contentHash": "c3dfaf45e8cb784f18d9c460c7f005c4ee9dbb430f21ee8af6913bbfea66a75b",
+      "installedAt": "2026-05-12T15:08:32.063Z",
+      "updatedAt": "2026-05-12T15:33:27.236Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "tlc-spec-driven": {
+      "name": "tlc-spec-driven",
+      "source": "local",
+      "contentHash": "79d0e1b750dfc70820ac0152d9ca78927c398f669397e9cdb8bb812ceca2fbc6",
+      "installedAt": "2026-05-12T15:08:32.065Z",
+      "updatedAt": "2026-05-12T15:33:27.238Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "web-design-guidelines": {
+      "name": "web-design-guidelines",
+      "source": "local",
+      "contentHash": "213a23fff251b12ddfec648bda148bf10704ef6617e162eb9329cc83963dd138",
+      "installedAt": "2026-05-12T15:08:32.066Z",
+      "updatedAt": "2026-05-12T15:33:27.239Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf",
+        "gemini"
+      ],
+      "method": "copy",
+      "global": false
+    }
+  }
 }
