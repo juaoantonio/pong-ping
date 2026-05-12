@@ -45,7 +45,7 @@ export function getTenantLoginUrl(
 ) {
   const frontendHostname = options.frontendHostname ?? window.location.hostname;
   const url = new URL(
-    `${getTenantAuthApiBaseUrl(options.apiBaseUrl, options.authApiBaseUrl, frontendHostname)}/auth/google`,
+    `${getTenantAuthApiBaseUrl(options.apiBaseUrl, options.authApiBaseUrl)}/auth/google`,
   );
   const tenantSlug = getTenantSlugFromHostname(frontendHostname);
   const safeReturnTo = getSafeInternalRedirect(returnTo);
@@ -63,9 +63,7 @@ export function getTenantLoginUrl(
 export function getTenantAuthApiBaseUrl(
   apiBaseUrl = getApiBaseUrl(),
   authApiBaseUrl = import.meta.env.VITE_AUTH_API_BASE_URL?.trim(),
-  _frontendHostname = window.location.hostname,
 ) {
-  void _frontendHostname;
   if (authApiBaseUrl) return authApiBaseUrl.replace(/\/+$/, "");
 
   return apiBaseUrl.replace(/\/+$/, "");
@@ -73,9 +71,7 @@ export function getTenantAuthApiBaseUrl(
 
 export function getTenantApiBaseUrl(
   baseUrl = getApiBaseUrl(),
-  _frontendHostname = window.location.hostname,
 ) {
-  void _frontendHostname;
   return baseUrl.replace(/\/+$/, "");
 }
 

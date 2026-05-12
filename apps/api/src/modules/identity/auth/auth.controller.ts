@@ -22,13 +22,25 @@ import { buildTenantFrontendRedirectUrl } from "./tenant-redirect";
 @ApiTags("tenant auth")
 @Controller("auth")
 export class AuthController {
+  private readonly sessionCookieName: string;
+  private readonly sessionTtlSeconds: number;
+  private readonly rootDomain: string;
+  private readonly tenantFrontendUrl: string;
+  private readonly isProduction: boolean;
+
   public constructor(
     private readonly config: ConfigService<ConfigSchema>,
     private readonly auth: AuthService,
     private readonly context: CurrentContextService,
     private readonly sessions: SessionService,
     private readonly oauthState: OAuthStateService,
-  ) {}
+  ) {
+    this.sessionCookieName = this.config.getOrThrow<string>("SESSION_COOKIE_NAME");
+    this.sessionTtlSeconds = this.config.getOrThrow<number>("SESSION_TTL_SECONDS");
+    this.rootDomain = this.config.getOrThrow<string>("ROOT_DOMAIN");
+    this.tenantFrontendUrl = this.config.getOrThrow<string>("TENANT_FRONTEND_URL");
+    this.isProduction = this.config.getOrThrow<string>("NODE_ENV") === "production";
+  }
 
   @Get("google")
   @Public()
@@ -85,23 +97,22 @@ export class AuthController {
         ipAddress: req.ip,
       },
     );
-    const secure = this.config.getOrThrow<string>("NODE_ENV") === "production";
 
     setSessionCookie(
       res,
-      this.config.getOrThrow<string>("SESSION_COOKIE_NAME"),
+      this.sessionCookieName,
       created.token,
-      this.config.getOrThrow<number>("SESSION_TTL_SECONDS"),
+      this.sessionTtlSeconds,
       {
-        secure,
-        rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+        secure: this.isProduction,
+        rootDomain: this.rootDomain,
       },
     );
 
     return res.redirect(
       buildTenantFrontendRedirectUrl({
-        tenantFrontendUrl: this.config.getOrThrow<string>("TENANT_FRONTEND_URL"),
-        rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+        tenantFrontendUrl: this.tenantFrontendUrl,
+        rootDomain: this.rootDomain,
         tenantSlug: validatedState.payload.tenantSlug,
         returnTo: validatedState.payload.returnTo,
       }),
@@ -132,9 +143,9 @@ export class AuthController {
   public async logout(@Res({ passthrough: true }) res: Response) {
     const principal = this.context.getPrincipalOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
-    clearSessionCookie(res, this.config.getOrThrow<string>("SESSION_COOKIE_NAME"), {
-      secure: this.config.getOrThrow<string>("NODE_ENV") === "production",
-      rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+    clearSessionCookie(res, this.sessionCookieName, {
+      secure: this.isProduction,
+      rootDomain: this.rootDomain,
     });
 
     return { revoked: true };

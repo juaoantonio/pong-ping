@@ -162,43 +162,38 @@ describe("tenant auth api", () => {
       getTenantAuthApiBaseUrl(
         "http://api.localhost.me:3001/v1",
         "",
-        "teste.localhost.me",
       ),
     ).toBe("http://api.localhost.me:3001/v1");
     expect(
       getTenantAuthApiBaseUrl(
         "http://localhost:3001/v1",
         "",
-        "teste.localhost",
       ),
     ).toBe("http://localhost:3001/v1");
     expect(
       getTenantAuthApiBaseUrl(
         "https://api.pongping.example/v1",
         "",
-        "teste.pongping.example",
       ),
     ).toBe("https://api.pongping.example/v1");
     expect(
       getTenantAuthApiBaseUrl(
         "http://localhost:3001/v1",
         "https://login.pongping.example/v1",
-        "teste.localhost",
       ),
     ).toBe("https://login.pongping.example/v1");
   });
 
   it("keeps tenant API calls on the central API host", () => {
     expect(
-      getTenantApiBaseUrl("http://localhost:3001/v1", "teste.localhost"),
+      getTenantApiBaseUrl("http://localhost:3001/v1"),
     ).toBe("http://localhost:3001/v1");
     expect(
       getTenantApiBaseUrl(
         "https://api.pongping.example/v1",
-        "teste.pongping.example",
       ),
     ).toBe("https://api.pongping.example/v1");
-    expect(getTenantApiBaseUrl("http://localhost:3001/v1", "localhost")).toBe(
+    expect(getTenantApiBaseUrl("http://localhost:3001/v1")).toBe(
       "http://localhost:3001/v1",
     );
   });

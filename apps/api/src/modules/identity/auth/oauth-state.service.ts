@@ -68,10 +68,6 @@ export class OAuthStateService {
     return { payload, tenant };
   }
 
-  public validateInternalReturnTo(returnTo: string | undefined): string {
-    return validateInternalReturnTo(returnTo);
-  }
-
   private decodeAndVerify(rawState: string | undefined): OAuthTenantStatePayload {
     if (!rawState) {
       throw new BadRequestException("OAuth state is required.");

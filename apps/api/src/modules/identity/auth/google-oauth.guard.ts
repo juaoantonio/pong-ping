@@ -13,7 +13,7 @@ import { isObservable, lastValueFrom } from "rxjs";
 import { Repository } from "typeorm";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import { TenantEntity } from "../entities";
-import { OAuthStateService } from "./oauth-state.service";
+import { OAuthStateService, validateInternalReturnTo } from "./oauth-state.service";
 
 type RequestWithOAuthState = Request & {
   tenantOAuthState?: string;
@@ -45,7 +45,7 @@ export class GoogleOAuthGuard extends AuthGuard("google") {
   public async prepareTenantOAuthStart(request: RequestWithOAuthState): Promise<void> {
     this.assertAuthHost(request);
     const tenant = await this.resolveTenant(request.query.tenant);
-    const returnTo = this.oauthState.validateInternalReturnTo(firstString(request.query.returnTo));
+    const returnTo = validateInternalReturnTo(firstString(request.query.returnTo));
     request.tenantOAuthState = this.oauthState.createTenantState({
       tenantId: tenant.id,
       tenantSlug: tenant.slug,

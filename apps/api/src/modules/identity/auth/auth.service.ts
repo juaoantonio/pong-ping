@@ -90,30 +90,13 @@ export class AuthService {
     });
 
     if (existingBySubject) {
-      if (existingBySubject.email !== email) {
-        const existingByEmail = await this.users.findOne({ where: { email } });
-        if (existingByEmail && existingByEmail.id !== existingBySubject.id) {
-          throw new ConflictException("Email is already linked to another Google account.");
-        }
-      }
-
-      existingBySubject.email = email;
-      existingBySubject.displayName = profile.displayName;
-      existingBySubject.avatarUrl = profile.avatarUrl;
-      return this.users.save(existingBySubject);
+      return this.updateExistingGoogleUser(existingBySubject, profile, email);
     }
 
     const existingByEmail = await this.users.findOne({ where: { email } });
+    
     if (existingByEmail) {
-      if (existingByEmail.googleSubject !== null) {
-        throw new ConflictException("Email is already linked to another Google account.");
-      }
-
-      existingByEmail.googleSubject = profile.googleSubject;
-      existingByEmail.displayName = profile.displayName;
-      existingByEmail.avatarUrl = profile.avatarUrl;
-      existingByEmail.active = true;
-      return this.users.save(existingByEmail);
+      return this.linkPendingGoogleUser(existingByEmail, profile);
     }
 
     return this.users.save(
@@ -125,6 +108,39 @@ export class AuthService {
         active: true,
       }),
     );
+  }
+
+  private async updateExistingGoogleUser(
+    user: IdentityUserEntity,
+    profile: GoogleProfile,
+    email: string,
+  ): Promise<IdentityUserEntity> {
+    if (user.email !== email) {
+      const emailCollision = await this.users.findOne({ where: { email } });
+      if (emailCollision && emailCollision.id !== user.id) {
+        throw new ConflictException("Email is already linked to another Google account.");
+      }
+    }
+
+    user.email = email;
+    user.displayName = profile.displayName;
+    user.avatarUrl = profile.avatarUrl;
+    return this.users.save(user);
+  }
+
+  private async linkPendingGoogleUser(
+    user: IdentityUserEntity,
+    profile: GoogleProfile,
+  ): Promise<IdentityUserEntity> {
+    if (user.googleSubject !== null) {
+      throw new ConflictException("Email is already linked to another Google account.");
+    }
+
+    user.googleSubject = profile.googleSubject;
+    user.displayName = profile.displayName;
+    user.avatarUrl = profile.avatarUrl;
+    user.active = true;
+    return this.users.save(user);
   }
 }
 
