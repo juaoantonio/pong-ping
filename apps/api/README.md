@@ -12,15 +12,29 @@ pnpm --filter @pong-ping/api services:up
 pnpm --filter @pong-ping/api dev
 ```
 
-The API listens on `http://127.0.0.1:3001/v1`.
+The API listens on `http://127.0.0.1:3001/v1` directly. For tenant auth local
+development, map fake local domains to `127.0.0.1`:
 
-For local frontend development, keep the Vite dev origin in `CORS_ORIGIN`:
-`["http://localhost:3000","http://localhost:5173","http://127.0.0.1:5173"]`.
-The Vite frontend should use `VITE_API_BASE_URL=http://localhost:3001/v1` so
-system auth requests reach the configured `ROOT_DOMAIN=localhost` root host.
-After Google completes system auth, the API redirects the browser to
-`SYSTEM_ADMIN_FRONTEND_URL`, which defaults locally to
-`http://localhost:5173/admin/tenants`.
+```text
+127.0.0.1 localhost.me
+127.0.0.1 teste.localhost.me
+127.0.0.1 api.localhost.me
+```
+
+Use these browser URLs:
+
+- Tenant app: `http://teste.localhost.me:5173/club/login`
+- System admin app: `http://localhost.me:5173/admin/tenants`
+- Central OAuth/API host: `http://api.localhost.me:3001/v1`
+
+Google Console should authorize this redirect URI:
+
+```text
+http://api.localhost.me:3001/v1/auth/google/callback
+```
+
+The API sets `Domain=.localhost.me` cookies so sessions work across
+`api.localhost.me` and tenant hosts such as `teste.localhost.me`.
 
 The backend uses the root PostgreSQL service and a separate database named
 `pong_ping_api`. Start the service through the API workspace so Docker Compose

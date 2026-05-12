@@ -16,6 +16,8 @@ import { AuthService } from "./auth.service";
 import { AuthLogoutResponseDto, IdentityPrincipalResponseDto } from "./dtos/auth-response.dtos";
 import { GoogleOAuthGuard } from "./google-oauth.guard";
 import type { GoogleProfile } from "./google-profile";
+import { OAuthStateService } from "./oauth-state.service";
+import { buildTenantFrontendRedirectUrl } from "./tenant-redirect";
 
 @ApiTags("tenant auth")
 @Controller("auth")
@@ -25,6 +27,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly context: CurrentContextService,
     private readonly sessions: SessionService,
+    private readonly oauthState: OAuthStateService,
   ) {}
 
   @Get("google")
@@ -32,7 +35,7 @@ export class AuthController {
   @UseGuards(GoogleOAuthGuard)
   @ApiOperation({
     summary: "Start tenant Google login",
-    description: "Redirects the browser to Google OAuth for the current tenant host.",
+    description: "Redirects the browser to Google OAuth from the central tenant auth host.",
   })
   @ApiResponse({
     status: HttpStatus.FOUND,
@@ -73,24 +76,35 @@ export class AuthController {
     },
   )
   public async googleCallback(@Req() req: Request, @Res() res: Response) {
-    const created = await this.auth.completeGoogleLogin(req.user as GoogleProfile, {
-      userAgent: req.headers["user-agent"],
-      ipAddress: req.ip,
-    });
+    const validatedState = await this.oauthState.validateTenantState(firstString(req.query.state));
+    const created = await this.auth.completeGoogleLoginForTenant(
+      req.user as GoogleProfile,
+      validatedState.tenant,
+      {
+        userAgent: req.headers["user-agent"],
+        ipAddress: req.ip,
+      },
+    );
+    const secure = this.config.getOrThrow<string>("NODE_ENV") === "production";
 
     setSessionCookie(
       res,
       this.config.getOrThrow<string>("SESSION_COOKIE_NAME"),
       created.token,
       this.config.getOrThrow<number>("SESSION_TTL_SECONDS"),
-      this.config.getOrThrow<string>("NODE_ENV") === "production",
+      {
+        secure,
+        rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+      },
     );
 
     return res.redirect(
-      getTenantFrontendRedirectUrl(
-        this.config.getOrThrow<string>("TENANT_FRONTEND_URL"),
-        req.headers.host,
-      ),
+      buildTenantFrontendRedirectUrl({
+        tenantFrontendUrl: this.config.getOrThrow<string>("TENANT_FRONTEND_URL"),
+        rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+        tenantSlug: validatedState.payload.tenantSlug,
+        returnTo: validatedState.payload.returnTo,
+      }),
     );
   }
 
@@ -118,11 +132,10 @@ export class AuthController {
   public async logout(@Res({ passthrough: true }) res: Response) {
     const principal = this.context.getPrincipalOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
-    clearSessionCookie(
-      res,
-      this.config.getOrThrow<string>("SESSION_COOKIE_NAME"),
-      this.config.getOrThrow<string>("NODE_ENV") === "production",
-    );
+    clearSessionCookie(res, this.config.getOrThrow<string>("SESSION_COOKIE_NAME"), {
+      secure: this.config.getOrThrow<string>("NODE_ENV") === "production",
+      rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+    });
 
     return { revoked: true };
   }
@@ -153,17 +166,7 @@ export class AuthController {
   }
 }
 
-function getTenantFrontendRedirectUrl(frontendUrl: string, requestHost: string | undefined) {
-  const url = new URL(frontendUrl);
-  const hostname = requestHost?.split(",")[0]?.trim().replace(/:\d+$/, "");
-
-  if (hostname && isTenantHostname(hostname)) {
-    url.hostname = hostname;
-  }
-
-  return url.toString();
-}
-
-function isTenantHostname(hostname: string) {
-  return hostname.endsWith(".localhost") || hostname.split(".").length > 2;
+function firstString(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  return undefined;
 }

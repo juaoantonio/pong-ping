@@ -1,5 +1,5 @@
 import { ForbiddenException } from "@nestjs/common";
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import type { TenantContext } from "../../../common/context";
 import { TenantEntity } from "../entities";
@@ -9,7 +9,10 @@ import { TenantMiddleware } from "./tenant.middleware";
 describe("TenantMiddleware", () => {
   it("writes resolved active tenant to request context", async () => {
     const context = new FakeContext();
-    const middleware = createMiddleware({ status: "resolved", tenant: tenant("tenant-1", "acme") }, context);
+    const middleware = createMiddleware(
+      { status: "resolved", tenant: tenant("tenant-1", "acme") },
+      context,
+    );
     const next = vi.fn();
 
     await middleware.use(requestWithHost("acme.example.test"), {} as Response, next);
@@ -31,6 +34,44 @@ describe("TenantMiddleware", () => {
     await middleware.use(requestWithHost("acme.example.test"), {} as Response, next);
 
     expect(context.tenant).toBeUndefined();
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("leaves auth host without tenant context", async () => {
+    const context = new FakeContext();
+    const middleware = createMiddleware({ status: "reserved" }, context);
+    const next = vi.fn();
+
+    await middleware.use(requestWithHost("api.localhost.me:3001"), {} as Response, next);
+
+    expect(context.tenant).toBeUndefined();
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("resolves tenant from origin when request arrives on the reserved API host", async () => {
+    const context = new FakeContext();
+    const resolver = {
+      resolveFromHost: vi.fn(async (host: string | undefined) =>
+        host === "http://teste.localhost.me:5173"
+          ? { status: "resolved", tenant: tenant("tenant-1", "teste") }
+          : { status: "reserved" },
+      ),
+    };
+    const middleware = new TenantMiddleware(
+      resolver as unknown as TenantResolver,
+      context as never,
+    );
+    const next = vi.fn();
+
+    await middleware.use(
+      requestWithHost("api.localhost.me:3001", {
+        headers: { origin: "http://teste.localhost.me:5173" },
+      }),
+      {} as Response,
+      next,
+    );
+
+    expect(context.tenant).toEqual({ id: "tenant-1", slug: "teste" });
     expect(next).toHaveBeenCalledWith();
   });
 

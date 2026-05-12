@@ -6,6 +6,7 @@ import {
   IdentityUserEntity,
   SystemRoleAssignmentEntity,
   TenantMembershipEntity,
+  TenantEntity,
 } from "../entities";
 import { IDENTITY_SYSTEM_ROLE } from "../identity-roles";
 import { SessionService, type CreatedSession } from "../session/session.service";
@@ -29,6 +30,18 @@ export class AuthService {
     requestInfo: { userAgent?: string; ipAddress?: string },
   ): Promise<CreatedSession> {
     const tenant = this.context.getTenantOrThrow();
+    return this.completeGoogleLoginForTenant(
+      profile,
+      { id: tenant.id } as TenantEntity,
+      requestInfo,
+    );
+  }
+
+  public async completeGoogleLoginForTenant(
+    profile: GoogleProfile,
+    tenant: Pick<TenantEntity, "id">,
+    requestInfo: { userAgent?: string; ipAddress?: string },
+  ): Promise<CreatedSession> {
     const user = await this.upsertGoogleUser(profile);
     const membership = await this.memberships.findOne({
       where: { tenantId: tenant.id, userId: user.id, active: true },

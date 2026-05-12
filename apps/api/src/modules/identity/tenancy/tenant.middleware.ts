@@ -13,7 +13,11 @@ export class TenantMiddleware implements NestMiddleware {
   public async use(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const host = req.headers["x-forwarded-host"]?.toString() ?? req.headers.host;
-      const resolution = await this.tenantResolver.resolveFromHost(host);
+      const hostResolution = await this.tenantResolver.resolveFromHost(host);
+      const resolution =
+        hostResolution.status === "missing" || hostResolution.status === "reserved"
+          ? await this.resolveFromOriginOrHost(req, hostResolution)
+          : hostResolution;
 
       if (resolution.status !== "resolved") {
         next();
@@ -30,6 +34,17 @@ export class TenantMiddleware implements NestMiddleware {
     } catch (error) {
       next(error);
     }
+  }
+
+  private async resolveFromOriginOrHost(
+    req: Request,
+    hostResolution: Awaited<ReturnType<TenantResolver["resolveFromHost"]>>,
+  ) {
+    const origin = firstString(req.headers.origin);
+    if (!origin) return hostResolution;
+
+    const originResolution = await this.tenantResolver.resolveFromHost(origin);
+    return originResolution.status === "resolved" ? originResolution : hostResolution;
   }
 }
 

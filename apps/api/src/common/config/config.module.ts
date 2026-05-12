@@ -26,6 +26,7 @@ type DatabaseConfig = {
 };
 
 type IdentityAuthConfig = {
+  AUTH_BASE_URL: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_CALLBACK_URL: string;
@@ -96,16 +97,21 @@ const jsonStringArray = (label: string) =>
     }) as unknown as ArraySchema<string[]>;
 
 export const identityAuthSchema: Joi.StrictSchemaMap<IdentityAuthConfig> = {
+  AUTH_BASE_URL: Joi.string().uri().default("http://api.localhost.me:3001/v1"),
   GOOGLE_CLIENT_ID: Joi.string().required(),
   GOOGLE_CLIENT_SECRET: Joi.string().required(),
   GOOGLE_CALLBACK_URL: Joi.string().uri().required(),
-  SYSTEM_ADMIN_FRONTEND_URL: Joi.string().uri().default("http://localhost:5173/admin/tenants"),
-  TENANT_FRONTEND_URL: Joi.string().uri().default("http://localhost:5173/club"),
+  SYSTEM_ADMIN_FRONTEND_URL: Joi.string().uri().default("http://localhost.me:5173/admin/tenants"),
+  TENANT_FRONTEND_URL: Joi.string().uri().default("http://localhost.me:5173/club"),
   SESSION_SECRET: Joi.string().min(32).required(),
   SESSION_COOKIE_NAME: Joi.string().default("pong_ping_session"),
-  SESSION_TTL_SECONDS: Joi.number().integer().min(60).default(60 * 60 * 24 * 14),
-  ROOT_DOMAIN: Joi.string().hostname().default("localhost"),
+  SESSION_TTL_SECONDS: Joi.number()
+    .integer()
+    .min(60)
+    .default(60 * 60 * 24 * 14),
+  ROOT_DOMAIN: Joi.string().hostname().default("localhost.me"),
   RESERVED_TENANT_SUBDOMAINS: jsonStringArray("RESERVED_TENANT_SUBDOMAINS").default([
+    "auth",
     "api",
     "www",
   ]),

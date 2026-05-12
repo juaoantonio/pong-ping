@@ -8,9 +8,15 @@ import { AuthController } from "./auth.controller";
 describe("AuthController", () => {
   it("creates a tenant session cookie and redirects on Google callback", async () => {
     const auth = {
-      completeGoogleLogin: vi.fn(async () => ({
+      completeGoogleLoginForTenant: vi.fn(async () => ({
         session: { id: "session-1" },
         token: "raw-token",
+      })),
+    };
+    const oauthState = {
+      validateTenantState: vi.fn(async () => ({
+        payload: { tenantSlug: "teste", returnTo: "/club" },
+        tenant: { id: "tenant-1", slug: "teste", active: true },
       })),
     };
     const response = { cookie: vi.fn(), redirect: vi.fn() } as unknown as Response;
@@ -19,6 +25,7 @@ describe("AuthController", () => {
       auth as never,
       {} as CurrentContextService,
       {} as SessionService,
+      oauthState as never,
     );
 
     await controller.googleCallback(
@@ -29,14 +36,17 @@ describe("AuthController", () => {
           displayName: "Member",
           avatarUrl: null,
         },
-        headers: { host: "teste.localhost:3001", "user-agent": "vitest" },
+        query: { state: "signed-state" },
+        headers: { host: "api.localhost.me:3001", "user-agent": "vitest" },
         ip: "127.0.0.1",
       } as never,
       response,
     );
 
-    expect(auth.completeGoogleLogin).toHaveBeenCalledWith(
+    expect(oauthState.validateTenantState).toHaveBeenCalledWith("signed-state");
+    expect(auth.completeGoogleLoginForTenant).toHaveBeenCalledWith(
       expect.objectContaining({ googleSubject: "google-1" }),
+      expect.objectContaining({ id: "tenant-1" }),
       { userAgent: "vitest", ipAddress: "127.0.0.1" },
     );
     expect(response.cookie).toHaveBeenCalledWith(
@@ -44,7 +54,7 @@ describe("AuthController", () => {
       "raw-token",
       expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
     );
-    expect(response.redirect).toHaveBeenCalledWith("http://teste.localhost:5173/club");
+    expect(response.redirect).toHaveBeenCalledWith("http://teste.localhost.me:5173/club");
   });
 });
 
@@ -54,7 +64,8 @@ function fakeConfig() {
       if (key === "SESSION_COOKIE_NAME") return "sid";
       if (key === "SESSION_TTL_SECONDS") return 3600;
       if (key === "NODE_ENV") return "test";
-      if (key === "TENANT_FRONTEND_URL") return "http://localhost:5173/club";
+      if (key === "TENANT_FRONTEND_URL") return "http://localhost.me:5173/club";
+      if (key === "ROOT_DOMAIN") return "localhost.me";
       throw new Error(`Missing config key ${key}`);
     },
   } as never;

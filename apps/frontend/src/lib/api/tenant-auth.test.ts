@@ -3,6 +3,7 @@ import { ApiClientError } from "@/lib/api/errors";
 import { authKeys } from "@/lib/api/system-admin";
 import {
   getTenantApiBaseUrl,
+  getTenantAuthApiBaseUrl,
   getTenantLoginUrl,
   getTenantMe,
   logoutTenantSession,
@@ -55,13 +56,13 @@ describe("tenant auth api", () => {
 
     await expect(getTenantMe()).resolves.toEqual(tenantPrincipal);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/v1/auth/me",
+      "http://api.localhost.me:3001/v1/auth/me",
       expect.objectContaining({ credentials: "include" }),
     );
   });
 
-  it("fetches tenant auth through the tenant API host when the frontend is tenant-scoped", async () => {
-    vi.stubGlobal("location", new URL("http://teste.localhost:5173/club"));
+  it("fetches tenant auth through the central API host when the frontend is tenant-scoped", async () => {
+    vi.stubGlobal("location", new URL("http://teste.localhost.me:5173/club"));
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       mockResponse({
         ok: true,
@@ -72,7 +73,7 @@ describe("tenant auth api", () => {
 
     await expect(getTenantMe()).resolves.toEqual(tenantPrincipal);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://teste.localhost:3001/v1/auth/me",
+      "http://api.localhost.me:3001/v1/auth/me",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -103,28 +104,100 @@ describe("tenant auth api", () => {
 
     await expect(logoutTenantSession()).resolves.toEqual({ revoked: true });
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/v1/auth/logout",
+      "http://api.localhost.me:3001/v1/auth/logout",
       expect.objectContaining({ credentials: "include", method: "POST" }),
     );
   });
 
-  it("builds the tenant Google login URL with safe redirect paths only", () => {
-    expect(getTenantLoginUrl()).toBe("http://localhost:3001/v1/auth/google");
-    expect(getTenantLoginUrl("/club/settings")).toBe(
-      "http://localhost:3001/v1/auth/google?redirect=%2Fclub%2Fsettings",
+  it("builds the tenant Google login URL on the central API host", () => {
+    expect(getTenantLoginUrl()).toBe(
+      "http://api.localhost.me:3001/v1/auth/google",
     );
-    expect(getTenantLoginUrl("https://example.com/club")).toBe(
-      "http://localhost:3001/v1/auth/google",
+    expect(
+      getTenantLoginUrl("/club", {
+        apiBaseUrl: "http://api.localhost.me:3001/v1",
+        authApiBaseUrl: "",
+        frontendHostname: "acme.localhost.me",
+      }),
+    ).toBe(
+      "http://api.localhost.me:3001/v1/auth/google?tenant=acme&returnTo=%2Fclub",
+    );
+    expect(
+      getTenantLoginUrl("/club", {
+        apiBaseUrl: "http://localhost:3001/v1",
+        authApiBaseUrl: "",
+        frontendHostname: "acme.localhost",
+      }),
+    ).toBe("http://localhost:3001/v1/auth/google?tenant=acme&returnTo=%2Fclub");
+    expect(
+      getTenantLoginUrl("/club/settings", {
+        apiBaseUrl: "https://api.pongping.example/v1",
+        authApiBaseUrl: "",
+        frontendHostname: "acme.pongping.example",
+      }),
+    ).toBe(
+      "https://api.pongping.example/v1/auth/google?tenant=acme&returnTo=%2Fclub%2Fsettings",
     );
   });
 
-  it("builds tenant API URLs from the current tenant frontend host", () => {
-    expect(getTenantApiBaseUrl("http://localhost:3001/v1", "teste.localhost")).toBe(
-      "http://teste.localhost:3001/v1",
-    );
-    expect(getTenantApiBaseUrl("https://api.pongping.example/v1", "teste.pongping.example")).toBe(
-      "https://teste.pongping.example/v1",
-    );
+  it("uses configured auth API base and rejects external returnTo", () => {
+    expect(
+      getTenantLoginUrl("https://example.com/club", {
+        apiBaseUrl: "http://localhost:3001/v1",
+        authApiBaseUrl: "https://login.pongping.example/v1",
+        frontendHostname: "acme.pongping.example",
+      }),
+    ).toBe("https://login.pongping.example/v1/auth/google?tenant=acme");
+    expect(
+      getTenantLoginUrl("//example.com/club", {
+        apiBaseUrl: "http://localhost:3001/v1",
+        authApiBaseUrl: "",
+        frontendHostname: "acme.localhost",
+      }),
+    ).toBe("http://localhost:3001/v1/auth/google?tenant=acme");
+  });
+
+  it("builds the central auth API base from the tenant host", () => {
+    expect(
+      getTenantAuthApiBaseUrl(
+        "http://api.localhost.me:3001/v1",
+        "",
+        "teste.localhost.me",
+      ),
+    ).toBe("http://api.localhost.me:3001/v1");
+    expect(
+      getTenantAuthApiBaseUrl(
+        "http://localhost:3001/v1",
+        "",
+        "teste.localhost",
+      ),
+    ).toBe("http://localhost:3001/v1");
+    expect(
+      getTenantAuthApiBaseUrl(
+        "https://api.pongping.example/v1",
+        "",
+        "teste.pongping.example",
+      ),
+    ).toBe("https://api.pongping.example/v1");
+    expect(
+      getTenantAuthApiBaseUrl(
+        "http://localhost:3001/v1",
+        "https://login.pongping.example/v1",
+        "teste.localhost",
+      ),
+    ).toBe("https://login.pongping.example/v1");
+  });
+
+  it("keeps tenant API calls on the central API host", () => {
+    expect(
+      getTenantApiBaseUrl("http://localhost:3001/v1", "teste.localhost"),
+    ).toBe("http://localhost:3001/v1");
+    expect(
+      getTenantApiBaseUrl(
+        "https://api.pongping.example/v1",
+        "teste.pongping.example",
+      ),
+    ).toBe("https://api.pongping.example/v1");
     expect(getTenantApiBaseUrl("http://localhost:3001/v1", "localhost")).toBe(
       "http://localhost:3001/v1",
     );

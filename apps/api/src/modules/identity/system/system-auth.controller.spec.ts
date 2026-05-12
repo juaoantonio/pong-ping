@@ -73,6 +73,7 @@ function fakeConfig() {
       if (key === "SESSION_TTL_SECONDS") return 3600;
       if (key === "NODE_ENV") return "test";
       if (key === "SYSTEM_ADMIN_FRONTEND_URL") return "http://localhost:5173/admin/tenants";
+      if (key === "ROOT_DOMAIN") return "localhost";
       throw new Error(`Missing config key ${key}`);
     },
   } as never;

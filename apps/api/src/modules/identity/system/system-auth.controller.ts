@@ -88,7 +88,10 @@ export class SystemAuthController {
       this.config.getOrThrow<string>("SESSION_COOKIE_NAME"),
       created.token,
       this.config.getOrThrow<number>("SESSION_TTL_SECONDS"),
-      this.config.getOrThrow<string>("NODE_ENV") === "production",
+      {
+        secure: this.config.getOrThrow<string>("NODE_ENV") === "production",
+        rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+      },
     );
 
     return res.redirect(this.config.getOrThrow<string>("SYSTEM_ADMIN_FRONTEND_URL"));
@@ -118,11 +121,10 @@ export class SystemAuthController {
   public async logout(@Res({ passthrough: true }) res: Response) {
     const principal = this.context.getPrincipalOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
-    clearSessionCookie(
-      res,
-      this.config.getOrThrow<string>("SESSION_COOKIE_NAME"),
-      this.config.getOrThrow<string>("NODE_ENV") === "production",
-    );
+    clearSessionCookie(res, this.config.getOrThrow<string>("SESSION_COOKIE_NAME"), {
+      secure: this.config.getOrThrow<string>("NODE_ENV") === "production",
+      rootDomain: this.config.getOrThrow<string>("ROOT_DOMAIN"),
+    });
 
     return { revoked: true };
   }

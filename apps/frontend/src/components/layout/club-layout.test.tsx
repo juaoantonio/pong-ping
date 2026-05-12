@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type * as TanStackRouter from "@tanstack/react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -14,7 +15,7 @@ const { navigate, toastError, toastSuccess } = vi.hoisted(() => ({
 }));
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@tanstack/react-router")>();
+  const actual = await importOriginal<typeof TanStackRouter>();
 
   return {
     ...actual,
@@ -44,7 +45,11 @@ function mockResponse(body: unknown, init: ResponseInit = {}) {
   });
 }
 
-function renderLayout(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+function renderLayout(
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  }),
+) {
   queryClient.setQueryDefaults(tenantAuthKeys.me, { staleTime: Infinity });
   queryClient.setQueryData(tenantAuthKeys.me, {
     userId: "tenant-user-123456789",
@@ -96,19 +101,26 @@ describe("ClubLayout", () => {
 
     renderLayout();
 
-    expect(screen.getByRole("link", { name: /ir para o conteudo/i })).toHaveAttribute(
-      "href",
-      "#main-content",
+    expect(
+      screen.getByRole("link", { name: /ir para o conteudo/i }),
+    ).toHaveAttribute("href", "#main-content");
+    expect(screen.getAllByRole("main").at(-1)).toHaveAttribute(
+      "id",
+      "main-content",
     );
-    expect(screen.getAllByRole("main").at(-1)).toHaveAttribute("id", "main-content");
     expect(screen.getByText("Pong Ping Club")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute("href", "/club");
+    expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+      "href",
+      "/club",
+    );
     expect(screen.getByText("tenant-u...6789")).toBeInTheDocument();
     expect(screen.queryByText(/system admin/i)).not.toBeInTheDocument();
   });
 
   it("logs out the tenant session without clearing system auth", async () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const fetchMock = vi.fn().mockImplementation(() =>
       Promise.resolve(
         mockResponse({
@@ -124,9 +136,11 @@ describe("ClubLayout", () => {
     renderLayout(queryClient);
     await user.click(screen.getByRole("button", { name: /sair/i }));
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/club/login" }));
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({ to: "/club/login" }),
+    );
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/v1/auth/logout",
+      "http://api.localhost.me:3001/v1/auth/logout",
       expect.objectContaining({ credentials: "include", method: "POST" }),
     );
     expect(queryClient.getQueryData(tenantAuthKeys.me)).toBeUndefined();
@@ -156,7 +170,9 @@ describe("ClubLayout", () => {
     renderLayout();
     await user.click(screen.getByRole("button", { name: /sair/i }));
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Nao foi possivel sair agora."));
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("Nao foi possivel sair agora."),
+    );
     expect(navigate).not.toHaveBeenCalled();
   });
 });

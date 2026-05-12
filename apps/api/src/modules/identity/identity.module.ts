@@ -8,6 +8,7 @@ import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { GoogleOAuthGuard } from "./auth/google-oauth.guard";
 import { GoogleOAuthStrategy } from "./auth/google-oauth.strategy";
+import { OAuthStateService } from "./auth/oauth-state.service";
 import { IDENTITY_ENTITIES } from "./entities";
 import { SessionMiddleware } from "./session/session.middleware";
 import { SessionService } from "./session/session.service";
@@ -32,6 +33,7 @@ import { TenantResolver } from "./tenancy/tenant.resolver";
     TenantResolver,
     SessionService,
     AuthService,
+    OAuthStateService,
     SystemAdminService,
     SystemHostGuard,
     SystemGoogleOAuthGuard,
@@ -42,7 +44,7 @@ import { TenantResolver } from "./tenancy/tenant.resolver";
       useClass: IdentityAuthorizationGuard,
     },
   ],
-  exports: [AuthService, SessionService, TenantResolver],
+  exports: [AuthService, SessionService, TenantResolver, OAuthStateService],
 })
 export class IdentityModule implements NestModule {
   public configure(consumer: MiddlewareConsumer): void {

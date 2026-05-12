@@ -48,6 +48,43 @@ describe("AuthService", () => {
     expect(created.token).toBe("raw-token");
   });
 
+  it("cria sessao para profile google com tenant validado do state", async () => {
+    const sessions = {
+      createTenantSession: vi.fn(async () => ({
+        session: { id: "session-1" },
+        token: "raw-token",
+      })),
+    };
+    const service = new AuthService(
+      { getTenantOrThrow: vi.fn() } as never,
+      sessions as never,
+      repository() as never,
+      {
+        findOne: vi.fn(async () => ({ id: "membership-1", roles: [IDENTITY_TENANT_ROLE.ADMIN] })),
+      } as never,
+      { findOne: vi.fn() } as never,
+    );
+
+    const created = await service.completeGoogleLoginForTenant(
+      {
+        googleSubject: "google-1",
+        email: "user@example.test",
+        displayName: "User",
+        avatarUrl: null,
+      },
+      { id: "tenant-state-1" } as never,
+      { userAgent: "vitest", ipAddress: "127.0.0.1" },
+    );
+
+    expect(sessions.createTenantSession).toHaveBeenCalledWith({
+      userId: "user-1",
+      tenantId: "tenant-state-1",
+      userAgent: "vitest",
+      ipAddress: "127.0.0.1",
+    });
+    expect(created.token).toBe("raw-token");
+  });
+
   it("rejeita login google sem membership ativo no tenant atual", async () => {
     const service = new AuthService(
       { getTenantOrThrow: () => ({ id: "tenant-1", slug: "acme" }) } as never,

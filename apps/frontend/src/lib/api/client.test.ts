@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { apiRequest } from "@/lib/api/client";
-import { ApiClientError, ApiParseError } from "@/lib/api/errors";
+import { ApiParseError } from "@/lib/api/errors";
 
 function mockResponse(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
@@ -29,11 +29,13 @@ describe("apiRequest", () => {
       }),
     );
 
-    await expect(apiRequest<{ id: string }>("/system/admin/tenants")).resolves.toEqual({
+    await expect(
+      apiRequest<{ id: string }>("/system/admin/tenants"),
+    ).resolves.toEqual({
       id: "tenant-1",
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3001/v1/system/admin/tenants",
+      "http://api.localhost.me:3001/v1/system/admin/tenants",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -48,16 +50,21 @@ describe("apiRequest", () => {
       }),
     );
 
-    await apiRequest<{ created: true }, { name: string }>("/system/admin/tenants", {
-      body: { name: "Downtown" },
-      method: "POST",
-    });
+    await apiRequest<{ created: true }, { name: string }>(
+      "/system/admin/tenants",
+      {
+        body: { name: "Downtown" },
+        method: "POST",
+      },
+    );
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: JSON.stringify({ name: "Downtown" }),
-        headers: expect.objectContaining({ "Content-Type": "application/json" }),
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
         method: "POST",
       }),
     );
@@ -91,6 +98,8 @@ describe("apiRequest", () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockResolvedValueOnce(mockResponse({ data: { id: "tenant-1" } }));
 
-    await expect(apiRequest("/system/admin/tenants")).rejects.toBeInstanceOf(ApiParseError);
+    await expect(apiRequest("/system/admin/tenants")).rejects.toBeInstanceOf(
+      ApiParseError,
+    );
   });
 });

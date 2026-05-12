@@ -19,9 +19,12 @@ export function tenantMeQueryOptions() {
 }
 
 export async function getTenantMe() {
-  const principal = await apiRequest<IdentityPrincipalResponseContract>("/auth/me", {
-    baseUrl: getTenantApiBaseUrl(),
-  });
+  const principal = await apiRequest<IdentityPrincipalResponseContract>(
+    "/auth/me",
+    {
+      baseUrl: getTenantApiBaseUrl(),
+    },
+  );
   return validateTenantPrincipal(principal);
 }
 
@@ -32,28 +35,48 @@ export function logoutTenantSession() {
   });
 }
 
-export function getTenantLoginUrl(redirect?: string) {
-  const url = new URL(`${getTenantApiBaseUrl()}/auth/google`);
-  const safeRedirect = getSafeInternalRedirect(redirect);
+export function getTenantLoginUrl(
+  returnTo?: string,
+  options: {
+    apiBaseUrl?: string;
+    authApiBaseUrl?: string;
+    frontendHostname?: string;
+  } = {},
+) {
+  const frontendHostname = options.frontendHostname ?? window.location.hostname;
+  const url = new URL(
+    `${getTenantAuthApiBaseUrl(options.apiBaseUrl, options.authApiBaseUrl, frontendHostname)}/auth/google`,
+  );
+  const tenantSlug = getTenantSlugFromHostname(frontendHostname);
+  const safeReturnTo = getSafeInternalRedirect(returnTo);
 
-  if (safeRedirect) {
-    url.searchParams.set("redirect", safeRedirect);
+  if (tenantSlug) {
+    url.searchParams.set("tenant", tenantSlug);
+  }
+  if (safeReturnTo) {
+    url.searchParams.set("returnTo", safeReturnTo);
   }
 
   return url.toString();
 }
 
+export function getTenantAuthApiBaseUrl(
+  apiBaseUrl = getApiBaseUrl(),
+  authApiBaseUrl = import.meta.env.VITE_AUTH_API_BASE_URL?.trim(),
+  _frontendHostname = window.location.hostname,
+) {
+  void _frontendHostname;
+  if (authApiBaseUrl) return authApiBaseUrl.replace(/\/+$/, "");
+
+  return apiBaseUrl.replace(/\/+$/, "");
+}
+
 export function getTenantApiBaseUrl(
   baseUrl = getApiBaseUrl(),
-  frontendHostname = window.location.hostname,
+  _frontendHostname = window.location.hostname,
 ) {
-  const url = new URL(baseUrl);
-
-  if (isTenantFrontendHostname(frontendHostname)) {
-    url.hostname = frontendHostname;
-  }
-
-  return url.toString().replace(/\/$/, "");
+  void _frontendHostname;
+  return baseUrl.replace(/\/+$/, "");
 }
 
 function validateTenantPrincipal(principal: IdentityPrincipalResponseContract) {
@@ -73,6 +96,11 @@ function getSafeInternalRedirect(redirect?: string) {
   }
 
   return redirect;
+}
+
+function getTenantSlugFromHostname(hostname: string) {
+  if (!isTenantFrontendHostname(hostname)) return undefined;
+  return hostname.split(".")[0]?.toLowerCase();
 }
 
 function isTenantFrontendHostname(hostname: string) {

@@ -12,7 +12,12 @@ import {
   TenantEntity,
 } from "../entities";
 import { IDENTITY_SYSTEM_ROLE, IDENTITY_TENANT_ROLE } from "../identity-roles";
-import { clearSessionCookie, readCookie, setSessionCookie } from "./cookies";
+import {
+  clearSessionCookie,
+  getSessionCookieDomain,
+  readCookie,
+  setSessionCookie,
+} from "./cookies";
 import { SessionMiddleware } from "./session.middleware";
 import { SessionService } from "./session.service";
 import { SESSION_VALIDATION_FAILURE, SessionValidationError } from "./session-validation.error";
@@ -172,8 +177,11 @@ describe("session cookie helpers", () => {
       clearCookie: vi.fn(),
     } as unknown as Response;
 
-    setSessionCookie(response, "sid", "raw-token", 3600, false);
-    clearSessionCookie(response, "sid", false);
+    setSessionCookie(response, "sid", "raw-token", 3600, {
+      secure: false,
+      rootDomain: "localhost",
+    });
+    clearSessionCookie(response, "sid", { secure: false, rootDomain: "localhost" });
 
     expect(response.cookie).toHaveBeenCalledWith(
       "sid",
@@ -193,6 +201,65 @@ describe("session cookie helpers", () => {
     expect(readCookie({ headers: { cookie: "other=1; sid=raw-token" } } as Request, "sid")).toBe(
       "raw-token",
     );
+  });
+
+  it("usa dominio raiz apenas para cookies seguros fora de localhost", () => {
+    const response = {
+      cookie: vi.fn(),
+      clearCookie: vi.fn(),
+    } as unknown as Response;
+
+    setSessionCookie(response, "sid", "raw-token", 3600, {
+      secure: true,
+      rootDomain: "pongping.example",
+    });
+    clearSessionCookie(response, "sid", {
+      secure: true,
+      rootDomain: "pongping.example",
+    });
+
+    expect(getSessionCookieDomain("pongping.example", true)).toBe(".pongping.example");
+    expect(getSessionCookieDomain("localhost.me", false)).toBe(".localhost.me");
+    expect(getSessionCookieDomain("localhost", true)).toBeUndefined();
+    expect(getSessionCookieDomain("localhost", false)).toBeUndefined();
+    expect(response.cookie).toHaveBeenCalledWith(
+      "sid",
+      "raw-token",
+      expect.objectContaining({ domain: ".pongping.example", secure: true }),
+    );
+    expect(response.clearCookie).toHaveBeenCalledWith(
+      "sid",
+      expect.objectContaining({ domain: ".pongping.example", secure: true }),
+    );
+  });
+
+  it("lets public tenant OAuth routes restart when a stale tenant cookie is present", async () => {
+    const context = new FakeContext();
+    const sessions = {
+      validateSystemSession: vi
+        .fn()
+        .mockRejectedValue(new SessionValidationError(SESSION_VALIDATION_FAILURE.TenantMismatch)),
+    };
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("missing") as never,
+    );
+    const next = vi.fn();
+
+    await middleware.use(
+      {
+        path: "/v1/auth/google",
+        url: "/v1/auth/google?tenant=teste&returnTo=%2Fclub",
+        headers: { host: "localhost:3001", cookie: "sid=raw-token" },
+      } as Request,
+      {} as Response,
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith();
+    expect(sessions.validateSystemSession).not.toHaveBeenCalled();
   });
 });
 

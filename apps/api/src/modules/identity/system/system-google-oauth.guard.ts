@@ -1,8 +1,7 @@
-import { ExecutionContext, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AuthGuard } from "@nestjs/passport";
 import type { IAuthModuleOptions } from "@nestjs/passport";
-import type { Request } from "express";
 import type { ConfigSchema } from "../../../common/config/config.module";
 
 @Injectable()
@@ -11,14 +10,13 @@ export class SystemGoogleOAuthGuard extends AuthGuard("google") {
     super();
   }
 
-  public override getAuthenticateOptions(context: ExecutionContext): IAuthModuleOptions {
-    const request = context.switchToHttp().getRequest<Request>();
+  public override getAuthenticateOptions(): IAuthModuleOptions {
     return {
-      callbackURL: this.buildCallbackUrl(request),
+      callbackURL: this.buildCallbackUrl(),
     };
   }
 
-  private buildCallbackUrl(request: Request): string {
+  private buildCallbackUrl(): string {
     const configuredCallback = new URL(this.config.getOrThrow<string>("GOOGLE_CALLBACK_URL"));
     const prefix = this.config.getOrThrow<string>("API_PREFIX").replace(/^\/|\/$/g, "");
     configuredCallback.pathname = prefix

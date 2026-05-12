@@ -17,10 +17,25 @@ Run the development server from the repo root:
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see
-the web app. The API listens on
-[http://127.0.0.1:3001/v1](http://127.0.0.1:3001/v1), with health at
-`/v1/health` and docs at `/v1/docs`.
+For tenant Google login in local development, point fake local domains to
+`127.0.0.1` so the frontend and API share the `.localhost.me` cookie domain:
+
+```text
+127.0.0.1 localhost.me
+127.0.0.1 teste.localhost.me
+127.0.0.1 api.localhost.me
+```
+
+Open `http://teste.localhost.me:5173/club/login` for a tenant named `teste`.
+The central OAuth/API host is `http://api.localhost.me:3001/v1`, and the
+Google Console redirect URI should match:
+
+```text
+http://api.localhost.me:3001/v1/auth/google/callback
+```
+
+Direct service URLs remain available for debugging: the Vite app listens on
+`http://localhost:5173`, and the API listens on `http://127.0.0.1:3001/v1`.
 
 ## Common Commands
 

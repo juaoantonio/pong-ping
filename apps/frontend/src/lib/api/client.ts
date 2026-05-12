@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ApiSuccessResponseContract } from "@pong-ping/contracts";
 import { ApiClientError, ApiParseError } from "@/lib/api/errors";
 
-const DEFAULT_API_BASE_URL = "http://localhost:3001/v1";
+const DEFAULT_API_BASE_URL = "http://api.localhost.me:3001/v1";
 
 const successEnvelopeSchema = z.object({
   ok: z.literal(true),
@@ -27,13 +27,18 @@ const errorEnvelopeSchema = z.object({
   }),
 });
 
-export type ApiRequestOptions<TBody> = Omit<RequestInit, "body" | "credentials"> & {
+export type ApiRequestOptions<TBody> = Omit<
+  RequestInit,
+  "body" | "credentials"
+> & {
   baseUrl?: string;
   body?: TBody;
 };
 
 export function getApiBaseUrl() {
-  return (import.meta.env.VITE_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
+  return (
+    import.meta.env.VITE_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL
+  ).replace(/\/+$/, "");
 }
 
 export function getSystemLoginUrl() {

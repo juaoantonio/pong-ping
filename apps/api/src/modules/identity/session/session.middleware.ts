@@ -18,6 +18,11 @@ export class SessionMiddleware implements NestMiddleware {
   ) {}
 
   public async use(req: Request, _res: Response, next: NextFunction): Promise<void> {
+    if (isPublicAuthPath(req)) {
+      next();
+      return;
+    }
+
     const cookieName = this.config.getOrThrow<string>("SESSION_COOKIE_NAME");
     const rawToken = readCookie(req, cookieName);
     if (!rawToken) {
@@ -40,11 +45,6 @@ export class SessionMiddleware implements NestMiddleware {
       next();
     } catch (error) {
       if (error instanceof SessionValidationError) {
-        if (isSystemAuthPublicPath(req)) {
-          next();
-          return;
-        }
-
         next(new UnauthorizedException("Invalid session."));
         return;
       }
@@ -64,7 +64,12 @@ export class SessionMiddleware implements NestMiddleware {
   }
 }
 
-function isSystemAuthPublicPath(req: Request): boolean {
+function isPublicAuthPath(req: Request): boolean {
   const path = req.path ?? req.url?.split("?")[0] ?? "";
-  return path.endsWith("/system/auth/google") || path.endsWith("/system/auth/google/callback");
+  return (
+    path.endsWith("/auth/google") ||
+    path.endsWith("/auth/google/callback") ||
+    path.endsWith("/system/auth/google") ||
+    path.endsWith("/system/auth/google/callback")
+  );
 }

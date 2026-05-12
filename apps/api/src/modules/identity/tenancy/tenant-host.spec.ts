@@ -26,6 +26,11 @@ describe("parseTenantSlugFromHost", () => {
     expect(parseTenantSlugFromHost("api.example.test", "example.test", ["api"])).toEqual({
       status: "reserved",
     });
+    expect(
+      parseTenantSlugFromHost("api.localhost.me", "localhost.me", ["auth", "api", "www"]),
+    ).toEqual({
+      status: "reserved",
+    });
   });
 
   it("rejeita dominio raiz diferente", () => {

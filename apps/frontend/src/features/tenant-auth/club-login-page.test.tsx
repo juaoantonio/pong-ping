@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type * as TanStackRouter from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -8,7 +9,7 @@ import { ClubLoginPage } from "@/features/tenant-auth/club-login-page";
 const navigateMock = vi.fn();
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@tanstack/react-router")>();
+  const actual = await importOriginal<typeof TanStackRouter>();
 
   return {
     ...actual,
@@ -28,7 +29,9 @@ function renderWithQueryClient(ui: ReactNode) {
     },
   });
 
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  );
 }
 
 function mockResponse(body: unknown, init: ResponseInit = {}) {
@@ -80,14 +83,21 @@ describe("ClubLoginPage", () => {
 
     renderWithQueryClient(<ClubLoginPage />);
 
-    expect(await screen.findByRole("heading", { name: "Pong Ping Club" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Pong Ping Club" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Área do clube")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /entrar com google/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /entrar com google/i }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/administr/i)).not.toBeInTheDocument();
   });
 
   it("redirects authenticated tenant users to a safe internal redirect path", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(mockTenantPrincipal()));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(mockTenantPrincipal()),
+    );
 
     renderWithQueryClient(<ClubLoginPage redirect="/club/settings" />);
 
@@ -102,7 +112,7 @@ describe("ClubLoginPage", () => {
     const assign = vi.fn();
     vi.stubGlobal(
       "location",
-      Object.assign(new URL("http://localhost/club/login"), {
+      Object.assign(new URL("http://acme.localhost.me:5173/club/login"), {
         assign,
       }),
     );
@@ -126,10 +136,12 @@ describe("ClubLoginPage", () => {
     const user = userEvent.setup();
     renderWithQueryClient(<ClubLoginPage redirect="/club" />);
 
-    await user.click(await screen.findByRole("button", { name: /entrar com google/i }));
+    await user.click(
+      await screen.findByRole("button", { name: /entrar com google/i }),
+    );
 
     expect(assign).toHaveBeenCalledWith(
-      "http://localhost:3001/v1/auth/google?redirect=%2Fclub",
+      "http://api.localhost.me:3001/v1/auth/google?tenant=acme&returnTo=%2Fclub",
     );
   });
 });

@@ -24,17 +24,21 @@ describe("schema de configuracao", () => {
       DB_DATABASE: "app",
       GOOGLE_CLIENT_ID: "google-client-id",
       GOOGLE_CLIENT_SECRET: "google-client-secret",
-      GOOGLE_CALLBACK_URL: "http://localhost:3001/v1/auth/google/callback",
+      GOOGLE_CALLBACK_URL: "http://api.localhost.me:3001/v1/auth/google/callback",
       SESSION_SECRET: "a".repeat(32),
     });
 
     expect(result.error).toBeUndefined();
+    expect(result.value.AUTH_BASE_URL).toBe("http://api.localhost.me:3001/v1");
+    expect(result.value.GOOGLE_CALLBACK_URL).toBe(
+      "http://api.localhost.me:3001/v1/auth/google/callback",
+    );
     expect(result.value.CORS_ORIGIN).toEqual(["http://localhost:3000"]);
     expect(result.value.SESSION_COOKIE_NAME).toBe("pong_ping_session");
     expect(result.value.SESSION_TTL_SECONDS).toBe(60 * 60 * 24 * 14);
-    expect(result.value.ROOT_DOMAIN).toBe("localhost");
-    expect(result.value.RESERVED_TENANT_SUBDOMAINS).toEqual(["api", "www"]);
-    expect(result.value.TENANT_FRONTEND_URL).toBe("http://localhost:5173/club");
+    expect(result.value.ROOT_DOMAIN).toBe("localhost.me");
+    expect(result.value.RESERVED_TENANT_SUBDOMAINS).toEqual(["auth", "api", "www"]);
+    expect(result.value.TENANT_FRONTEND_URL).toBe("http://localhost.me:5173/club");
   });
 
   it("exige secrets de oauth e sessao", () => {
