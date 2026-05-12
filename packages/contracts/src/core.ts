@@ -1,4 +1,4 @@
-import type { ISODateString } from "./index";
+import type { ISODateString } from "./index.js";
 
 export const CORE_PLAY_MODE_CONTRACT = {
   SINGLES: "singles",

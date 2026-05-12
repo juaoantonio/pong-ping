@@ -14,6 +14,7 @@ export default new DataSource({
   database: process.env.DB_DATABASE ?? "pong_ping_api",
   entities: ["src/**/*.entity.ts", "src/**/*.schema.ts"],
   migrations: ["src/common/database/migrations/**/*{.ts,.js}"],
+  entitySkipConstructor: true,
   synchronize: false,
   logging: process.env.DB_LOGGING === "true",
 });

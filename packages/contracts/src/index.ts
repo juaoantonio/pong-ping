@@ -110,4 +110,4 @@ export interface SystemMembershipDeactivationResponseContract {
   deactivated: true;
 }
 
-export * from "./core";
+export * from "./core.js";

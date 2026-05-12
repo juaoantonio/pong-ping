@@ -18,6 +18,7 @@ import { TypeOrmWinstonLogger } from "../logging/typeorm-winston.logger";
         password: config.getOrThrow<string>("DB_PASSWORD"),
         database: config.getOrThrow<string>("DB_DATABASE"),
         autoLoadEntities: true,
+        entitySkipConstructor: true,
         synchronize: config.getOrThrow<boolean>("DB_SYNCHRONIZE"),
         logging: config.getOrThrow<boolean>("DB_LOGGING"),
         logger,
