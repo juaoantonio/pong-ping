@@ -50,7 +50,7 @@ describe("AuthController", () => {
       { userAgent: "vitest", ipAddress: "127.0.0.1" },
     );
     expect(response.cookie).toHaveBeenCalledWith(
-      "sid",
+      "sid_teste",
       "raw-token",
       expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
     );

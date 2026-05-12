@@ -4,7 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 import type { ConfigSchema } from "../../../common/config/config.module";
 import { CurrentContextService } from "../../../common/context";
 import { TenantResolver } from "../tenancy/tenant.resolver";
-import { readCookie } from "./cookies";
+import { getSystemSessionCookieName, getTenantSessionCookieName, readCookie } from "./cookies";
 import { SessionService } from "./session.service";
 import { SessionValidationError } from "./session-validation.error";
 
@@ -23,25 +23,30 @@ export class SessionMiddleware implements NestMiddleware {
       return;
     }
 
-    const cookieName = this.config.getOrThrow<string>("SESSION_COOKIE_NAME");
-    const rawToken = readCookie(req, cookieName);
-    if (!rawToken) {
-      next();
-      return;
-    }
+    const cookieBaseName = this.config.getOrThrow<string>("SESSION_COOKIE_NAME");
+    const tenant = this.context.getTenant();
 
     try {
-      const tenant = this.context.getTenant();
-      const principal = tenant
-        ? await this.sessions.validateTenantSession(rawToken, tenant.id)
-        : await this.validateSystemHostSession(req, rawToken);
-
-      if (!principal) {
-        next();
-        return;
+      if (tenant) {
+        const cookieName = getTenantSessionCookieName(cookieBaseName, tenant.slug);
+        const rawToken = readCookie(req, cookieName);
+        if (rawToken) {
+          const principal = await this.sessions.validateTenantSession(rawToken, tenant.id);
+          if (principal) this.context.setPrincipal(principal);
+        }
+      } else {
+        const host = req.headers.host;
+        const hostResolution = this.tenantResolver.parseHost(host);
+        if (hostResolution.status === "missing" || hostResolution.status === "reserved") {
+          const cookieName = getSystemSessionCookieName(cookieBaseName);
+          const rawToken = readCookie(req, cookieName);
+          if (rawToken) {
+            const principal = await this.sessions.validateSystemSession(rawToken);
+            if (principal) this.context.setPrincipal(principal);
+          }
+        }
       }
 
-      this.context.setPrincipal(principal);
       next();
     } catch (error) {
       if (error instanceof SessionValidationError) {
@@ -51,16 +56,6 @@ export class SessionMiddleware implements NestMiddleware {
 
       next(error);
     }
-  }
-
-  private async validateSystemHostSession(req: Request, rawToken: string) {
-    const host = req.headers.host;
-    const hostResolution = this.tenantResolver.parseHost(host);
-    if (hostResolution.status !== "missing" && hostResolution.status !== "reserved") {
-      return undefined;
-    }
-
-    return this.sessions.validateSystemSession(rawToken);
   }
 }
 

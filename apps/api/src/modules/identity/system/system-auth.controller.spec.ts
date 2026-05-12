@@ -40,7 +40,7 @@ describe("SystemAuthController", () => {
       { userAgent: "vitest", ipAddress: "127.0.0.1" },
     );
     expect(response.cookie).toHaveBeenCalledWith(
-      "sid",
+      "sid_system",
       "raw-token",
       expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
     );
@@ -60,7 +60,7 @@ describe("SystemAuthController", () => {
     await expect(controller.logout(response)).resolves.toEqual({ revoked: true });
     expect(sessions.revokeSession).toHaveBeenCalledWith("session-1");
     expect(response.clearCookie).toHaveBeenCalledWith(
-      "sid",
+      "sid_system",
       expect.objectContaining({ httpOnly: true, maxAge: 0, path: "/" }),
     );
   });

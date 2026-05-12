@@ -19,6 +19,14 @@ export function readCookie(req: Request, name: string): string | undefined {
   }
 }
 
+export function getSystemSessionCookieName(baseName: string): string {
+  return `${baseName}_system`;
+}
+
+export function getTenantSessionCookieName(baseName: string, tenantSlug: string): string {
+  return `${baseName}_${tenantSlug.toLowerCase()}`;
+}
+
 export function setSessionCookie(
   res: Response,
   name: string,

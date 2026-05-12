@@ -10,7 +10,7 @@ import {
 } from "../../../common/shared/http/api-response.swagger";
 import { Public, RequireTenantRoles } from "../authorization/authorization.decorators";
 import { TENANT_ROLES } from "../identity-roles";
-import { clearSessionCookie, setSessionCookie } from "../session/cookies";
+import { clearSessionCookie, getTenantSessionCookieName, setSessionCookie } from "../session/cookies";
 import { SessionService } from "../session/session.service";
 import { AuthService } from "./auth.service";
 import { AuthLogoutResponseDto, IdentityPrincipalResponseDto } from "./dtos/auth-response.dtos";
@@ -100,7 +100,7 @@ export class AuthController {
 
     setSessionCookie(
       res,
-      this.sessionCookieName,
+      getTenantSessionCookieName(this.sessionCookieName, validatedState.tenant.slug),
       created.token,
       this.sessionTtlSeconds,
       {
@@ -142,11 +142,16 @@ export class AuthController {
   )
   public async logout(@Res({ passthrough: true }) res: Response) {
     const principal = this.context.getPrincipalOrThrow();
+    const tenant = this.context.getTenantOrThrow();
     await this.sessions.revokeSession(principal.sessionId);
-    clearSessionCookie(res, this.sessionCookieName, {
-      secure: this.isProduction,
-      rootDomain: this.rootDomain,
-    });
+    clearSessionCookie(
+      res,
+      getTenantSessionCookieName(this.sessionCookieName, tenant.slug),
+      {
+        secure: this.isProduction,
+        rootDomain: this.rootDomain,
+      },
+    );
 
     return { revoked: true };
   }

@@ -285,7 +285,7 @@ describe("SessionMiddleware", () => {
     );
     const next = vi.fn();
 
-    await middleware.use({ headers: { cookie: "sid=raw-token" } } as Request, {} as Response, next);
+    await middleware.use({ headers: { cookie: "sid_acme=raw-token" } } as Request, {} as Response, next);
 
     expect(sessions.validateTenantSession).toHaveBeenCalledWith("raw-token", "tenant-1");
     expect(context.principal).toEqual(principal);
@@ -308,7 +308,7 @@ describe("SessionMiddleware", () => {
     );
     const next = vi.fn();
 
-    await middleware.use({ headers: { cookie: "sid=raw-token" } } as Request, {} as Response, next);
+    await middleware.use({ headers: { cookie: "sid_acme=raw-token" } } as Request, {} as Response, next);
 
     expect(next.mock.calls[0]?.[0]?.getStatus()).toBe(401);
   });
@@ -362,7 +362,7 @@ describe("SessionMiddleware", () => {
     const next = vi.fn();
 
     await middleware.use(
-      { headers: { host: "api.example.test", cookie: "sid=raw-token" } } as Request,
+      { headers: { host: "api.example.test", cookie: "sid_system=raw-token" } } as Request,
       {} as Response,
       next,
     );
