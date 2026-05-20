@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, LogOut, Trophy, UserRound } from "lucide-react";
+import { Dumbbell, Home, ListOrdered, LogOut, Table2, Trophy, UserRound, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/tenant-auth";
 
 function isActivePath(pathname: string, href: string) {
+  if (href === "/club") return pathname === href || pathname === "/club/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -120,18 +121,27 @@ function ClubSidebar({
           <SidebarGroupLabel>Clube</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActivePath(pathname, "/club")}
-                  tooltip="Dashboard"
-                >
-                  <Link to="/club">
-                    <Home />
-                    <span>Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {[
+                { href: "/club", icon: Home, label: "Dashboard" },
+                { href: "/club/tables", icon: Table2, label: "Mesas" },
+                { href: "/club/ranking", icon: Trophy, label: "Ranking" },
+                { href: "/club/games", icon: ListOrdered, label: "Partidas" },
+                { href: "/club/athletes", icon: UsersRound, label: "Atletas" },
+                { href: "/club/profile", icon: Dumbbell, label: "Perfil" },
+              ].map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActivePath(pathname, item.href)}
+                    tooltip={item.label}
+                  >
+                    <Link to={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

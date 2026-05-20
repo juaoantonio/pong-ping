@@ -4,14 +4,17 @@ import { RequestContextModule } from "../../../common/context";
 import { CoreIdentityTranslator } from "../application/identity";
 import { RegisterAthleteUseCase, UpdateAthleteProfileUseCase } from "./application/use-cases";
 import { AthleteCommandController } from "./athlete-command.controller";
+import { AthleteReadController } from "./athlete-read.controller";
 import { AthleteRepository } from "./infrastructure/typeorm/repositories/athlete.repository";
 import { AthleteSchema } from "./infrastructure/typeorm/schemas/athlete.schema";
+import { AthleteReadQuery } from "./presentation/http/queries/athlete-read.query";
 
 @Module({
   imports: [RequestContextModule, TypeOrmModule.forFeature([AthleteSchema])],
-  controllers: [AthleteCommandController],
+  controllers: [AthleteCommandController, AthleteReadController],
   providers: [
     AthleteRepository,
+    AthleteReadQuery,
     CoreIdentityTranslator,
     {
       provide: RegisterAthleteUseCase,
@@ -26,6 +29,7 @@ import { AthleteSchema } from "./infrastructure/typeorm/schemas/athlete.schema";
   ],
   exports: [
     AthleteRepository,
+    AthleteReadQuery,
     CoreIdentityTranslator,
     RegisterAthleteUseCase,
     UpdateAthleteProfileUseCase,

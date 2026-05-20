@@ -15,6 +15,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClubIndexRouteImport } from './routes/club/index'
 import { Route as ClubLoginRouteImport } from './routes/club_.login'
+import { Route as ClubTablesRouteImport } from './routes/club/tables'
+import { Route as ClubRankingRouteImport } from './routes/club/ranking'
+import { Route as ClubProfileRouteImport } from './routes/club/profile'
+import { Route as ClubGamesRouteImport } from './routes/club/games'
+import { Route as ClubAthletesRouteImport } from './routes/club/athletes'
 import { Route as AdminTenantsRouteImport } from './routes/admin/tenants'
 import { Route as AdminTenantsTenantIdMembershipsRouteImport } from './routes/admin/tenants.$tenantId.memberships'
 
@@ -48,6 +53,31 @@ const ClubLoginRoute = ClubLoginRouteImport.update({
   path: '/club/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClubTablesRoute = ClubTablesRouteImport.update({
+  id: '/tables',
+  path: '/tables',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubRankingRoute = ClubRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubProfileRoute = ClubProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubGamesRoute = ClubGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => ClubRoute,
+} as any)
+const ClubAthletesRoute = ClubAthletesRouteImport.update({
+  id: '/athletes',
+  path: '/athletes',
+  getParentRoute: () => ClubRoute,
+} as any)
 const AdminTenantsRoute = AdminTenantsRouteImport.update({
   id: '/tenants',
   path: '/tenants',
@@ -66,6 +96,11 @@ export interface FileRoutesByFullPath {
   '/club': typeof ClubRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/tenants': typeof AdminTenantsRouteWithChildren
+  '/club/athletes': typeof ClubAthletesRoute
+  '/club/games': typeof ClubGamesRoute
+  '/club/profile': typeof ClubProfileRoute
+  '/club/ranking': typeof ClubRankingRoute
+  '/club/tables': typeof ClubTablesRoute
   '/club/login': typeof ClubLoginRoute
   '/club/': typeof ClubIndexRoute
   '/admin/tenants/$tenantId/memberships': typeof AdminTenantsTenantIdMembershipsRoute
@@ -75,6 +110,11 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/tenants': typeof AdminTenantsRouteWithChildren
+  '/club/athletes': typeof ClubAthletesRoute
+  '/club/games': typeof ClubGamesRoute
+  '/club/profile': typeof ClubProfileRoute
+  '/club/ranking': typeof ClubRankingRoute
+  '/club/tables': typeof ClubTablesRoute
   '/club/login': typeof ClubLoginRoute
   '/club': typeof ClubIndexRoute
   '/admin/tenants/$tenantId/memberships': typeof AdminTenantsTenantIdMembershipsRoute
@@ -86,6 +126,11 @@ export interface FileRoutesById {
   '/club': typeof ClubRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/tenants': typeof AdminTenantsRouteWithChildren
+  '/club/athletes': typeof ClubAthletesRoute
+  '/club/games': typeof ClubGamesRoute
+  '/club/profile': typeof ClubProfileRoute
+  '/club/ranking': typeof ClubRankingRoute
+  '/club/tables': typeof ClubTablesRoute
   '/club_/login': typeof ClubLoginRoute
   '/club/': typeof ClubIndexRoute
   '/admin/tenants/$tenantId/memberships': typeof AdminTenantsTenantIdMembershipsRoute
@@ -98,6 +143,11 @@ export interface FileRouteTypes {
     | '/club'
     | '/login'
     | '/admin/tenants'
+    | '/club/athletes'
+    | '/club/games'
+    | '/club/profile'
+    | '/club/ranking'
+    | '/club/tables'
     | '/club/login'
     | '/club/'
     | '/admin/tenants/$tenantId/memberships'
@@ -107,6 +157,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/admin/tenants'
+    | '/club/athletes'
+    | '/club/games'
+    | '/club/profile'
+    | '/club/ranking'
+    | '/club/tables'
     | '/club/login'
     | '/club'
     | '/admin/tenants/$tenantId/memberships'
@@ -117,6 +172,11 @@ export interface FileRouteTypes {
     | '/club'
     | '/login'
     | '/admin/tenants'
+    | '/club/athletes'
+    | '/club/games'
+    | '/club/profile'
+    | '/club/ranking'
+    | '/club/tables'
     | '/club_/login'
     | '/club/'
     | '/admin/tenants/$tenantId/memberships'
@@ -174,6 +234,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/club/tables': {
+      id: '/club/tables'
+      path: '/tables'
+      fullPath: '/club/tables'
+      preLoaderRoute: typeof ClubTablesRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/ranking': {
+      id: '/club/ranking'
+      path: '/ranking'
+      fullPath: '/club/ranking'
+      preLoaderRoute: typeof ClubRankingRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/profile': {
+      id: '/club/profile'
+      path: '/profile'
+      fullPath: '/club/profile'
+      preLoaderRoute: typeof ClubProfileRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/games': {
+      id: '/club/games'
+      path: '/games'
+      fullPath: '/club/games'
+      preLoaderRoute: typeof ClubGamesRouteImport
+      parentRoute: typeof ClubRoute
+    }
+    '/club/athletes': {
+      id: '/club/athletes'
+      path: '/athletes'
+      fullPath: '/club/athletes'
+      preLoaderRoute: typeof ClubAthletesRouteImport
+      parentRoute: typeof ClubRoute
+    }
     '/admin/tenants': {
       id: '/admin/tenants'
       path: '/tenants'
@@ -214,10 +309,20 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ClubRouteChildren {
+  ClubAthletesRoute: typeof ClubAthletesRoute
+  ClubGamesRoute: typeof ClubGamesRoute
+  ClubProfileRoute: typeof ClubProfileRoute
+  ClubRankingRoute: typeof ClubRankingRoute
+  ClubTablesRoute: typeof ClubTablesRoute
   ClubIndexRoute: typeof ClubIndexRoute
 }
 
 const ClubRouteChildren: ClubRouteChildren = {
+  ClubAthletesRoute: ClubAthletesRoute,
+  ClubGamesRoute: ClubGamesRoute,
+  ClubProfileRoute: ClubProfileRoute,
+  ClubRankingRoute: ClubRankingRoute,
+  ClubTablesRoute: ClubTablesRoute,
   ClubIndexRoute: ClubIndexRoute,
 }
 

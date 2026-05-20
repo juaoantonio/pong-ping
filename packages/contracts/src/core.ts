@@ -84,6 +84,23 @@ export interface AthleteResponseContract {
   profile: AthleteProfileContract;
 }
 
+export interface CorePageRequestContract {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CorePageMetaContract {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface CorePageResponseContract<TItem> {
+  items: TItem[];
+  page: CorePageMetaContract;
+}
+
 export interface CreateTableRequestContract {
   name: string;
   playMode: CorePlayModeContract;
@@ -171,4 +188,28 @@ export interface GameRecordResponseContract {
   originalRecordId: string | null;
   correctionId: string | null;
   isCorrection: boolean;
+}
+
+export interface RatingReadContract {
+  athleteId: string;
+  athleteDisplayName: string;
+  points: number;
+  wins: number;
+  totalMatches: number;
+  winRate: number;
+  tier: string | null;
+}
+
+export interface CoreTableSummaryContract {
+  totalTables: number;
+  activeTables: number;
+  queuedAthletes: number;
+  tables: TableResponseContract[];
+}
+
+export interface CoreDashboardSummaryContract {
+  tables: CoreTableSummaryContract;
+  activeAthleteCount: number;
+  recentGames: GameRecordResponseContract[];
+  ranking: RatingReadContract[];
 }
