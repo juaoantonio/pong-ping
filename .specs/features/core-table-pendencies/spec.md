@@ -9,8 +9,8 @@
 
 - Queries de listagem e detalhe existem.
 - Comandos existem para criar/renomear mesa, entrar/remover da fila, formar jogo ativo, remover do jogo ativo e rotacionar winner-stays.
-- `TableCommandController` exige admin para criar/renomear, mas comandos de fila/jogo ativo aceitam member/admin.
-- `TableRepository` usa `findOneBy` e `save` simples, sem lock explicito.
+- `TableCommandController` exige admin para criar/renomear; fila/jogo ativo aceitam member/admin com policy especifica para remocoes.
+- `TableRepository` usa transacao com lock pessimista para comandos mutaveis de mesa.
 
 ## Problema
 
@@ -18,10 +18,10 @@ Operacoes de fila e jogo ativo podem sofrer race conditions se dois comandos mod
 
 ## Objetivos
 
-- [ ] Avaliar concorrencia em operacoes de fila e jogo ativo.
-- [ ] Definir estrategia de lock/transacao/versionamento para comandos de mesa.
-- [ ] Revisar autorizacao para remover atleta da fila.
-- [ ] Revisar autorizacao para remover atleta do jogo ativo.
+- [x] Avaliar concorrencia em operacoes de fila e jogo ativo.
+- [x] Definir estrategia de lock/transacao/versionamento para comandos de mesa.
+- [x] Revisar autorizacao para remover atleta da fila.
+- [x] Revisar autorizacao para remover atleta do jogo ativo.
 
 ## Fora De Escopo
 
@@ -63,9 +63,8 @@ Operacoes de fila e jogo ativo podem sofrer race conditions se dois comandos mod
 
 ## Traceabilidade
 
-| ID | Origem em `PENDENCIAS_BACKEND.md` | Status inicial |
+| ID | Origem em `PENDENCIAS_BACKEND.md` | Status final |
 | --- | --- | --- |
-| CORE-TABLE-01 | Avaliar concorrencia em operacoes de fila/jogo ativo | Pendente |
-| CORE-TABLE-02 | Revisar autorizacao de remocao de atleta da fila | Pendente |
-| CORE-TABLE-03 | Revisar autorizacao de remocao de atleta do jogo ativo | Pendente |
-
+| CORE-TABLE-01 | Avaliar concorrencia em operacoes de fila/jogo ativo | Concluido |
+| CORE-TABLE-02 | Revisar autorizacao de remocao de atleta da fila | Concluido |
+| CORE-TABLE-03 | Revisar autorizacao de remocao de atleta do jogo ativo | Concluido |

@@ -10,9 +10,15 @@ Motivo: o agregado `Table` concentra fila e jogo ativo; comandos concorrentes pr
 
 ### Componentes Provaveis
 
-- `TableRepository.transaction(...)` ou metodo especifico como `withLockedTable(tableId, callback)`.
-- `TableRepository.findByIdForUpdate(...)`.
-- Use cases de mesa passam a executar dentro dessa unidade transacional.
+- `TableRepository.withLockedTable(clubId, tableId, callback)`.
+- `TableRepository.findByIdForClub(...)` para consultas tenant-scoped de comando.
+- Use cases de mesa executam dentro dessa unidade transacional quando alteram ou dependem da fila/jogo ativo.
+
+### Implementado
+
+- Estrategia selecionada: transacao TypeORM com `pessimistic_write` na linha de `tables`.
+- Comandos cobertos: renomear, entrar na fila, remover da fila, formar jogo ativo, remover do jogo ativo e rotacionar winner-stays.
+- Resposta para concorrencia: comandos concorrentes sobre a mesma mesa sao serializados pelo banco; conflitos de regra apos o lock retornam erro de dominio existente.
 
 ### Alternativa
 
@@ -26,7 +32,7 @@ Regra proposta:
   - Membro remove somente a si mesmo.
   - Admin remove qualquer atleta do tenant atual.
 - Remocao do jogo ativo:
-  - Membro remove somente a si mesmo, se produto aceitar abandono.
+  - Membro remove somente a si mesmo.
   - Admin remove qualquer atleta.
 
 ## Tenant Scope
@@ -43,4 +49,3 @@ Os comandos atuais recebem `tableId` e `athleteId`. Para evitar cross-tenant:
 - Formar jogo enquanto outro comando remove atleta da fila.
 - Rotacionar winner-stays enquanto outro comando remove atleta do jogo ativo.
 - Membro tentando remover outro atleta.
-

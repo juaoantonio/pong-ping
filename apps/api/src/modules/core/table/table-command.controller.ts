@@ -1,5 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { Body, Controller, Delete, HttpStatus, Param, Patch, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+} from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { CurrentContextService } from "../../../common/context";
 import {
@@ -92,7 +101,8 @@ export class TableCommandController {
     data: TableResponseDto,
   })
   public async rename(@Param("tableId") tableId: string, @Body() body: RenameTableRequestDto) {
-    const table = await this.renameTable.execute({ tableId, name: body.name });
+    const tenant = this.context.getTenantOrThrow();
+    const table = await this.renameTable.execute({ clubId: tenant.id, tableId, name: body.name });
 
     return toTableResponse(table);
   }
@@ -106,7 +116,9 @@ export class TableCommandController {
     data: TableQueueEntryCommandResponseDto,
   })
   public async enqueue(@Param("tableId") tableId: string) {
+    const tenant = this.context.getTenantOrThrow();
     const output = await this.enqueueTable.execute({
+      clubId: tenant.id,
       tableId,
       athleteId: await this.currentAthleteId(),
     });
@@ -131,7 +143,9 @@ export class TableCommandController {
     @Param("tableId") tableId: string,
     @Param("athleteId") athleteId: string,
   ) {
-    const output = await this.removeFromQueue.execute({ tableId, athleteId });
+    const tenant = this.context.getTenantOrThrow();
+    await this.assertCanRemoveAthlete(athleteId);
+    const output = await this.removeFromQueue.execute({ clubId: tenant.id, tableId, athleteId });
 
     return {
       table: toTableResponse(output.table),
@@ -152,7 +166,9 @@ export class TableCommandController {
     @Param("tableId") tableId: string,
     @Param("athleteId") athleteId: string,
   ) {
-    const output = await this.removeFromActiveGame.execute({ tableId, athleteId });
+    const tenant = this.context.getTenantOrThrow();
+    await this.assertCanRemoveAthlete(athleteId);
+    const output = await this.removeFromActiveGame.execute({ clubId: tenant.id, tableId, athleteId });
 
     return {
       table: toTableResponse(output.table),
@@ -170,7 +186,8 @@ export class TableCommandController {
     extraModels: [ActiveGameResponseDto],
   })
   public async formGame(@Param("tableId") tableId: string) {
-    const output = await this.formActiveGame.execute({ tableId });
+    const tenant = this.context.getTenantOrThrow();
+    const output = await this.formActiveGame.execute({ clubId: tenant.id, tableId });
 
     return {
       table: toTableResponse(output.table),
@@ -191,7 +208,9 @@ export class TableCommandController {
     @Param("tableId") tableId: string,
     @Body() body: WinningAthletesRequestDto,
   ) {
+    const tenant = this.context.getTenantOrThrow();
     const output = await this.rotateWinnerStays.execute({
+      clubId: tenant.id,
       tableId,
       winningAthleteIds: body.winningAthleteIds,
     });
@@ -211,5 +230,15 @@ export class TableCommandController {
     }
 
     return athlete.id.value;
+  }
+
+  private async assertCanRemoveAthlete(athleteId: string): Promise<void> {
+    const principal = this.context.getPrincipalOrThrow();
+    const currentAthleteId = await this.currentAthleteId();
+    const isAdmin = principal.tenantRoles.includes(IDENTITY_TENANT_ROLE.ADMIN);
+
+    if (!isAdmin && currentAthleteId !== athleteId) {
+      throw new ForbiddenException("Only tenant admins can remove other athletes from a table.");
+    }
   }
 }

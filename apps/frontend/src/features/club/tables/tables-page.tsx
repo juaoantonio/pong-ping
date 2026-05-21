@@ -155,7 +155,13 @@ function TableCard({
   const rotate = useRotateCoreWinnerStaysMutation();
   const recordGame = useRecordCoreGameMutation();
   const queuedAthleteIds = new Set(table.queue.map((entry) => entry.athleteId));
+  const activeAthleteIds = new Set(
+    table.activeGame
+      ? [...table.activeGame.firstSide.athleteIds, ...table.activeGame.secondSide.athleteIds]
+      : [],
+  );
   const isQueued = currentAthleteId ? queuedAthleteIds.has(currentAthleteId) : false;
+  const isActive = currentAthleteId ? activeAthleteIds.has(currentAthleteId) : false;
 
   return (
     <SectionPanel
@@ -174,7 +180,17 @@ function TableCard({
           </p>
           <div className="flex flex-wrap gap-2">
             {currentAthleteId ? (
-              isQueued ? (
+              isActive ? (
+                <Button
+                  disabled={removeActive.isPending}
+                  onClick={() => removeActive.mutate({ tableId: table.id, athleteId: currentAthleteId })}
+                  type="button"
+                  variant="outline"
+                >
+                  <UserMinus className="size-4" />
+                  Sair do jogo
+                </Button>
+              ) : isQueued ? (
                 <Button
                   disabled={removeQueued.isPending}
                   onClick={() => removeQueued.mutate({ tableId: table.id, athleteId: currentAthleteId })}
@@ -272,24 +288,20 @@ function TableCard({
                 {table.queue.map((entry) => (
                   <div className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-sm" key={entry.athleteId}>
                     <span>{entry.position + 1}. {entry.athleteId}</span>
-                    <Button
-                      disabled={removeQueued.isPending || removeActive.isPending}
-                      onClick={() => {
-                        const isActive = table.activeGame
-                          ? [
-                              ...table.activeGame.firstSide.athleteIds,
-                              ...table.activeGame.secondSide.athleteIds,
-                            ].includes(entry.athleteId)
-                          : false;
-                        const mutation = isActive ? removeActive : removeQueued;
-                        mutation.mutate({ tableId: table.id, athleteId: entry.athleteId });
-                      }}
-                      size="sm"
-                      type="button"
-                      variant="ghost"
-                    >
-                      Remover
-                    </Button>
+                    {isAdmin || entry.athleteId === currentAthleteId ? (
+                      <Button
+                        disabled={removeQueued.isPending || removeActive.isPending}
+                        onClick={() => {
+                          const mutation = activeAthleteIds.has(entry.athleteId) ? removeActive : removeQueued;
+                          mutation.mutate({ tableId: table.id, athleteId: entry.athleteId });
+                        }}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        {entry.athleteId === currentAthleteId ? "Sair" : "Remover"}
+                      </Button>
+                    ) : null}
                   </div>
                 ))}
               </div>

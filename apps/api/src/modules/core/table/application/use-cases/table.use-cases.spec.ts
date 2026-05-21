@@ -13,16 +13,36 @@ import { RemoveFromQueueUseCase } from "./remove-from-queue.use-case";
 import { RenameTableUseCase } from "./rename-table.use-case";
 import { RotateWinnerStaysUseCase } from "./rotate-winner-stays.use-case";
 
-class InMemoryTableRepository implements Pick<TableRepository, "findById" | "save"> {
+class InMemoryTableRepository
+  implements Pick<TableRepository, "findById" | "findByIdForClub" | "save" | "withLockedTable">
+{
   public readonly tables = new Map<string, Table>();
+  public lockedCalls = 0;
 
   public async findById(id: TableId): Promise<Table | null> {
     return this.tables.get(id.value) ?? null;
   }
 
+  public async findByIdForClub(clubId: ClubId, id: TableId): Promise<Table | null> {
+    const table = await this.findById(id);
+
+    return table?.clubId.equals(clubId) ? table : null;
+  }
+
   public async save(table: Table): Promise<Table> {
     this.tables.set(table.id.value, table);
     return table;
+  }
+
+  public async withLockedTable<T>(
+    clubId: ClubId,
+    id: TableId,
+    work: (table: Table, tables: TableRepository) => Promise<T>,
+  ): Promise<T | null> {
+    this.lockedCalls += 1;
+    const table = await this.findByIdForClub(clubId, id);
+
+    return table ? work(table, this as unknown as TableRepository) : null;
   }
 }
 
@@ -61,9 +81,10 @@ describe("use cases de mesa", () => {
     await repository.save(createTable());
     const useCase = new RenameTableUseCase(repository as TableRepository);
 
-    const table = await useCase.execute({ tableId: "table-1", name: "Mesa Central" });
+    const table = await useCase.execute({ clubId: "club-1", tableId: "table-1", name: "Mesa Central" });
 
     expect(table.name.value).toBe("Mesa Central");
+    expect(repository.lockedCalls).toBe(1);
   });
 
   it("coloca atleta na fila e persiste mesa", async () => {
@@ -71,10 +92,15 @@ describe("use cases de mesa", () => {
     await repository.save(createTable());
     const useCase = new EnqueueTableUseCase(repository as TableRepository);
 
-    const output = await useCase.execute({ tableId: "table-1", athleteId: "athlete-2" });
+    const output = await useCase.execute({
+      clubId: "club-1",
+      tableId: "table-1",
+      athleteId: "athlete-2",
+    });
 
     expect(output.membershipCreated).toBe(true);
     expect(output.table.queue.entries[0]?.athleteId.value).toBe("athlete-2");
+    expect(repository.lockedCalls).toBe(1);
   });
 
   it("remove atleta que nao esta no jogo atual", async () => {
@@ -86,7 +112,11 @@ describe("use cases de mesa", () => {
     await repository.save(table);
     const useCase = new RemoveFromQueueUseCase(repository as TableRepository);
 
-    const output = await useCase.execute({ tableId: "table-1", athleteId: "athlete-4" });
+    const output = await useCase.execute({
+      clubId: "club-1",
+      tableId: "table-1",
+      athleteId: "athlete-4",
+    });
 
     expect(output.removedEntry.athleteId.value).toBe("athlete-4");
     expect(output.table.queue.entries).toHaveLength(2);
@@ -100,7 +130,7 @@ describe("use cases de mesa", () => {
     await repository.save(table);
     const useCase = new FormActiveGameUseCase(repository as TableRepository);
 
-    const output = await useCase.execute({ tableId: "table-1" });
+    const output = await useCase.execute({ clubId: "club-1", tableId: "table-1" });
 
     expect(output.activeGame.firstSide.athletes[0]?.value).toBe("athlete-1");
     expect(output.activeGame.secondSide.athletes[0]?.value).toBe("athlete-2");
@@ -115,7 +145,11 @@ describe("use cases de mesa", () => {
     await repository.save(table);
     const useCase = new RemoveFromActiveGameUseCase(repository as TableRepository);
 
-    const output = await useCase.execute({ tableId: "table-1", athleteId: "athlete-1" });
+    const output = await useCase.execute({
+      clubId: "club-1",
+      tableId: "table-1",
+      athleteId: "athlete-1",
+    });
 
     expect(output.removedEntry.athleteId.value).toBe("athlete-1");
     expect(output.table.queue.entries.map((entry) => entry.athleteId.value)).toEqual([
@@ -133,7 +167,11 @@ describe("use cases de mesa", () => {
     await repository.save(table);
     const useCase = new RotateWinnerStaysUseCase(repository as TableRepository);
 
-    await useCase.execute({ tableId: "table-1", winningAthleteIds: ["athlete-2"] });
+    await useCase.execute({
+      clubId: "club-1",
+      tableId: "table-1",
+      winningAthleteIds: ["athlete-2"],
+    });
 
     expect(table.queue.entries.map((entry) => entry.athleteId.value)).toEqual([
       "athlete-2",
@@ -145,6 +183,18 @@ describe("use cases de mesa", () => {
   it("rejeita operacao em mesa inexistente", async () => {
     const useCase = new FormActiveGameUseCase(new InMemoryTableRepository() as TableRepository);
 
-    await expect(useCase.execute({ tableId: "table-404" })).rejects.toThrow(DomainRuleViolation);
+    await expect(useCase.execute({ clubId: "club-1", tableId: "table-404" })).rejects.toThrow(
+      DomainRuleViolation,
+    );
+  });
+
+  it("rejeita operacao em mesa de outro clube", async () => {
+    const repository = new InMemoryTableRepository();
+    await repository.save(createTable());
+    const useCase = new EnqueueTableUseCase(repository as TableRepository);
+
+    await expect(
+      useCase.execute({ clubId: "club-2", tableId: "table-1", athleteId: "athlete-2" }),
+    ).rejects.toThrow(DomainRuleViolation);
   });
 });

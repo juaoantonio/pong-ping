@@ -27,16 +27,16 @@ describe("Fluxo de mesa e jogo core - e2e", () => {
     });
 
     const createTableResponse = await tenantRequest(ctx, admin)
-      .post("/v1/core/tables")
+      .post("/v1/tables")
       .send({ name: "Mesa Central", playMode: "singles" })
       .expect(201);
     const tableId = createTableResponse.body.data.id as string;
 
-    await tenantRequest(ctx, member).post(`/v1/core/tables/${tableId}/queue`).expect(201);
-    await tenantRequest(ctx, admin).post(`/v1/core/tables/${tableId}/queue`).expect(201);
+    await tenantRequest(ctx, member).post(`/v1/tables/${tableId}/queue`).expect(201);
+    await tenantRequest(ctx, admin).post(`/v1/tables/${tableId}/queue`).expect(201);
 
     const activeGameResponse = await tenantRequest(ctx, admin)
-      .post(`/v1/core/tables/${tableId}/active-game`)
+      .post(`/v1/tables/${tableId}/active-game`)
       .expect(201);
 
     expectSuccessEnvelope(activeGameResponse.body);
@@ -46,11 +46,11 @@ describe("Fluxo de mesa e jogo core - e2e", () => {
     });
 
     const recordResponse = await tenantRequest(ctx, admin)
-      .post(`/v1/core/tables/${tableId}/games`)
+      .post(`/v1/tables/${tableId}/games`)
       .send({ winningAthleteIds: ["athlete-admin"] })
       .expect(201);
-    const gamesResponse = await tenantRequest(ctx, admin).get("/v1/core/games").expect(200);
-    const rankingResponse = await tenantRequest(ctx, admin).get("/v1/core/ratings").expect(200);
+    const gamesResponse = await tenantRequest(ctx, admin).get("/v1/games").expect(200);
+    const rankingResponse = await tenantRequest(ctx, admin).get("/v1/ratings").expect(200);
 
     expectSuccessEnvelope(recordResponse.body);
     expect(recordResponse.body.data).toMatchObject({

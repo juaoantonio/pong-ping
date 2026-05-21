@@ -27,11 +27,11 @@ describe("Autorizacao core do clube - e2e", () => {
     });
 
     const deniedResponse = await tenantRequest(ctx, member)
-      .post("/v1/core/tables")
+      .post("/v1/tables")
       .send({ name: "Mesa Negada", playMode: "singles" })
       .expect(403);
     const allowedResponse = await tenantRequest(ctx, admin)
-      .post("/v1/core/tables")
+      .post("/v1/tables")
       .send({ name: "Mesa Permitida", playMode: "singles" })
       .expect(201);
 

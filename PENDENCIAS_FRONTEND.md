@@ -56,6 +56,7 @@ Nota: Next.js e qualquer app Next legado nao devem guiar novas implementacoes. O
   - [x] Formar jogo ativo.
   - [x] Remover atleta do jogo ativo.
   - [x] Rotacionar winner-stays.
+  - [x] Respeitar politica self/admin para remocoes na fila e no jogo ativo.
 - [x] Criar fluxo de jogos.
   - [x] Registrar vencedor.
   - [x] Mostrar confirmacao antes de gravar resultado.

@@ -52,6 +52,13 @@ function createTable(): Table {
   });
 }
 
+function queuedTable(athleteId = "athlete-1") {
+  const table = createTable();
+  const queueEntry = table.enqueue(new AthleteId(athleteId)).queueEntry;
+
+  return { queueEntry, table };
+}
+
 describe("controllers de comandos core", () => {
   it("atualiza o proprio perfil de atleta como membro", async () => {
     const updateAthleteProfile = { execute: vi.fn().mockResolvedValue(createAthlete()) };
@@ -154,6 +161,116 @@ describe("controllers de comandos core", () => {
       }),
     );
     expect(response).toMatchObject({ id: "table-1", createdByAthleteId: "athlete-1" });
+  });
+
+  it("permite membro remover a si mesmo da fila", async () => {
+    const output = queuedTable("athlete-1");
+    const removeFromQueue = { execute: vi.fn().mockResolvedValue({ table: output.table, removedEntry: output.queueEntry }) };
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new TableCommandController(
+      contextStub() as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      removeFromQueue as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+    );
+
+    await controller.removeQueued("table-1", "athlete-1");
+
+    expect(removeFromQueue.execute).toHaveBeenCalledWith({
+      clubId: "club-1",
+      tableId: "table-1",
+      athleteId: "athlete-1",
+    });
+  });
+
+  it("nega membro removendo outro atleta da fila", async () => {
+    const removeFromQueue = { execute: vi.fn() };
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new TableCommandController(
+      contextStub() as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      removeFromQueue as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+    );
+
+    await expect(controller.removeQueued("table-1", "athlete-2")).rejects.toThrow(
+      ForbiddenException,
+    );
+    expect(removeFromQueue.execute).not.toHaveBeenCalled();
+  });
+
+  it("permite admin remover outro atleta da fila", async () => {
+    const output = queuedTable("athlete-2");
+    const removeFromQueue = { execute: vi.fn().mockResolvedValue({ table: output.table, removedEntry: output.queueEntry }) };
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new TableCommandController(
+      contextStub({
+        principal: {
+          ...principal,
+          tenantRoles: ["admin"],
+        },
+      }) as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      removeFromQueue as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+    );
+
+    await controller.removeQueued("table-1", "athlete-2");
+
+    expect(removeFromQueue.execute).toHaveBeenCalledWith({
+      clubId: "club-1",
+      tableId: "table-1",
+      athleteId: "athlete-2",
+    });
+  });
+
+  it("aplica politica self/admin ao remover atleta do jogo ativo", async () => {
+    const output = queuedTable("athlete-1");
+    const removeFromActiveGame = {
+      execute: vi.fn().mockResolvedValue({ table: output.table, removedEntry: output.queueEntry }),
+    };
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new TableCommandController(
+      contextStub() as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+      removeFromActiveGame as never,
+      { execute: vi.fn() } as never,
+      { execute: vi.fn() } as never,
+    );
+
+    await controller.removeActive("table-1", "athlete-1");
+
+    expect(removeFromActiveGame.execute).toHaveBeenCalledWith({
+      clubId: "club-1",
+      tableId: "table-1",
+      athleteId: "athlete-1",
+    });
+    await expect(controller.removeActive("table-1", "athlete-2")).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it("registra jogo com atleta atual como ator", async () => {

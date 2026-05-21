@@ -1,7 +1,7 @@
 # Core Table Pendencies Tasks
 
-**Status**: Draft  
-**Escopo**: pre-implementacao
+**Status**: Implementado
+**Escopo**: implementacao concluida
 
 ## Gate Check Commands
 
@@ -21,9 +21,9 @@
 
 **Done when**:
 
-- [ ] Estrategia selecionada esta documentada.
-- [ ] Comandos impactados estao listados.
-- [ ] Resposta esperada para conflito esta definida.
+- [x] Estrategia selecionada esta documentada.
+- [x] Comandos impactados estao listados.
+- [x] Resposta esperada para conflito esta definida.
 
 ### T2: Planejar Repositorio Transacional
 
@@ -33,8 +33,8 @@
 
 **Done when**:
 
-- [ ] API transacional cobre os comandos mutaveis de mesa.
-- [ ] Testes conseguem simular conflito ou verificar uso de transaction manager.
+- [x] API transacional cobre os comandos mutaveis de mesa.
+- [x] Testes verificam uso do caminho locked nos use cases.
 
 ### T3: Planejar Tenant Scope Dos Comandos
 
@@ -44,8 +44,8 @@
 
 **Done when**:
 
-- [ ] Mesa de outro tenant nao pode ser alterada pelo endpoint.
-- [ ] Teste cobre tentativa cross-tenant.
+- [x] Mesa de outro tenant nao pode ser alterada pelo endpoint.
+- [x] Teste cobre tentativa cross-tenant.
 
 ### T4: Planejar Autorizacao De Remocao
 
@@ -55,8 +55,8 @@
 
 **Done when**:
 
-- [ ] Membro remove a si mesmo.
-- [ ] Membro nao remove outro atleta.
-- [ ] Admin remove outro atleta no mesmo tenant.
-- [ ] Gates `unit` e `build` passam.
-
+- [x] Membro remove a si mesmo.
+- [x] Membro nao remove outro atleta.
+- [x] Admin remove outro atleta no mesmo tenant.
+- [x] Gate `unit` passa.
+- [x] Gate `build` passa.

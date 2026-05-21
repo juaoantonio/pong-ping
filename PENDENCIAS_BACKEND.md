@@ -107,10 +107,12 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
   - [x] Criar listagem de atletas do clube.
   - [x] Validar se atualizacao de perfil deve restringir edicao ao proprio atleta ou admins.
     - Decisao: usuario tenant edita somente o proprio perfil; admin nao edita perfil de outro atleta.
-- [ ] `Table`
+- [x] `Table`
   - [x] Criar queries para listagem e detalhe.
-  - [ ] Avaliar concorrencia em operacoes de fila/jogo ativo.
-  - [ ] Revisar autorizacao de remocao de atleta da fila e jogo ativo.
+  - [x] Avaliar concorrencia em operacoes de fila/jogo ativo.
+    - Decisao: comandos mutaveis de mesa usam transacao com lock pessimista na linha da mesa.
+  - [x] Revisar autorizacao de remocao de atleta da fila e jogo ativo.
+    - Decisao: membro remove somente a si mesmo; admin remove qualquer atleta do tenant atual.
 - [x] `Competition`
   - [x] Criar historico de jogos.
   - [x] Criar consulta de detalhe de jogo.
@@ -151,5 +153,4 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
 - [x] `pnpm --filter @pong-ping/api build`
 - [x] `apps/frontend`: `vitest run`
 - [x] `apps/frontend`: `vite build && tsc -b`
-- [ ] `pnpm --filter @pong-ping/api test:e2e`
-  - Bloqueado no ambiente atual por falta de runtime Docker/Testcontainers.
+- [x] `pnpm --filter @pong-ping/api test:e2e`

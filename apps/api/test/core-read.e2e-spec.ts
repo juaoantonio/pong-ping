@@ -36,9 +36,9 @@ describe("Leituras core do clube - e2e", () => {
     await tables.save(createTable(alpha.id, "alpha-table", "Mesa Alpha", "alpha-athlete-1"));
     await tables.save(createTable(beta.id, "beta-table", "Mesa Beta", "beta-athlete-1"));
 
-    const listResponse = await tenantRequest(ctx, alphaAdmin).get("/v1/core/tables").expect(200);
+    const listResponse = await tenantRequest(ctx, alphaAdmin).get("/v1/tables").expect(200);
     const dashboardResponse = await tenantRequest(ctx, alphaAdmin)
-      .get("/v1/core/dashboard")
+      .get("/v1/dashboard")
       .expect(200);
 
     expectSuccessEnvelope(listResponse.body);
