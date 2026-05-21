@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { AthleteReadController } from "./athlete/athlete-read.controller";
+import { ClubReadController } from "./club/club-read.controller";
 import { CompetitionReadController } from "./competition/competition-read.controller";
 import { CoreDashboardReadController } from "./core-dashboard-read.controller";
 import { RatingReadController } from "./rating/rating-read.controller";
@@ -22,6 +23,15 @@ function contextStub() {
 }
 
 describe("controllers de leitura core", () => {
+  it("consulta clube atual usando tenant atual", async () => {
+    const query = { getCurrentClub: vi.fn().mockResolvedValue({ id: "club-1" }) };
+    const controller = new ClubReadController(contextStub() as never, query as never);
+
+    await expect(controller.current()).resolves.toEqual({ id: "club-1" });
+
+    expect(query.getCurrentClub).toHaveBeenCalledWith("club-1");
+  });
+
   it("lista mesas usando tenant atual e paginacao recebida", async () => {
     const query = { listTables: vi.fn().mockResolvedValue({ items: [], page: {} }) };
     const controller = new TableReadController(contextStub() as never, query as never);

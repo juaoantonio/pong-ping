@@ -1,6 +1,6 @@
 # Pendencias Backend
 
-Atualizado em: 2026-05-20
+Atualizado em: 2026-05-21
 
 Escopo: `apps/api`
 
@@ -45,6 +45,14 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
 - Integracao `identity` -> `core` existe:
   - Tenant criado/atualizado sincroniza `Club`.
   - Login de usuario tenant registra `Athlete`.
+- APIs tenant-scoped do modulo esportivo nao usam mais o prefixo publico `/core`; o prefixo global `/v1` permanece.
+- `core` possui leitura implementada para:
+  - Clube atual (`GET /club`).
+  - Dashboard (`GET /dashboard`).
+  - Mesas (`GET /tables`, `GET /tables/:tableId`).
+  - Atletas (`GET /athletes/me`, `GET /athletes`).
+  - Ratings (`GET /ratings`).
+  - Jogos (`GET /games`, `GET /games/:gameRecordId`).
 - `core` possui comandos implementados para:
   - Atualizar perfil de atleta.
   - Criar/renomear mesa.
@@ -59,6 +67,7 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
 ## Pendencias Prioritarias
 
 - [x] Criar read APIs do `core` para a area do clube.
+  - [x] Consultar dados do clube atual.
   - [x] Listar mesas do tenant atual.
   - [x] Consultar detalhe de mesa.
   - [x] Expor fila da mesa.
@@ -88,9 +97,11 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
 
 ## Pendencias Do Core
 
-- [ ] `Club`
-  - [ ] Decidir se precisa API de leitura administrativa ou se continua somente sincronizado por identity.
-  - [ ] Criar consulta interna/externa para dados do clube atual, se o frontend precisar.
+- [x] `Club`
+  - [x] Decidir se precisa API de leitura administrativa ou se continua somente sincronizado por identity.
+    - Decisao: `identity.tenant` continua fonte administrativa; `core.club` permanece sincronizado para o dominio esportivo.
+  - [x] Criar consulta interna/externa para dados do clube atual.
+    - Implementado como `GET /club`, tenant-scoped, usando `ClubResponseContract`.
 - [ ] `Athlete`
   - [x] Criar endpoint para atleta atual.
   - [x] Criar listagem de atletas do clube.
@@ -99,7 +110,7 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
   - [x] Criar queries para listagem e detalhe.
   - [ ] Avaliar concorrencia em operacoes de fila/jogo ativo.
   - [ ] Revisar autorizacao de remocao de atleta da fila e jogo ativo.
-- [ ] `Competition`
+- [x] `Competition`
   - [x] Criar historico de jogos.
   - [x] Criar consulta de detalhe de jogo.
   - [x] Expor correcoes no historico.
@@ -136,5 +147,7 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
 - [x] `pnpm --filter @pong-ping/contracts build`
 - [x] `pnpm --filter @pong-ping/api test`
 - [x] `pnpm --filter @pong-ping/api build`
+- [x] `apps/frontend`: `vitest run`
+- [x] `apps/frontend`: `vite build && tsc -b`
 - [ ] `pnpm --filter @pong-ping/api test:e2e`
   - Bloqueado no ambiente atual por falta de runtime Docker/Testcontainers.

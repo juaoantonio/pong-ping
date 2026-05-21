@@ -8,13 +8,17 @@ import {
   DeactivateClubUseCase,
   RenameClubUseCase,
 } from "./application/use-cases";
+import { ClubReadController } from "./club-read.controller";
 import { ClubRepository } from "./infrastructure/typeorm/repositories/club.repository";
 import { ClubSchema } from "./infrastructure/typeorm/schemas/club.schema";
+import { ClubReadQuery } from "./presentation/http/queries/club-read.query";
 
 @Module({
   imports: [RequestContextModule, TypeOrmModule.forFeature([ClubSchema])],
+  controllers: [ClubReadController],
   providers: [
     ClubRepository,
+    ClubReadQuery,
     {
       provide: CreateClubUseCase,
       inject: [ClubRepository],
@@ -43,6 +47,7 @@ import { ClubSchema } from "./infrastructure/typeorm/schemas/club.schema";
   ],
   exports: [
     ClubRepository,
+    ClubReadQuery,
     CreateClubUseCase,
     RenameClubUseCase,
     ChangeClubSlugUseCase,

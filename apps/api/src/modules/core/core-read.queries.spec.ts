@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { Athlete, AthleteDisplayName, AthleteId } from "./athlete/domain";
 import { AthleteReadQuery } from "./athlete/presentation/http/queries/athlete-read.query";
-import { ClubId } from "./club/domain";
+import { Club, ClubId, ClubName, ClubSlug } from "./club/domain";
+import { ClubReadQuery } from "./club/presentation/http/queries/club-read.query";
 import { GameRecord, GameRecordId, SideRatingChange } from "./competition/domain";
 import { GameReadQuery } from "./competition/presentation/http/queries/game-read.query";
 import { CoreDashboardReadQuery } from "./presentation/http/queries/core-dashboard-read.query";
@@ -27,6 +28,15 @@ function createAthlete(input: {
     clubId: new ClubId(input.clubId ?? "club-1"),
     userId: new ActorId(input.userId ?? `user-${input.id}`),
     displayName: new AthleteDisplayName(input.displayName ?? input.id),
+  });
+}
+
+function createClub() {
+  return Club.create({
+    id: new ClubId("club-1"),
+    name: new ClubName("Central Pong"),
+    slug: new ClubSlug("central-pong"),
+    createdAt: new Date("2026-05-20T09:00:00.000Z"),
   });
 }
 
@@ -94,6 +104,30 @@ function createGameRecord() {
 }
 
 describe("queries de leitura core", () => {
+  it("consulta clube atual com tenant scope e serializacao", async () => {
+    const club = createClub();
+    const clubs = repositoryStub({ findOneBy: vi.fn().mockResolvedValue(club) });
+    const query = new ClubReadQuery(clubs as never);
+
+    const response = await query.getCurrentClub("club-1");
+
+    expect(clubs.findOneBy).toHaveBeenCalledWith({ id: new ClubId("club-1") });
+    expect(response).toEqual({
+      id: "club-1",
+      name: "Central Pong",
+      slug: "central-pong",
+      active: true,
+      createdAt: "2026-05-20T09:00:00.000Z",
+    });
+  });
+
+  it("rejeita clube atual ausente", async () => {
+    const clubs = repositoryStub({ findOneBy: vi.fn().mockResolvedValue(null) });
+    const query = new ClubReadQuery(clubs as never);
+
+    await expect(query.getCurrentClub("club-1")).rejects.toThrow(DomainRuleViolation);
+  });
+
   it("lista mesas com tenant scope, paginacao e serializacao", async () => {
     const table = createTable({ id: "table-1", queuedAthleteIds: ["athlete-1", "athlete-2"] });
     const tables = repositoryStub({

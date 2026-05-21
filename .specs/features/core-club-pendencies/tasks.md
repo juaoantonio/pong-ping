@@ -1,7 +1,7 @@
 # Core Club Pendencies Tasks
 
-**Status**: Draft  
-**Escopo**: pre-implementacao
+**Status**: Implementado  
+**Escopo**: backend e frontend
 
 ## Gate Check Commands
 
@@ -21,9 +21,9 @@
 
 **Done when**:
 
-- [ ] Ownership entre `identity.tenant` e `core.club` esta documentado.
-- [ ] Alteracoes permitidas via Core estao explicitamente aceitas ou rejeitadas.
-- [ ] Nenhuma tarefa de controller administrativo segue sem essa decisao.
+- [x] Ownership entre `identity.tenant` e `core.club` esta documentado.
+- [x] Alteracoes permitidas via Core estao explicitamente aceitas ou rejeitadas.
+- [x] Nenhuma tarefa de controller administrativo segue sem essa decisao.
 
 ### T2: Definir Contrato De Leitura Do Clube Atual
 
@@ -33,8 +33,8 @@
 
 **Done when**:
 
-- [ ] Shape de resposta esta definido.
-- [ ] Build de contratos passa se houver alteracao.
+- [x] Shape de resposta esta definido.
+- [x] Build de contratos passa se houver alteracao.
 
 ### T3: Planejar Read Query Do Clube Atual
 
@@ -44,20 +44,19 @@
 
 **Done when**:
 
-- [ ] Query filtra por `tenantId`.
-- [ ] Query retorna DTO/contrato de leitura, sem reconstruir agregado para exibicao.
-- [ ] Teste cobre sucesso e clube ausente.
+- [x] Query filtra por `tenantId`.
+- [x] Query retorna DTO/contrato de leitura, sem reconstruir agregado para exibicao.
+- [x] Teste cobre sucesso e clube ausente.
 
 ### T4: Planejar Controller De Leitura
 
-**What**: Expor `GET /core/club` se confirmado pelo frontend.  
+**What**: Expor `GET /club` se confirmado pelo frontend.  
 **Where**: `apps/api/src/modules/core/club/club-read.controller.ts`, `club.module.ts`  
 **Requirement**: CORE-CLUB-02
 
 **Done when**:
 
-- [ ] Controller usa `CurrentContextService` para obter tenant atual.
-- [ ] Roles `MEMBER` e `ADMIN` sao aceitas.
-- [ ] Controller esta registrado no `ClubModule`.
-- [ ] Gates `unit` e `build` passam.
-
+- [x] Controller usa `CurrentContextService` para obter tenant atual.
+- [x] Roles `MEMBER` e `ADMIN` sao aceitas.
+- [x] Controller esta registrado no `ClubModule`.
+- [x] Gates `unit` e `build` passam.

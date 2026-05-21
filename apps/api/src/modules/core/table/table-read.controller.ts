@@ -11,8 +11,8 @@ import { CorePageQueryDto } from "../shared/presentation/http/dtos/core-page.dto
 import { TableResponseDto } from "./presentation/http/dtos/table-command.dtos";
 import { TableReadQuery } from "./presentation/http/queries/table-read.query";
 
-@ApiTags("core tables")
-@Controller("core/tables")
+@ApiTags("tables")
+@Controller("tables")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class TableReadController {
   public constructor(

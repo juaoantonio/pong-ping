@@ -3,6 +3,7 @@ import type { CorePageRequestContract } from "@pong-ping/contracts";
 import {
   getCoreDashboard,
   getCoreTable,
+  getCurrentCoreClub,
   getCurrentCoreAthlete,
   listCoreAthletes,
   listCoreGames,
@@ -15,6 +16,13 @@ export function useCoreDashboardQuery() {
   return useQuery({
     queryKey: coreQueryKeys.dashboard(),
     queryFn: getCoreDashboard,
+  });
+}
+
+export function useCurrentCoreClubQuery() {
+  return useQuery({
+    queryKey: coreQueryKeys.club.current(),
+    queryFn: getCurrentCoreClub,
   });
 }
 

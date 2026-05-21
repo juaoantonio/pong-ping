@@ -24,6 +24,7 @@ import {
   tenantAuthKeys,
   tenantMeQueryOptions,
 } from "@/lib/api/tenant-auth";
+import { useCurrentCoreClubQuery } from "@/features/club/api/queries";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/club") return pathname === href || pathname === "/club/";
@@ -39,6 +40,8 @@ export function ClubLayout() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const me = useQuery(tenantMeQueryOptions());
+  const club = useCurrentCoreClubQuery();
+  const clubName = club.data?.name ?? "Pong Ping Club";
   const logout = useMutation({
     mutationFn: logoutTenantSession,
     onSuccess: async () => {
@@ -61,6 +64,7 @@ export function ClubLayout() {
         isLoggingOut={logout.isPending}
         onLogout={() => logout.mutate()}
         pathname={location.pathname}
+        clubName={clubName}
         userId={me.data?.userId}
       />
       <SidebarInset>
@@ -69,7 +73,7 @@ export function ClubLayout() {
           <Separator className="mr-2 h-4" orientation="vertical" />
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <Link className="text-muted-foreground transition-colors hover:text-foreground" to="/club">
-              Clube
+              {clubName}
             </Link>
             <span className="text-muted-foreground">/</span>
             <span className="truncate font-medium">Dashboard</span>
@@ -87,11 +91,13 @@ function ClubSidebar({
   isLoggingOut,
   onLogout,
   pathname,
+  clubName,
   userId,
 }: {
   isLoggingOut: boolean;
   onLogout: () => void;
   pathname: string;
+  clubName: string;
   userId?: string;
 }) {
   const userLabel = shortId(userId);
@@ -101,13 +107,13 @@ function ClubSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" tooltip="Pong Ping Club">
+            <SidebarMenuButton asChild size="lg" tooltip={clubName}>
               <Link to="/club">
                 <span className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
                   <Trophy className="size-4" />
                 </span>
                 <span className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Pong Ping Club</span>
+                  <span className="truncate font-semibold">{clubName}</span>
                   <span className="truncate text-xs">Workspace do clube</span>
                 </span>
               </Link>

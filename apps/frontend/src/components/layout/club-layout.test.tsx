@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClubLayout } from "@/components/layout/club-layout";
+import { coreQueryKeys } from "@/features/club/api/query-keys";
 import { authKeys } from "@/lib/api/system-admin";
 import { tenantAuthKeys } from "@/lib/api/tenant-auth";
 
@@ -65,6 +66,13 @@ function renderLayout(
     systemRoles: ["system_admin"],
     tenantRoles: [],
   });
+  queryClient.setQueryData(coreQueryKeys.club.current(), {
+    id: "tenant-1",
+    name: "Central Pong",
+    slug: "central-pong",
+    active: true,
+    createdAt: "2026-05-20T09:00:00.000Z",
+  });
 
   return render(
     <QueryClientProvider client={queryClient}>
@@ -108,7 +116,7 @@ describe("ClubLayout", () => {
       "id",
       "main-content",
     );
-    expect(screen.getByText("Pong Ping Club")).toBeInTheDocument();
+    expect(screen.getAllByText("Central Pong")).toHaveLength(2);
     expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
       "href",
       "/club",

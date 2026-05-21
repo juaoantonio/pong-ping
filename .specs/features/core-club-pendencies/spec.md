@@ -18,10 +18,10 @@ O Core ainda naeo decidiu se `Club` precisa de uma superfaAcie administrativa/le
 
 ## Objetivos
 
-- [ ] Decidir se `Club` teraa API administrativa praApria no Core.
-- [ ] Definir se a leitura do clube atual ao interna, externa ou desnecessaaria.
-- [ ] Se necessaaria, especificar consulta tenant-scoped para dados do clube atual.
-- [ ] Evitar duplicidade de ownership entre `identity.tenant` e `core.club`.
+- [x] Decidir se `Club` teraa API administrativa praApria no Core.
+- [x] Definir se a leitura do clube atual ao interna, externa ou desnecessaaria.
+- [x] Se necessaaria, especificar consulta tenant-scoped para dados do clube atual.
+- [x] Evitar duplicidade de ownership entre `identity.tenant` e `core.club`.
 
 ## Fora De Escopo
 
@@ -58,4 +58,3 @@ O Core ainda naeo decidiu se `Club` precisa de uma superfaAcie administrativa/le
 | --- | --- | --- |
 | CORE-CLUB-01 | Decidir se precisa API de leitura administrativa ou se continua somente sincronizado por identity | Pendente |
 | CORE-CLUB-02 | Criar consulta interna/externa para dados do clube atual, se o frontend precisar | Pendente |
-

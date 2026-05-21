@@ -15,8 +15,8 @@ import { CorrectGameUseCase, RecordGameUseCase } from "./application/use-cases";
 import { GameRecordResponseDto } from "./presentation/http/dtos/competition-command.dtos";
 import { toGameRecordResponse } from "./presentation/http/serializers/competition-contract.serializer";
 
-@ApiTags("core competitions")
-@Controller("core")
+@ApiTags("competitions")
+@Controller()
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class CompetitionCommandController {
   public constructor(

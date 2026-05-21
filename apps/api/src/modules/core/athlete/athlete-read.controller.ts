@@ -11,8 +11,8 @@ import { CorePageQueryDto } from "../shared/presentation/http/dtos/core-page.dto
 import { AthleteResponseDto } from "./presentation/http/dtos/athlete-command.dtos";
 import { AthleteReadQuery } from "./presentation/http/queries/athlete-read.query";
 
-@ApiTags("core athletes")
-@Controller("core/athletes")
+@ApiTags("athletes")
+@Controller("athletes")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class AthleteReadController {
   public constructor(

@@ -10,8 +10,8 @@ import { IDENTITY_TENANT_ROLE } from "../identity/identity-roles";
 import { CoreDashboardSummaryDto } from "./presentation/http/dtos/core-dashboard-read.dtos";
 import { CoreDashboardReadQuery } from "./presentation/http/queries/core-dashboard-read.query";
 
-@ApiTags("core dashboard")
-@Controller("core/dashboard")
+@ApiTags("dashboard")
+@Controller("dashboard")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class CoreDashboardReadController {
   public constructor(

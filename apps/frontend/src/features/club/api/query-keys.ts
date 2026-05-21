@@ -2,6 +2,9 @@ import type { CorePageRequestContract } from "@pong-ping/contracts";
 
 export const coreQueryKeys = {
   all: ["core"] as const,
+  club: {
+    current: () => [...coreQueryKeys.all, "club", "current"] as const,
+  },
   dashboard: () => [...coreQueryKeys.all, "dashboard"] as const,
   tables: {
     all: () => [...coreQueryKeys.all, "tables"] as const,

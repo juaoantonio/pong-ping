@@ -35,8 +35,8 @@ import {
   toTableResponse,
 } from "./presentation/http/serializers/table-contract.serializer";
 
-@ApiTags("core tables")
-@Controller("core/tables")
+@ApiTags("tables")
+@Controller("tables")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class TableCommandController {
   public constructor(

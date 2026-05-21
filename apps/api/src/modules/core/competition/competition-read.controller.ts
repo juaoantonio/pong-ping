@@ -11,8 +11,8 @@ import { CorePageQueryDto } from "../shared/presentation/http/dtos/core-page.dto
 import { GameRecordResponseDto } from "./presentation/http/dtos/competition-command.dtos";
 import { GameReadQuery } from "./presentation/http/queries/game-read.query";
 
-@ApiTags("core competitions")
-@Controller("core/games")
+@ApiTags("competitions")
+@Controller("games")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class CompetitionReadController {
   public constructor(

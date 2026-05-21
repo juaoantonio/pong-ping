@@ -13,8 +13,8 @@ import {
 } from "./presentation/http/dtos/athlete-command.dtos";
 import { toAthleteResponse } from "./presentation/http/serializers/athlete-contract.serializer";
 
-@ApiTags("core athletes")
-@Controller("core/athletes")
+@ApiTags("athletes")
+@Controller("athletes")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class AthleteCommandController {
   public constructor(private readonly updateAthleteProfile: UpdateAthleteProfileUseCase) {}

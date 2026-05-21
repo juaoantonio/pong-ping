@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Query } from "@nestjs/common";
+import { Controller, Get, HttpStatus } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentContextService } from "../../../common/context";
 import {
@@ -7,32 +7,33 @@ import {
 } from "../../../common/shared/http/api-response.swagger";
 import { RequireTenantRoles } from "../../identity/authorization/authorization.decorators";
 import { IDENTITY_TENANT_ROLE } from "../../identity/identity-roles";
-import { CorePageQueryDto } from "../shared/presentation/http/dtos/core-page.dtos";
-import { RatingReadQuery } from "./presentation/http/queries/rating-read.query";
+import { ClubResponseDto } from "./presentation/http/dtos/club-command.dtos";
+import { ClubReadQuery } from "./presentation/http/queries/club-read.query";
 
-@ApiTags("ratings")
-@Controller("ratings")
+@ApiTags("club")
+@Controller("club")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
-export class RatingReadController {
+export class ClubReadController {
   public constructor(
     private readonly context: CurrentContextService,
-    private readonly query: RatingReadQuery,
+    private readonly query: ClubReadQuery,
   ) {}
 
   @Get()
-  @ApiOperation({ summary: "List ratings for the current core club" })
+  @ApiOperation({ summary: "Get the current club" })
   @ApiSuccessEnvelopeResponse({
     status: HttpStatus.OK,
-    description: "Ratings listed.",
+    description: "Current club.",
+    data: ClubResponseDto,
   })
   @ApiErrorEnvelopeResponses(
-    { status: HttpStatus.BAD_REQUEST, description: "Validation failed." },
     { status: HttpStatus.UNAUTHORIZED, description: "Missing or invalid session." },
     { status: HttpStatus.FORBIDDEN, description: "Tenant member role is required." },
+    { status: HttpStatus.NOT_FOUND, description: "Club was not found." },
   )
-  public async list(@Query() page: CorePageQueryDto) {
+  public async current() {
     const tenant = this.context.getTenantOrThrow();
 
-    return this.query.listRatings(tenant.id, page);
+    return this.query.getCurrentClub(tenant.id);
   }
 }
