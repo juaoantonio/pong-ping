@@ -1,4 +1,5 @@
 import { ClubId } from "../../../club/domain";
+import { type RatingRepository } from "../../../rating/infrastructure/typeorm/repositories/rating.repository";
 import { ActorId, DomainRuleViolation } from "../../../shared/domain";
 import { Athlete } from "../../domain/athlete";
 import { AthleteDisplayName } from "../../domain/value-objects/athlete-display-name";
@@ -20,7 +21,10 @@ export type RegisterAthleteInput = {
 };
 
 export class RegisterAthleteUseCase {
-  public constructor(private readonly athletes: AthleteRepository) {}
+  public constructor(
+    private readonly athletes: AthleteRepository,
+    private readonly ratings: RatingRepository,
+  ) {}
 
   public async execute(input: RegisterAthleteInput): Promise<Athlete> {
     const userId = ActorId.from(input.userId);
@@ -40,6 +44,10 @@ export class RegisterAthleteUseCase {
       profile: AthleteProfile.from(input.profile),
     });
 
-    return this.athletes.save(athlete);
+    const savedAthlete = await this.athletes.save(athlete);
+    const rating = await this.ratings.getOrCreate(savedAthlete.clubId, savedAthlete.id);
+    await this.ratings.save(rating);
+
+    return savedAthlete;
   }
 }

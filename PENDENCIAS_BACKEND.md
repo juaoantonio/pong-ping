@@ -44,7 +44,7 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
   - Resolucao de tenant por host/slug.
 - Integracao `identity` -> `core` existe:
   - Tenant criado/atualizado sincroniza `Club`.
-  - Login de usuario tenant registra `Athlete`.
+  - Login de usuario tenant registra `Athlete` e cria `Rating` padrao.
 - APIs tenant-scoped do modulo esportivo nao usam mais o prefixo publico `/core`; o prefixo global `/v1` permanece.
 - `core` possui leitura implementada para:
   - Clube atual (`GET /club`).
@@ -116,6 +116,7 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
   - [x] Expor correcoes no historico.
 - [ ] `Rating`
   - [x] Criar ranking do clube.
+  - [x] Criar rating padrao ao registrar atleta.
   - [ ] Criar consulta de rating por atleta.
   - [ ] Validar comportamento de doubles: pareamento atual calcula deltas por indice entre lados.
 - [ ] `Scoreboard`

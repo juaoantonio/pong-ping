@@ -12,6 +12,8 @@ import {
 } from "../../club/application/use-cases";
 import { Club, ClubId, ClubName, ClubSlug } from "../../club/domain";
 import { type ClubRepository } from "../../club/infrastructure/typeorm/repositories/club.repository";
+import { Rating } from "../../rating/domain";
+import { type RatingRepository } from "../../rating/infrastructure/typeorm/repositories/rating.repository";
 import { ActorId } from "../../shared/domain";
 import { CoreIdentityEventsListener } from "./core-identity-events.listener";
 
@@ -83,8 +85,8 @@ describe("listener de eventos de identidade do core", () => {
     expect(club?.active).toBe(false);
   });
 
-  it("cria atleta no primeiro login de usuario do tenant", async () => {
-    const { listener, athletes } = createListener();
+  it("cria atleta e rating padrao no primeiro login de usuario do tenant", async () => {
+    const { listener, athletes, ratings } = createListener();
 
     await listener.handleTenantUserAuthenticated({
       tenantId: "club-1",
@@ -97,10 +99,15 @@ describe("listener de eventos de identidade do core", () => {
     const athlete = await athletes.findByUserId(new ActorId("user-1"));
     expect(athlete?.clubId.value).toBe("club-1");
     expect(athlete?.displayName.value).toBe("player");
+    const rating = athlete ? await ratings.findByAthleteId(athlete.id) : null;
+    expect(rating?.clubId.value).toBe("club-1");
+    expect(rating?.points.value).toBe(1000);
+    expect(rating?.wins).toBe(0);
+    expect(rating?.totalMatches).toBe(0);
   });
 
   it("ignora login repetido para usuario que ja tem atleta", async () => {
-    const { listener, athletes } = createListener();
+    const { listener, athletes, ratings } = createListener();
     const event = {
       tenantId: "club-1",
       userId: "user-1",
@@ -113,6 +120,7 @@ describe("listener de eventos de identidade do core", () => {
     await listener.handleTenantUserAuthenticated(event);
 
     expect(athletes.athletes).toHaveLength(1);
+    expect(ratings.ratings.size).toBe(1);
     expect(athletes.athletes[0]?.displayName.value).toBe("Nico Pong");
   });
 });
@@ -120,10 +128,12 @@ describe("listener de eventos de identidade do core", () => {
 function createListener() {
   const clubs = new InMemoryClubRepository();
   const athletes = new InMemoryAthleteRepository();
+  const ratings = new InMemoryRatingRepository();
 
   return {
     clubs,
     athletes,
+    ratings,
     listener: new CoreIdentityEventsListener(
       clubs as ClubRepository,
       athletes as AthleteRepository,
@@ -132,7 +142,7 @@ function createListener() {
       new ChangeClubSlugUseCase(clubs as ClubRepository),
       new ActivateClubUseCase(clubs as ClubRepository),
       new DeactivateClubUseCase(clubs as ClubRepository),
-      new RegisterAthleteUseCase(athletes as AthleteRepository),
+      new RegisterAthleteUseCase(athletes as AthleteRepository, ratings as RatingRepository),
     ),
   };
 }
@@ -176,5 +186,28 @@ class InMemoryAthleteRepository implements Pick<
       this.athletes[index] = athlete;
     }
     return athlete;
+  }
+}
+
+class InMemoryRatingRepository implements Pick<
+  RatingRepository,
+  "findByAthleteId" | "getOrCreate" | "save"
+> {
+  public readonly ratings = new Map<string, Rating>();
+
+  public async findByAthleteId(athleteId: AthleteId): Promise<Rating | null> {
+    return this.ratings.get(athleteId.value) ?? null;
+  }
+
+  public async getOrCreate(clubId: ClubId, athleteId: AthleteId): Promise<Rating> {
+    const current = await this.findByAthleteId(athleteId);
+    if (current) return current;
+
+    return Rating.createDefault({ clubId, athleteId });
+  }
+
+  public async save(rating: Rating): Promise<Rating> {
+    this.ratings.set(rating.athleteId.value, rating);
+    return rating;
   }
 }

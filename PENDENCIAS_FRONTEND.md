@@ -1,6 +1,6 @@
 # Pendencias Frontend
 
-Atualizado em: 2026-05-20
+Atualizado em: 2026-05-21
 
 Escopo vigente: `apps/frontend`
 
@@ -31,7 +31,7 @@ Nota: Next.js e qualquer app Next legado nao devem guiar novas implementacoes. O
   - Verificacao de sessao tenant.
   - Logout tenant.
   - Layout autenticado.
-  - Dashboard estatico.
+  - Dashboard integrado ao `core`.
 - Testes e build do frontend passam.
 
 ## Pendencias Prioritarias
@@ -72,6 +72,7 @@ Nota: Next.js e qualquer app Next legado nao devem guiar novas implementacoes. O
   - [x] Ordenar por pontos.
   - [x] Exibir vitorias, total de partidas e win rate.
   - [x] Estado vazio para atletas sem partidas.
+  - [x] Backend cria rating padrao para novos atletas.
 
 ## Dependencias Do Backend
 

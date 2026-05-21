@@ -6,6 +6,8 @@ import { ATHLETE_TECHNICAL_LEVEL } from "../../domain/value-objects/athlete-tech
 import { AthleteDisplayName } from "../../domain/value-objects/athlete-display-name";
 import { AthleteId } from "../../domain/value-objects/athlete-id";
 import { type AthleteRepository } from "../../infrastructure/typeorm/repositories/athlete.repository";
+import { Rating } from "../../../rating/domain";
+import { type RatingRepository } from "../../../rating/infrastructure/typeorm/repositories/rating.repository";
 import { RegisterAthleteUseCase } from "./register-athlete.use-case";
 import { UpdateAthleteProfileUseCase } from "./update-athlete-profile.use-case";
 
@@ -29,10 +31,37 @@ class InMemoryAthleteRepository implements Pick<
   }
 }
 
+class InMemoryRatingRepository implements Pick<
+  RatingRepository,
+  "findByAthleteId" | "getOrCreate" | "save"
+> {
+  public readonly ratings = new Map<string, Rating>();
+
+  public async findByAthleteId(athleteId: AthleteId): Promise<Rating | null> {
+    return this.ratings.get(athleteId.value) ?? null;
+  }
+
+  public async getOrCreate(clubId: ClubId, athleteId: AthleteId): Promise<Rating> {
+    const current = await this.findByAthleteId(athleteId);
+    if (current) return current;
+
+    return Rating.createDefault({ clubId, athleteId });
+  }
+
+  public async save(rating: Rating): Promise<Rating> {
+    this.ratings.set(rating.athleteId.value, rating);
+    return rating;
+  }
+}
+
 describe("use cases de atleta", () => {
-  it("registra atleta vinculado a identidade de usuario", async () => {
+  it("registra atleta vinculado a identidade de usuario e cria rating padrao", async () => {
     const repository = new InMemoryAthleteRepository();
-    const useCase = new RegisterAthleteUseCase(repository as AthleteRepository);
+    const ratings = new InMemoryRatingRepository();
+    const useCase = new RegisterAthleteUseCase(
+      repository as AthleteRepository,
+      ratings as RatingRepository,
+    );
 
     const athlete = await useCase.execute({
       id: "athlete-1",
@@ -43,10 +72,15 @@ describe("use cases de atleta", () => {
 
     expect(athlete.userId.value).toBe("user-1");
     expect(await repository.findById(new AthleteId("athlete-1"))).toBe(athlete);
+    const rating = await ratings.findByAthleteId(new AthleteId("athlete-1"));
+    expect(rating?.points.value).toBe(1000);
+    expect(rating?.wins).toBe(0);
+    expect(rating?.totalMatches).toBe(0);
   });
 
-  it("rejeita usuario ja registrado como atleta", async () => {
+  it("rejeita usuario ja registrado como atleta sem criar rating", async () => {
     const repository = new InMemoryAthleteRepository();
+    const ratings = new InMemoryRatingRepository();
     await repository.save(
       Athlete.register({
         id: new AthleteId("athlete-1"),
@@ -55,7 +89,10 @@ describe("use cases de atleta", () => {
         displayName: new AthleteDisplayName("Nico Pong"),
       }),
     );
-    const useCase = new RegisterAthleteUseCase(repository as AthleteRepository);
+    const useCase = new RegisterAthleteUseCase(
+      repository as AthleteRepository,
+      ratings as RatingRepository,
+    );
 
     await expect(
       useCase.execute({
@@ -65,6 +102,7 @@ describe("use cases de atleta", () => {
         displayName: "Other Pong",
       }),
     ).rejects.toMatchObject({ code: "athlete_already_registered" });
+    expect(ratings.ratings.size).toBe(0);
   });
 
   it("atualiza perfil tecnico e nome de exibicao", async () => {
