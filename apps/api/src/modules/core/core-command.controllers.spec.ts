@@ -1,3 +1,4 @@
+import { ForbiddenException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import { ActorId } from "./shared/domain";
 import { CoreIdentityTranslator } from "./application/identity";
@@ -19,19 +20,24 @@ const principal = {
   tenantRoles: ["member"],
 };
 
-function contextStub() {
+function contextStub(input?: { principal?: typeof principal }) {
   return {
     getTenantOrThrow: vi.fn(() => tenantContext),
-    getPrincipalOrThrow: vi.fn(() => principal),
+    getPrincipalOrThrow: vi.fn(() => input?.principal ?? principal),
   };
 }
 
-function createAthlete(): Athlete {
+function createAthlete(input?: {
+  id?: string;
+  clubId?: string;
+  userId?: string;
+  displayName?: string;
+}): Athlete {
   return Athlete.register({
-    id: new AthleteId("athlete-1"),
-    clubId: new ClubId("club-1"),
-    userId: new ActorId("user-1"),
-    displayName: new AthleteDisplayName("Nico Pong"),
+    id: new AthleteId(input?.id ?? "athlete-1"),
+    clubId: new ClubId(input?.clubId ?? "club-1"),
+    userId: new ActorId(input?.userId ?? "user-1"),
+    displayName: new AthleteDisplayName(input?.displayName ?? "Nico Pong"),
   });
 }
 
@@ -47,18 +53,78 @@ function createTable(): Table {
 }
 
 describe("controllers de comandos core", () => {
-  it("atualiza perfil de atleta", async () => {
+  it("atualiza o proprio perfil de atleta como membro", async () => {
     const updateAthleteProfile = { execute: vi.fn().mockResolvedValue(createAthlete()) };
-    const controller = new AthleteCommandController(updateAthleteProfile as never);
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new AthleteCommandController(
+      contextStub() as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      updateAthleteProfile as never,
+    );
 
     const response = await controller.updateProfile("athlete-1", { displayName: "Nico Pong" });
 
     expect(updateAthleteProfile.execute).toHaveBeenCalledWith({
+      clubId: "club-1",
       athleteId: "athlete-1",
       displayName: "Nico Pong",
       profile: undefined,
     });
     expect(response).toMatchObject({ id: "athlete-1", userId: "user-1" });
+  });
+
+  it("nega membro editando perfil de outro atleta", async () => {
+    const updateAthleteProfile = { execute: vi.fn() };
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new AthleteCommandController(
+      contextStub() as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      updateAthleteProfile as never,
+    );
+
+    await expect(
+      controller.updateProfile("athlete-2", { displayName: "Other Pong" }),
+    ).rejects.toThrow(ForbiddenException);
+    expect(updateAthleteProfile.execute).not.toHaveBeenCalled();
+  });
+
+  it("nega admin editando perfil de outro atleta", async () => {
+    const updateAthleteProfile = { execute: vi.fn() };
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const controller = new AthleteCommandController(
+      contextStub({
+        principal: {
+          ...principal,
+          tenantRoles: ["admin"],
+        },
+      }) as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      updateAthleteProfile as never,
+    );
+
+    await expect(
+      controller.updateProfile("athlete-2", { displayName: "Other Pong" }),
+    ).rejects.toThrow(ForbiddenException);
+    expect(updateAthleteProfile.execute).not.toHaveBeenCalled();
+  });
+
+  it("rejeita atualizacao de perfil quando atleta atual nao existe", async () => {
+    const updateAthleteProfile = { execute: vi.fn() };
+    const athletes = { findByUserId: vi.fn().mockResolvedValue(null) };
+    const controller = new AthleteCommandController(
+      contextStub() as never,
+      new CoreIdentityTranslator(),
+      athletes as never,
+      updateAthleteProfile as never,
+    );
+
+    await expect(
+      controller.updateProfile("athlete-1", { displayName: "Nico Pong" }),
+    ).rejects.toMatchObject({ code: "athlete_not_found" });
+    expect(updateAthleteProfile.execute).not.toHaveBeenCalled();
   });
 
   it("cria mesa com tenant atual e atleta resolvido pelo principal", async () => {

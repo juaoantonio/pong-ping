@@ -1,13 +1,13 @@
 # Core Athlete Pendencies Design
 
-## Direcao Proposta
+## Direcao Implementada
 
 Adotar a regra conservadora:
 
-- `MEMBER`: pode atualizar somente o proprio perfil.
-- `ADMIN`: pode atualizar qualquer atleta do tenant atual.
-
-A decisao final ainda precisa ser confirmada antes da implementacao, mas esse desenho reduz risco de alteracao indevida.
+- Usuario tenant pode atualizar somente o proprio perfil.
+- `ADMIN` nao possui privilegio para editar perfil de outro atleta.
+- Qualquer usuario tentando editar terceiro recebe HTTP 403.
+- Alvo inexistente ou fora do tenant atual recebe `athlete_not_found`.
 
 ## Componentes
 
@@ -15,10 +15,11 @@ A decisao final ainda precisa ser confirmada antes da implementacao, mas esse de
   - Continua expondo `PATCH /core/athletes/:athleteId/profile`.
   - Usa `CurrentContextService` e `CoreIdentityTranslator` para identificar o ator.
   - Usa `AthleteRepository.findByUserId(actorId)` para descobrir o atleta atual.
-  - Verifica role tenant atual antes de permitir edicao de terceiros.
+  - Bloqueia quando o atleta atual nao e o atleta alvo.
 - `UpdateAthleteProfileUseCase`
-  - Pode continuar focado na alteracao do agregado.
-  - Autorizacao fica no delivery/application policy, nao no dominio.
+  - Recebe `clubId` obrigatorio.
+  - Rejeita atleta fora do tenant atual antes de alterar o agregado.
+  - Autorizacao de dono do perfil fica no controller.
 
 ## Politica
 
@@ -26,16 +27,10 @@ A decisao final ainda precisa ser confirmada antes da implementacao, mas esse de
 | --- | --- | --- |
 | MEMBER | proprio atleta | Permitir |
 | MEMBER | outro atleta | Forbidden |
-| ADMIN | atleta do tenant atual | Permitir |
+| ADMIN | proprio atleta | Permitir |
+| ADMIN | outro atleta | Forbidden |
 | Sem atleta vinculado | qualquer alvo | Not found ou forbidden conforme padrao atual |
 
-## Risco De Tenant Scope
+## Tenant Scope
 
-O use case atual busca por `athleteId` sem receber `clubId`. Para impedir cross-tenant, a camada de autorizacao precisa validar que o atleta alvo pertence ao tenant atual antes de chamar ou antes de retornar sucesso. Alternativas:
-
-- Adicionar metodo de read/check no `AthleteRepository` para buscar por id e club.
-- Carregar alvo no controller e comparar `clubId`.
-- Evoluir o use case para receber `clubId` e rejeitar alvo fora do clube.
-
-Preferencia: evoluir o use case para aceitar `clubId` opcional/obrigatorio em comandos HTTP, mantendo regra proxima da operacao.
-
+O use case recebe `clubId` do tenant atual e compara com `athlete.clubId`. Isso impede edicao cross-tenant mesmo se algum caller contornar a policy do controller.

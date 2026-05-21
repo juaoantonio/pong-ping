@@ -1,12 +1,17 @@
-import { Body, Controller, HttpStatus, Param, Patch } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, HttpStatus, Param, Patch } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { CurrentContextService } from "../../../common/context";
 import {
   ApiErrorEnvelopeResponses,
   ApiSuccessEnvelopeResponse,
 } from "../../../common/shared/http/api-response.swagger";
 import { RequireTenantRoles } from "../../identity/authorization/authorization.decorators";
 import { IDENTITY_TENANT_ROLE } from "../../identity/identity-roles";
+import { CoreIdentityTranslator } from "../application/identity";
+import { DomainRuleViolation } from "../shared/domain";
 import { UpdateAthleteProfileUseCase } from "./application/use-cases";
+import { type Athlete } from "./domain";
+import { AthleteRepository } from "./infrastructure/typeorm/repositories/athlete.repository";
 import {
   AthleteResponseDto,
   UpdateAthleteProfileRequestDto,
@@ -17,7 +22,12 @@ import { toAthleteResponse } from "./presentation/http/serializers/athlete-contr
 @Controller("athletes")
 @RequireTenantRoles(IDENTITY_TENANT_ROLE.MEMBER, IDENTITY_TENANT_ROLE.ADMIN)
 export class AthleteCommandController {
-  public constructor(private readonly updateAthleteProfile: UpdateAthleteProfileUseCase) {}
+  public constructor(
+    private readonly context: CurrentContextService,
+    private readonly identity: CoreIdentityTranslator,
+    private readonly athletes: AthleteRepository,
+    private readonly updateAthleteProfile: UpdateAthleteProfileUseCase,
+  ) {}
 
   @Patch(":athleteId/profile")
   @ApiOperation({ summary: "Update an athlete profile" })
@@ -38,12 +48,31 @@ export class AthleteCommandController {
     @Param("athleteId") athleteId: string,
     @Body() body: UpdateAthleteProfileRequestDto,
   ) {
+    const tenant = this.context.getTenantOrThrow();
+    const currentAthlete = await this.currentAthlete();
+
+    if (currentAthlete.id.value !== athleteId) {
+      throw new ForbiddenException("Athlete profile can only be updated by its owner.");
+    }
+
     const athlete = await this.updateAthleteProfile.execute({
+      clubId: tenant.id,
       athleteId,
       displayName: body.displayName,
       profile: body.profile,
     });
 
     return toAthleteResponse(athlete);
+  }
+
+  private async currentAthlete(): Promise<Athlete> {
+    const actorId = this.identity.toActorId(this.context.getPrincipalOrThrow());
+    const athlete = await this.athletes.findByUserId(actorId);
+
+    if (!athlete) {
+      throw new DomainRuleViolation("athlete_not_found", "Current athlete was not found.");
+    }
+
+    return athlete;
   }
 }

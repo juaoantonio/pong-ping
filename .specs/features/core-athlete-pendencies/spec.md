@@ -8,19 +8,21 @@
 ## Estado Atual
 
 - Endpoint de atleta atual e listagem de atletas do clube ja existem.
-- `AthleteCommandController` permite `PATCH /core/athletes/:athleteId/profile` para `MEMBER` e `ADMIN`.
-- O use case `UpdateAthleteProfileUseCase` recebe apenas `athleteId`, `displayName` e `profile`; ele nao recebe ator atual nem role.
+- `AthleteCommandController` permite `PATCH /athletes/:athleteId/profile` para `MEMBER` e `ADMIN`.
+- Usuario tenant pode editar somente o proprio atleta.
+- `ADMIN` nao possui privilegio para editar perfil de outro atleta.
+- `UpdateAthleteProfileUseCase` recebe `clubId` e rejeita alvo fora do tenant atual.
 
 ## Problema
 
-A atualizacao de perfil ainda nao define se qualquer membro pode editar qualquer atleta, se somente admins podem editar terceiros, ou se membro comum so pode editar o proprio perfil. O endpoint atual aceita `athleteId` arbitrario para qualquer membro autenticado.
+A politica de atualizacao de perfil precisava impedir que qualquer usuario editasse atletas de terceiros e que o endpoint alterasse atleta de outro tenant.
 
 ## Objetivos
 
-- [ ] Definir politica de autorizacao para edicao de perfil.
-- [ ] Garantir que membro comum edite somente o proprio atleta, se essa for a regra escolhida.
-- [ ] Preservar capacidade administrativa para editar atletas de terceiros, se confirmada.
-- [ ] Cobrir a politica com testes unitarios de controller/use case.
+- [x] Definir politica de autorizacao para edicao de perfil.
+- [x] Garantir que usuario tenant edite somente o proprio atleta.
+- [x] Bloquear admin editando perfil de outro atleta.
+- [x] Cobrir a politica com testes unitarios de controller/use case.
 
 ## Fora De Escopo
 
@@ -36,10 +38,10 @@ A atualizacao de perfil ainda nao define se qualquer membro pode editar qualquer
 
 **Critaorios de aceite**:
 
-1. A politica distingue membro comum e admin.
-2. A politica define se membro comum pode editar somente o proprio atleta.
-3. A politica define se admin pode editar qualquer atleta do tenant atual.
-4. A decisao aparece no spec/design antes da implementacao.
+1. A politica permite que usuario tenant edite somente o proprio atleta.
+2. A politica define que admin nao edita perfil de outro atleta.
+3. Tentativas de editar terceiro retornam forbidden.
+4. A decisao aparece no spec/design.
 
 ### CORE-ATHLETE-02: Enforcement No Endpoint
 
@@ -49,13 +51,12 @@ A atualizacao de perfil ainda nao define se qualquer membro pode editar qualquer
 
 1. O controller identifica o atleta atual pelo principal autenticado quando necessario.
 2. Edicao de terceiro por membro comum retorna forbidden.
-3. Edicao administrativa continua tenant-scoped.
+3. Edicao de terceiro por admin retorna forbidden.
 4. Os testes cobrem proprio perfil, terceiro como membro e terceiro como admin.
 
 ## Traceabilidade
 
 | ID | Origem em `PENDENCIAS_BACKEND.md` | Status inicial |
 | --- | --- | --- |
-| CORE-ATHLETE-01 | Validar se atualizacao de perfil deve restringir edicao ao proprio atleta ou admins | Pendente |
-| CORE-ATHLETE-02 | Validar enforcement correspondente no endpoint | Derivado |
-
+| CORE-ATHLETE-01 | Validar se atualizacao de perfil deve restringir edicao ao proprio atleta ou admins | Concluido |
+| CORE-ATHLETE-02 | Validar enforcement correspondente no endpoint | Concluido |

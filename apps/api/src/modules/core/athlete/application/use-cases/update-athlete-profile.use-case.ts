@@ -1,4 +1,5 @@
 import { DomainRuleViolation } from "../../../shared/domain";
+import { ClubId } from "../../../club/domain";
 import { type Athlete } from "../../domain/athlete";
 import { AthleteDisplayName } from "../../domain/value-objects/athlete-display-name";
 import { AthleteId } from "../../domain/value-objects/athlete-id";
@@ -7,6 +8,7 @@ import { type AthleteRepository } from "../../infrastructure/typeorm/repositorie
 import { type AthleteProfileInput } from "./register-athlete.use-case";
 
 export type UpdateAthleteProfileInput = {
+  clubId: string | ClubId;
   athleteId: string | AthleteId;
   displayName?: string | AthleteDisplayName;
   profile: AthleteProfile | AthleteProfileInput;
@@ -16,9 +18,10 @@ export class UpdateAthleteProfileUseCase {
   public constructor(private readonly athletes: AthleteRepository) {}
 
   public async execute(input: UpdateAthleteProfileInput): Promise<Athlete> {
+    const clubId = ClubId.from(input.clubId);
     const athlete = await this.athletes.findById(AthleteId.from(input.athleteId));
 
-    if (!athlete) {
+    if (!athlete || !athlete.clubId.equals(clubId)) {
       throw new DomainRuleViolation("athlete_not_found", "Athlete was not found.");
     }
 

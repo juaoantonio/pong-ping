@@ -102,10 +102,11 @@ Esse padrao deve ser usado para liberar telas do frontend sem contaminar comando
     - Decisao: `identity.tenant` continua fonte administrativa; `core.club` permanece sincronizado para o dominio esportivo.
   - [x] Criar consulta interna/externa para dados do clube atual.
     - Implementado como `GET /club`, tenant-scoped, usando `ClubResponseContract`.
-- [ ] `Athlete`
+- [x] `Athlete`
   - [x] Criar endpoint para atleta atual.
   - [x] Criar listagem de atletas do clube.
-  - [ ] Validar se atualizacao de perfil deve restringir edicao ao proprio atleta ou admins.
+  - [x] Validar se atualizacao de perfil deve restringir edicao ao proprio atleta ou admins.
+    - Decisao: usuario tenant edita somente o proprio perfil; admin nao edita perfil de outro atleta.
 - [ ] `Table`
   - [x] Criar queries para listagem e detalhe.
   - [ ] Avaliar concorrencia em operacoes de fila/jogo ativo.

@@ -118,6 +118,7 @@ describe("use cases de atleta", () => {
     const useCase = new UpdateAthleteProfileUseCase(repository as AthleteRepository);
 
     const athlete = await useCase.execute({
+      clubId: "club-1",
       athleteId: "athlete-1",
       displayName: "Nico Spin",
       profile: {
@@ -136,8 +137,30 @@ describe("use cases de atleta", () => {
       new InMemoryAthleteRepository() as AthleteRepository,
     );
 
-    await expect(useCase.execute({ athleteId: "athlete-404", profile: {} })).rejects.toThrow(
-      DomainRuleViolation,
+    await expect(
+      useCase.execute({ clubId: "club-1", athleteId: "athlete-404", profile: {} }),
+    ).rejects.toThrow(DomainRuleViolation);
+  });
+
+  it("rejeita atualizacao de atleta fora do clube atual", async () => {
+    const repository = new InMemoryAthleteRepository();
+    await repository.save(
+      Athlete.register({
+        id: new AthleteId("athlete-1"),
+        clubId: new ClubId("club-2"),
+        userId: new ActorId("user-1"),
+        displayName: new AthleteDisplayName("Nico Pong"),
+      }),
     );
+    const useCase = new UpdateAthleteProfileUseCase(repository as AthleteRepository);
+
+    await expect(
+      useCase.execute({
+        clubId: "club-1",
+        athleteId: "athlete-1",
+        displayName: "Nico Spin",
+        profile: {},
+      }),
+    ).rejects.toMatchObject({ code: "athlete_not_found" });
   });
 });

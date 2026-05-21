@@ -1,7 +1,7 @@
 # Core Athlete Pendencies Tasks
 
-**Status**: Draft  
-**Escopo**: pre-implementacao
+**Status**: Implementado  
+**Escopo**: implementacao concluida
 
 ## Gate Check Commands
 
@@ -20,9 +20,9 @@
 
 **Done when**:
 
-- [ ] Regra de membro comum esta definida.
-- [ ] Regra de admin esta definida.
-- [ ] Resposta esperada para tentativa proibida esta definida.
+- [x] Regra de membro comum esta definida.
+- [x] Regra de admin esta definida.
+- [x] Resposta esperada para tentativa proibida esta definida.
 
 ### T2: Planejar Tenant Scope Do Use Case
 
@@ -32,8 +32,8 @@
 
 **Done when**:
 
-- [ ] Nao ha caminho para editar atleta de outro tenant pelo endpoint HTTP.
-- [ ] Teste cobre atleta alvo fora do tenant atual.
+- [x] Nao ha caminho para editar atleta de outro tenant pelo endpoint HTTP.
+- [x] Teste cobre atleta alvo fora do tenant atual.
 
 ### T3: Planejar Enforcement No Controller
 
@@ -43,8 +43,7 @@
 
 **Done when**:
 
-- [ ] Membro edita proprio perfil com sucesso.
-- [ ] Membro editando terceiro recebe forbidden.
-- [ ] Admin editando terceiro no mesmo tenant tem sucesso.
-- [ ] Gates `unit` e `build` passam.
-
+- [x] Membro edita proprio perfil com sucesso.
+- [x] Membro editando terceiro recebe forbidden.
+- [x] Admin editando terceiro recebe forbidden.
+- [x] Gates `unit` e `build` passam.
