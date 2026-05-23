@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { apiRequest } from "@/lib/api/client";
+import { apiRequest, getSystemLoginUrl } from "@/lib/api/client";
 import { ApiParseError } from "@/lib/api/errors";
 
 function mockResponse(body: unknown, init: ResponseInit = {}) {
@@ -100,6 +100,18 @@ describe("apiRequest", () => {
 
     await expect(apiRequest("/system/admin/tenants")).rejects.toBeInstanceOf(
       ApiParseError,
+    );
+  });
+});
+
+describe("getSystemLoginUrl", () => {
+  it("builds the system Google login URL by default", () => {
+    expect(getSystemLoginUrl()).toBe("http://api.localhost.me:3001/v1/system/auth/google");
+  });
+
+  it("builds the dev system Google login URL with a user alias", () => {
+    expect(getSystemLoginUrl({ devBypassEnabled: true, userAlias: "admin" })).toBe(
+      "http://api.localhost.me:3001/v1/system/auth/dev/google?user=admin",
     );
   });
 });

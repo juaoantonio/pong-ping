@@ -30,6 +30,8 @@ type IdentityAuthConfig = {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_CALLBACK_URL: string;
+  SOCIAL_AUTH_DEV_BYPASS_ENABLED: boolean;
+  SOCIAL_AUTH_DEV_USERS: SocialAuthDevUserConfig[];
   SYSTEM_ADMIN_FRONTEND_URL: string;
   TENANT_FRONTEND_URL: string;
   SESSION_SECRET: string;
@@ -40,6 +42,16 @@ type IdentityAuthConfig = {
 };
 
 export type ConfigSchema = AppConfig & CorsConfig & DatabaseConfig & IdentityAuthConfig;
+
+export type SocialAuthDevUserConfig = {
+  alias: string;
+  provider: "google";
+  subject: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  default?: boolean;
+};
 
 export const appSchema: Joi.StrictSchemaMap<AppConfig> = {
   NODE_ENV: Joi.string().valid("development", "test", "production").default("development"),
@@ -96,11 +108,56 @@ const jsonStringArray = (label: string) =>
       "any.invalid": `${label} must be a JSON string containing an array of strings.`,
     }) as unknown as ArraySchema<string[]>;
 
+const socialAuthDevUsers = () =>
+  Joi.string()
+    .custom((value: string, helpers) => {
+      try {
+        const parsedValue = JSON.parse(value) as unknown;
+        const { error, value: users } = Joi.array()
+          .items(
+            Joi.object({
+              alias: Joi.string()
+                .pattern(/^[a-z0-9][a-z0-9_-]{0,62}$/)
+                .required(),
+              provider: Joi.string().valid("google").required(),
+              subject: Joi.string().trim().min(1).required(),
+              email: Joi.string().email({ tlds: { allow: false } }).required(),
+              displayName: Joi.string().allow(null).default(null),
+              avatarUrl: Joi.string().uri().allow(null).default(null),
+              default: Joi.boolean().optional(),
+            }),
+          )
+          .default([])
+          .validate(parsedValue);
+        if (error) return helpers.error("any.invalid", { value });
+
+        const aliases = new Set<string>();
+        const defaultUsers = [];
+        for (const user of users as SocialAuthDevUserConfig[]) {
+          const key = `${user.provider}:${user.alias}`;
+          if (aliases.has(key)) return helpers.error("any.invalid", { value });
+          aliases.add(key);
+          if (user.default) defaultUsers.push(user);
+        }
+        if (defaultUsers.length > 1) return helpers.error("any.invalid", { value });
+
+        return users;
+      } catch {
+        return helpers.error("any.invalid", { value });
+      }
+    })
+    .messages({
+      "any.invalid":
+        "SOCIAL_AUTH_DEV_USERS must be a JSON array of unique social auth dev users.",
+    }) as unknown as ArraySchema<SocialAuthDevUserConfig[]>;
+
 export const identityAuthSchema: Joi.StrictSchemaMap<IdentityAuthConfig> = {
   AUTH_BASE_URL: Joi.string().uri().default("http://api.localhost.me:3001/v1"),
   GOOGLE_CLIENT_ID: Joi.string().required(),
   GOOGLE_CLIENT_SECRET: Joi.string().required(),
   GOOGLE_CALLBACK_URL: Joi.string().uri().required(),
+  SOCIAL_AUTH_DEV_BYPASS_ENABLED: Joi.boolean().default(false),
+  SOCIAL_AUTH_DEV_USERS: socialAuthDevUsers().default([]),
   SYSTEM_ADMIN_FRONTEND_URL: Joi.string().uri().default("http://localhost.me:5173/admin/tenants"),
   TENANT_FRONTEND_URL: Joi.string().uri().default("http://localhost.me:5173/club"),
   SESSION_SECRET: Joi.string().min(32).required(),

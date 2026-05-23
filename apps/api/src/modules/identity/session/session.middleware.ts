@@ -60,11 +60,17 @@ export class SessionMiddleware implements NestMiddleware {
 }
 
 function isPublicAuthPath(req: Request): boolean {
-  const path = req.path ?? req.url?.split("?")[0] ?? "";
-  return (
-    path.endsWith("/auth/google") ||
-    path.endsWith("/auth/google/callback") ||
-    path.endsWith("/system/auth/google") ||
-    path.endsWith("/system/auth/google/callback")
+  const paths = [req.path, req.originalUrl, req.url]
+    .filter((path): path is string => typeof path === "string")
+    .map((path) => path.split("?")[0]);
+
+  return paths.some(
+    (path) =>
+      path.endsWith("/auth/google") ||
+      path.endsWith("/auth/dev/google") ||
+      path.endsWith("/auth/google/callback") ||
+      path.endsWith("/system/auth/google") ||
+      path.endsWith("/system/auth/dev/google") ||
+      path.endsWith("/system/auth/google/callback"),
   );
 }

@@ -6,6 +6,7 @@ import { RequestContextModule } from "../../common/context";
 import { IdentityAuthorizationGuard } from "./authorization/identity-authorization.guard";
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
+import { DevSocialAuthService } from "./auth/dev-social-auth.service";
 import { GoogleOAuthGuard } from "./auth/google-oauth.guard";
 import { GoogleOAuthStrategy } from "./auth/google-oauth.strategy";
 import { OAuthStateService } from "./auth/oauth-state.service";
@@ -35,6 +36,7 @@ import { TenantResolver } from "./tenancy/tenant.resolver";
     SessionService,
     SessionCookieService,
     AuthService,
+    DevSocialAuthService,
     OAuthStateService,
     SystemAdminService,
     SystemHostGuard,

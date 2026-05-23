@@ -39,6 +39,8 @@ describe("schema de configuracao", () => {
     expect(result.value.ROOT_DOMAIN).toBe("localhost.me");
     expect(result.value.RESERVED_TENANT_SUBDOMAINS).toEqual(["auth", "api", "www"]);
     expect(result.value.TENANT_FRONTEND_URL).toBe("http://localhost.me:5173/club");
+    expect(result.value.SOCIAL_AUTH_DEV_BYPASS_ENABLED).toBe(false);
+    expect(result.value.SOCIAL_AUTH_DEV_USERS).toEqual([]);
   });
 
   it("exige secrets de oauth e sessao", () => {
@@ -51,6 +53,40 @@ describe("schema de configuracao", () => {
       "GOOGLE_CLIENT_SECRET",
       "GOOGLE_CALLBACK_URL",
       "SESSION_SECRET",
+    ]);
+  });
+
+  it("valida usuarios de bypass social em desenvolvimento", () => {
+    const schema = Joi.object(identityAuthSchema);
+
+    const result = schema.validate({
+      GOOGLE_CLIENT_ID: "google-client-id",
+      GOOGLE_CLIENT_SECRET: "google-client-secret",
+      GOOGLE_CALLBACK_URL: "http://api.localhost.me:3001/v1/auth/google/callback",
+      SESSION_SECRET: "a".repeat(32),
+      SOCIAL_AUTH_DEV_BYPASS_ENABLED: true,
+      SOCIAL_AUTH_DEV_USERS: JSON.stringify([
+        {
+          alias: "admin",
+          provider: "google",
+          subject: "dev-google-admin",
+          email: "admin@example.test",
+          displayName: "Admin Dev",
+          avatarUrl: null,
+          default: true,
+        },
+      ]),
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.value.SOCIAL_AUTH_DEV_USERS).toEqual([
+      expect.objectContaining({
+        alias: "admin",
+        provider: "google",
+        subject: "dev-google-admin",
+        email: "admin@example.test",
+        default: true,
+      }),
     ]);
   });
 });

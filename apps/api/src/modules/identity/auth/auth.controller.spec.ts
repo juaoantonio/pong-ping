@@ -28,6 +28,7 @@ describe("AuthController", () => {
       {} as SessionService,
       oauthState as never,
       new SessionCookieService(fakeConfig()),
+      {} as never,
     );
 
     await controller.googleCallback(
@@ -57,6 +58,57 @@ describe("AuthController", () => {
       expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
     );
     expect(response.redirect).toHaveBeenCalledWith("http://teste.localhost.me:5173/club");
+  });
+
+  it("creates a tenant session cookie through the dev Google bypass", async () => {
+    const auth = {
+      completeGoogleLoginForTenant: vi.fn(async () => ({
+        session: { id: "session-1" },
+        token: "raw-token",
+      })),
+    };
+    const devSocialAuth = {
+      resolveTenant: vi.fn(async () => ({ id: "tenant-1", slug: "teste", active: true })),
+      getGoogleProfile: vi.fn(() => ({
+        googleSubject: "dev-google-member",
+        email: "member@example.test",
+        displayName: "Member Dev",
+        avatarUrl: null,
+      })),
+    };
+    const response = { cookie: vi.fn(), redirect: vi.fn() } as unknown as Response;
+    const controller = new AuthController(
+      fakeConfig(),
+      auth as never,
+      {} as CurrentContextService,
+      {} as SessionService,
+      {} as never,
+      new SessionCookieService(fakeConfig()),
+      devSocialAuth as never,
+    );
+
+    await controller.devGoogleLogin(
+      {
+        query: { tenant: "teste", user: "member", returnTo: "/club/tables" },
+        headers: { "user-agent": "vitest" },
+        ip: "127.0.0.1",
+      } as never,
+      response,
+    );
+
+    expect(devSocialAuth.resolveTenant).toHaveBeenCalledWith("teste");
+    expect(devSocialAuth.getGoogleProfile).toHaveBeenCalledWith("member");
+    expect(auth.completeGoogleLoginForTenant).toHaveBeenCalledWith(
+      expect.objectContaining({ googleSubject: "dev-google-member" }),
+      expect.objectContaining({ id: "tenant-1" }),
+      { userAgent: "vitest", ipAddress: "127.0.0.1" },
+    );
+    expect(response.cookie).toHaveBeenCalledWith(
+      "sid_teste",
+      "raw-token",
+      expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
+    );
+    expect(response.redirect).toHaveBeenCalledWith("http://teste.localhost.me:5173/club/tables");
   });
 });
 

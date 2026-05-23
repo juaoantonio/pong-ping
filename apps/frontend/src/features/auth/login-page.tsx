@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { getSystemLoginUrl } from "@/lib/api/client";
 import { systemMeQueryOptions } from "@/lib/api/system-admin";
 
-export function LoginPage() {
+type LoginPageProps = {
+  userAlias?: string;
+};
+
+export function LoginPage({ userAlias }: LoginPageProps) {
   const me = useQuery({ ...systemMeQueryOptions(), retry: false });
 
   if (me.isSuccess) {
@@ -27,7 +31,10 @@ export function LoginPage() {
             </p>
           </div>
         </div>
-        <Button className="w-full" onClick={() => window.location.assign(getSystemLoginUrl())}>
+        <Button
+          className="w-full"
+          onClick={() => window.location.assign(getSystemLoginUrl({ userAlias }))}
+        >
           <LogIn className="size-4" />
           Entrar com Google
         </Button>

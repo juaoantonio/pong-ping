@@ -6,9 +6,10 @@ import { getTenantLoginUrl, tenantMeQueryOptions } from "@/lib/api/tenant-auth";
 
 type ClubLoginPageProps = {
   redirect?: string;
+  userAlias?: string;
 };
 
-export function ClubLoginPage({ redirect }: ClubLoginPageProps) {
+export function ClubLoginPage({ redirect, userAlias }: ClubLoginPageProps) {
   const me = useQuery({ ...tenantMeQueryOptions(), retry: false });
   const destination = redirect ?? "/club";
 
@@ -33,7 +34,7 @@ export function ClubLoginPage({ redirect }: ClubLoginPageProps) {
         </div>
         <Button
           className="w-full"
-          onClick={() => window.location.assign(getTenantLoginUrl(destination))}
+          onClick={() => window.location.assign(getTenantLoginUrl(destination, { userAlias }))}
         >
           <LogIn className="size-4" />
           Entrar com Google

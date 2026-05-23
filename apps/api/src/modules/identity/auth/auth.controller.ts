@@ -13,6 +13,7 @@ import { TENANT_ROLES } from "../identity-roles";
 import { SessionCookieService } from "../session/session-cookie.service";
 import { SessionService } from "../session/session.service";
 import { AuthService } from "./auth.service";
+import { DevSocialAuthService } from "./dev-social-auth.service";
 import { AuthLogoutResponseDto, IdentityPrincipalResponseDto } from "./dtos/auth-response.dtos";
 import { GoogleOAuthGuard } from "./google-oauth.guard";
 import type { GoogleProfile } from "./google-profile";
@@ -32,6 +33,7 @@ export class AuthController {
     private readonly sessions: SessionService,
     private readonly oauthState: OAuthStateService,
     private readonly sessionCookies: SessionCookieService,
+    private readonly devSocialAuth: DevSocialAuthService,
   ) {
     this.rootDomain = this.config.getOrThrow<string>("ROOT_DOMAIN");
     this.tenantFrontendUrl = this.config.getOrThrow<string>("TENANT_FRONTEND_URL");
@@ -54,6 +56,41 @@ export class AuthController {
   })
   public googleStart(): void {
     return undefined;
+  }
+
+  @Get("dev/google")
+  @Public()
+  @ApiOperation({
+    summary: "Complete tenant Google login through a development bypass",
+    description:
+      "Creates a tenant session from a configured development profile without contacting Google.",
+  })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: "Tenant session created and redirected to the club frontend.",
+  })
+  public async devGoogleLogin(@Req() req: Request, @Res() res: Response) {
+    const tenant = await this.devSocialAuth.resolveTenant(req.query.tenant);
+    const profile = this.devSocialAuth.getGoogleProfile(firstString(req.query.user));
+    const created = await this.auth.completeGoogleLoginForTenant(profile, tenant, {
+      userAgent: req.headers["user-agent"],
+      ipAddress: req.ip,
+    });
+
+    this.sessionCookies.setSessionCookie(
+      res,
+      this.sessionCookies.getTenantSessionCookieName(tenant.slug),
+      created.token,
+    );
+
+    return res.redirect(
+      buildTenantFrontendRedirectUrl({
+        tenantFrontendUrl: this.tenantFrontendUrl,
+        rootDomain: this.rootDomain,
+        tenantSlug: tenant.slug,
+        returnTo: firstString(req.query.returnTo),
+      }),
+    );
   }
 
   @Get("google/callback")

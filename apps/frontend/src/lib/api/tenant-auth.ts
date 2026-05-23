@@ -3,7 +3,7 @@ import type {
   AuthLogoutResponseContract,
   IdentityPrincipalResponseContract,
 } from "@pong-ping/contracts";
-import { apiRequest, getApiBaseUrl } from "@/lib/api/client";
+import { apiRequest, getApiBaseUrl, isSocialAuthDevBypassEnabled } from "@/lib/api/client";
 import { ApiClientError } from "@/lib/api/errors";
 
 export const tenantAuthKeys = {
@@ -41,11 +41,16 @@ export function getTenantLoginUrl(
     apiBaseUrl?: string;
     authApiBaseUrl?: string;
     frontendHostname?: string;
+    userAlias?: string;
+    devBypassEnabled?: boolean;
   } = {},
 ) {
   const frontendHostname = options.frontendHostname ?? window.location.hostname;
+  const useDevBypass = isSocialAuthDevBypassEnabled(options.devBypassEnabled);
   const url = new URL(
-    `${getTenantAuthApiBaseUrl(options.apiBaseUrl, options.authApiBaseUrl)}/auth/google`,
+    `${getTenantAuthApiBaseUrl(options.apiBaseUrl, options.authApiBaseUrl)}${
+      useDevBypass ? "/auth/dev/google" : "/auth/google"
+    }`,
   );
   const tenantSlug = getTenantSlugFromHostname(frontendHostname);
   const safeReturnTo = getSafeInternalRedirect(returnTo);
@@ -55,6 +60,9 @@ export function getTenantLoginUrl(
   }
   if (safeReturnTo) {
     url.searchParams.set("returnTo", safeReturnTo);
+  }
+  if (useDevBypass && options.userAlias) {
+    url.searchParams.set("user", options.userAlias);
   }
 
   return url.toString();

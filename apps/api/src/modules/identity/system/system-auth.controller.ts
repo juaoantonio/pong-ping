@@ -10,6 +10,7 @@ import {
 } from "../../../common/shared/http/api-response.swagger";
 import { Public, RequireSystemRoles } from "../authorization/authorization.decorators";
 import { AuthService } from "../auth/auth.service";
+import { DevSocialAuthService } from "../auth/dev-social-auth.service";
 import {
   AuthLogoutResponseDto,
   IdentityPrincipalResponseDto,
@@ -31,6 +32,7 @@ export class SystemAuthController {
     private readonly context: CurrentContextService,
     private readonly sessions: SessionService,
     private readonly sessionCookies: SessionCookieService,
+    private readonly devSocialAuth: DevSocialAuthService,
   ) {}
 
   @Get("google")
@@ -50,6 +52,36 @@ export class SystemAuthController {
   })
   public googleStart(): void {
     return undefined;
+  }
+
+  @Get("dev/google")
+  @Public()
+  @UseGuards(SystemHostGuard)
+  @ApiOperation({
+    summary: "Complete system Google login through a development bypass",
+    description:
+      "Creates a system administrator session from a configured development profile without contacting Google.",
+  })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: "System administrator session created and redirected to the frontend.",
+  })
+  public async devGoogleLogin(@Req() req: Request, @Res() res: Response) {
+    const created = await this.auth.completeSystemGoogleLogin(
+      this.devSocialAuth.getGoogleProfile(firstString(req.query.user)),
+      {
+        userAgent: req.headers["user-agent"],
+        ipAddress: req.ip,
+      },
+    );
+
+    this.sessionCookies.setSessionCookie(
+      res,
+      this.sessionCookies.getSystemSessionCookieName(),
+      created.token,
+    );
+
+    return res.redirect(this.config.getOrThrow<string>("SYSTEM_ADMIN_FRONTEND_URL"));
   }
 
   @Get("google/callback")
@@ -146,4 +178,9 @@ export class SystemAuthController {
   public me() {
     return this.auth.getMe();
   }
+}
+
+function firstString(value: unknown): string | undefined {
+  if (typeof value === "string") return value.trim();
+  return undefined;
 }

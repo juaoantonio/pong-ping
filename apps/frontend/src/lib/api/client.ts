@@ -41,8 +41,25 @@ export function getApiBaseUrl() {
   ).replace(/\/+$/, "");
 }
 
-export function getSystemLoginUrl() {
-  return `${getApiBaseUrl()}/system/auth/google`;
+export function getSystemLoginUrl(
+  options: { userAlias?: string; devBypassEnabled?: boolean } = {},
+) {
+  const path = isSocialAuthDevBypassEnabled(options.devBypassEnabled)
+    ? "/system/auth/dev/google"
+    : "/system/auth/google";
+  const url = new URL(`${getApiBaseUrl()}${path}`);
+
+  if (path.includes("/dev/") && options.userAlias) {
+    url.searchParams.set("user", options.userAlias);
+  }
+
+  return url.toString();
+}
+
+export function isSocialAuthDevBypassEnabled(
+  value: string | boolean | undefined = import.meta.env.VITE_SOCIAL_AUTH_DEV_BYPASS_ENABLED,
+) {
+  return value === true || value === "true";
 }
 
 export async function apiRequest<TData, TBody = never>(

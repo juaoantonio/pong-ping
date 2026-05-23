@@ -157,6 +157,20 @@ describe("tenant auth api", () => {
     ).toBe("http://localhost:3001/v1/auth/google?tenant=acme");
   });
 
+  it("builds the tenant dev Google login URL with a user alias", () => {
+    expect(
+      getTenantLoginUrl("/club", {
+        apiBaseUrl: "http://api.localhost.me:3001/v1",
+        authApiBaseUrl: "",
+        frontendHostname: "acme.localhost.me",
+        devBypassEnabled: true,
+        userAlias: "member",
+      }),
+    ).toBe(
+      "http://api.localhost.me:3001/v1/auth/dev/google?tenant=acme&returnTo=%2Fclub&user=member",
+    );
+  });
+
   it("builds the central auth API base from the tenant host", () => {
     expect(
       getTenantAuthApiBaseUrl(

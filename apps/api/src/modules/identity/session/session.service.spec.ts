@@ -285,6 +285,37 @@ describe("SessionMiddleware", () => {
     expect(sessions.validateSystemSession).not.toHaveBeenCalled();
   });
 
+  it("lets public tenant dev OAuth routes restart when a stale tenant cookie is present", async () => {
+    const context = new FakeContext();
+    const sessions = {
+      validateSystemSession: vi
+        .fn()
+        .mockRejectedValue(new SessionValidationError(SESSION_VALIDATION_FAILURE.TenantMismatch)),
+    };
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("missing") as never,
+      new SessionCookieService(fakeConfig()),
+    );
+    const next = vi.fn();
+
+    await middleware.use(
+      {
+        path: "/",
+        originalUrl: "/v1/auth/dev/google?tenant=teste&returnTo=%2Fclub",
+        url: "/auth/dev/google?tenant=teste&returnTo=%2Fclub",
+        headers: { host: "localhost:3001", cookie: "sid=raw-token" },
+      } as Request,
+      {} as Response,
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith();
+    expect(sessions.validateSystemSession).not.toHaveBeenCalled();
+  });
+
   it("writes the validated principal to context when a cookie is present", async () => {
     const context = new FakeContext();
     context.setTenant({ id: "tenant-1", slug: "acme" });
@@ -357,6 +388,36 @@ describe("SessionMiddleware", () => {
         path: "/v1/system/auth/google",
         url: "/v1/system/auth/google",
         headers: { host: "api.example.test", cookie: "sid=raw-token" },
+      } as Request,
+      {} as Response,
+      next,
+    );
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("lets public system dev OAuth routes restart when a stale system cookie is present", async () => {
+    const context = new FakeContext();
+    const sessions = {
+      validateSystemSession: vi
+        .fn()
+        .mockRejectedValue(new SessionValidationError(SESSION_VALIDATION_FAILURE.Expired)),
+    };
+    const middleware = new SessionMiddleware(
+      fakeConfig(),
+      context as never,
+      sessions as never,
+      tenantResolver("reserved") as never,
+      new SessionCookieService(fakeConfig()),
+    );
+    const next = vi.fn();
+
+    await middleware.use(
+      {
+        path: "/",
+        originalUrl: "/v1/system/auth/dev/google",
+        url: "/system/auth/dev/google",
+        headers: { host: "api.example.test", cookie: "sid_system=raw-token" },
       } as Request,
       {} as Response,
       next,

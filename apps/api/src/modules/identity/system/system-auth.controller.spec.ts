@@ -21,6 +21,7 @@ describe("SystemAuthController", () => {
       {} as CurrentContextService,
       {} as SessionService,
       new SessionCookieService(fakeConfig()),
+      {} as never,
     );
 
     await controller.googleCallback(
@@ -49,6 +50,53 @@ describe("SystemAuthController", () => {
     expect(response.redirect).toHaveBeenCalledWith("http://localhost:5173/admin/tenants");
   });
 
+  it("creates a system session cookie through the dev Google bypass", async () => {
+    const auth = {
+      completeSystemGoogleLogin: vi.fn(async () => ({
+        session: { id: "session-1" },
+        token: "raw-token",
+      })),
+    };
+    const devSocialAuth = {
+      getGoogleProfile: vi.fn(() => ({
+        googleSubject: "dev-google-admin",
+        email: "admin@example.test",
+        displayName: "Admin Dev",
+        avatarUrl: null,
+      })),
+    };
+    const response = { cookie: vi.fn(), redirect: vi.fn() } as unknown as Response;
+    const controller = new SystemAuthController(
+      fakeConfig(),
+      auth as never,
+      {} as CurrentContextService,
+      {} as SessionService,
+      new SessionCookieService(fakeConfig()),
+      devSocialAuth as never,
+    );
+
+    await controller.devGoogleLogin(
+      {
+        query: { user: "admin" },
+        headers: { "user-agent": "vitest" },
+        ip: "127.0.0.1",
+      } as never,
+      response,
+    );
+
+    expect(devSocialAuth.getGoogleProfile).toHaveBeenCalledWith("admin");
+    expect(auth.completeSystemGoogleLogin).toHaveBeenCalledWith(
+      expect.objectContaining({ googleSubject: "dev-google-admin" }),
+      { userAgent: "vitest", ipAddress: "127.0.0.1" },
+    );
+    expect(response.cookie).toHaveBeenCalledWith(
+      "sid_system",
+      "raw-token",
+      expect.objectContaining({ httpOnly: true, maxAge: 3_600_000, path: "/" }),
+    );
+    expect(response.redirect).toHaveBeenCalledWith("http://localhost:5173/admin/tenants");
+  });
+
   it("revokes the current system session and clears the cookie", async () => {
     const sessions = { revokeSession: vi.fn() };
     const response = { clearCookie: vi.fn() } as unknown as Response;
@@ -58,6 +106,7 @@ describe("SystemAuthController", () => {
       { getPrincipalOrThrow: () => ({ sessionId: "session-1" }) } as never,
       sessions as never,
       new SessionCookieService(fakeConfig()),
+      {} as never,
     );
 
     await expect(controller.logout(response)).resolves.toEqual({ revoked: true });
