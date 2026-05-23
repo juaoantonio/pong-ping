@@ -123,6 +123,32 @@ describe("listener de eventos de identidade do core", () => {
     expect(ratings.ratings.size).toBe(1);
     expect(athletes.athletes[0]?.displayName.value).toBe("Nico Pong");
   });
+
+  it("cria atleta por tenant quando mesmo usuario autentica em clubes diferentes", async () => {
+    const { listener, athletes, ratings } = createListener();
+
+    await listener.handleTenantUserAuthenticated({
+      tenantId: "club-1",
+      userId: "user-1",
+      displayName: "Nico Pong",
+      email: "nico@example.test",
+      occurredAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    await listener.handleTenantUserAuthenticated({
+      tenantId: "club-2",
+      userId: "user-1",
+      displayName: "Nico Pong",
+      email: "nico@example.test",
+      occurredAt: new Date("2026-01-02T00:00:00.000Z"),
+    });
+
+    expect(athletes.athletes).toHaveLength(2);
+    expect(athletes.athletes.map((athlete) => athlete.clubId.value)).toEqual([
+      "club-1",
+      "club-2",
+    ]);
+    expect(ratings.ratings.size).toBe(2);
+  });
 });
 
 function createListener() {
@@ -166,7 +192,7 @@ class InMemoryClubRepository implements Pick<ClubRepository, "existsBySlug" | "f
 
 class InMemoryAthleteRepository implements Pick<
   AthleteRepository,
-  "findById" | "findByUserId" | "save"
+  "findById" | "findByUserId" | "findByClubAndUserId" | "save"
 > {
   public readonly athletes: Athlete[] = [];
 
@@ -176,6 +202,15 @@ class InMemoryAthleteRepository implements Pick<
 
   public async findByUserId(userId: ActorId): Promise<Athlete | null> {
     return this.athletes.find((athlete) => athlete.userId.equals(userId)) ?? null;
+  }
+
+  public async findByClubAndUserId(
+    clubId: ClubId,
+    userId: ActorId,
+  ): Promise<Athlete | null> {
+    return this.athletes.find((athlete) =>
+      athlete.clubId.equals(clubId) && athlete.userId.equals(userId)
+    ) ?? null;
   }
 
   public async save(athlete: Athlete): Promise<Athlete> {

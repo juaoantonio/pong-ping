@@ -39,7 +39,6 @@ const athleteSchemaOptions: EntitySchemaOptions<AthletePersistence> = {
       name: "user_id",
       type: "varchar",
       length: 120,
-      unique: true,
       transformer: domainIdTransformer(ActorId),
     },
     displayNameValue: {
@@ -57,7 +56,14 @@ const athleteSchemaOptions: EntitySchemaOptions<AthletePersistence> = {
       transformer: athleteProfileTransformer,
     },
   },
-  indices: [{ name: "IDX_athletes_club_id", columns: ["clubId"] }],
+  indices: [
+    { name: "IDX_athletes_club_id", columns: ["clubId"] },
+    {
+      name: "UQ_athletes_club_id_user_id",
+      columns: ["clubId", "userId"],
+      unique: true,
+    },
+  ],
 };
 
 export const AthleteSchema = new EntitySchema<AthletePersistence>(athleteSchemaOptions);

@@ -19,6 +19,7 @@ import { RequireTenantRoles } from "../../identity/authorization/authorization.d
 import { IDENTITY_TENANT_ROLE } from "../../identity/identity-roles";
 import { AthleteRepository } from "../athlete/infrastructure/typeorm/repositories/athlete.repository";
 import { CoreIdentityTranslator } from "../application/identity";
+import { ClubId } from "../club/domain";
 import { DomainRuleViolation } from "../shared/domain";
 import {
   CreateTableUseCase,
@@ -222,8 +223,9 @@ export class TableCommandController {
   }
 
   private async currentAthleteId(): Promise<string> {
+    const tenant = this.context.getTenantOrThrow();
     const actorId = this.identity.toActorId(this.context.getPrincipalOrThrow());
-    const athlete = await this.athletes.findByUserId(actorId);
+    const athlete = await this.athletes.findByClubAndUserId(ClubId.from(tenant.id), actorId);
 
     if (!athlete) {
       throw new DomainRuleViolation("athlete_not_found", "Current athlete was not found.");

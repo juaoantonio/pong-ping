@@ -28,17 +28,18 @@ export class RegisterAthleteUseCase {
 
   public async execute(input: RegisterAthleteInput): Promise<Athlete> {
     const userId = ActorId.from(input.userId);
+    const clubId = ClubId.from(input.clubId);
 
-    if (await this.athletes.findByUserId(userId)) {
+    if (await this.athletes.findByClubAndUserId(clubId, userId)) {
       throw new DomainRuleViolation(
         "athlete_already_registered",
-        "User already has an athlete registration.",
+        "User already has an athlete registration for this club.",
       );
     }
 
     const athlete = Athlete.register({
       id: AthleteId.from(input.id),
-      clubId: ClubId.from(input.clubId),
+      clubId,
       userId,
       displayName: AthleteDisplayName.from(input.displayName),
       profile: AthleteProfile.from(input.profile),

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { FindOptionsWhere, Repository } from "typeorm";
+import { ClubId } from "../../../../club/domain";
 import { ActorId } from "../../../../shared/domain";
 import { Athlete } from "../../../domain";
 import { AthleteId } from "../../../domain";
@@ -22,6 +23,16 @@ export class AthleteRepository {
 
   public async findByUserId(userId: ActorId): Promise<Athlete | null> {
     return (await this.athletes.findOneBy({
+      userId,
+    } as FindOptionsWhere<AthletePersistence>)) as Athlete | null;
+  }
+
+  public async findByClubAndUserId(
+    clubId: ClubId,
+    userId: ActorId,
+  ): Promise<Athlete | null> {
+    return (await this.athletes.findOneBy({
+      clubId,
       userId,
     } as FindOptionsWhere<AthletePersistence>)) as Athlete | null;
   }

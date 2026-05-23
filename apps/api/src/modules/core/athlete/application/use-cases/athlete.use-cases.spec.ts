@@ -13,7 +13,7 @@ import { UpdateAthleteProfileUseCase } from "./update-athlete-profile.use-case";
 
 class InMemoryAthleteRepository implements Pick<
   AthleteRepository,
-  "findById" | "findByUserId" | "save"
+  "findById" | "findByUserId" | "findByClubAndUserId" | "save"
 > {
   public readonly athletes = new Map<string, Athlete>();
 
@@ -23,6 +23,15 @@ class InMemoryAthleteRepository implements Pick<
 
   public async findByUserId(userId: ActorId): Promise<Athlete | null> {
     return [...this.athletes.values()].find((athlete) => athlete.userId.equals(userId)) ?? null;
+  }
+
+  public async findByClubAndUserId(
+    clubId: ClubId,
+    userId: ActorId,
+  ): Promise<Athlete | null> {
+    return [...this.athletes.values()].find((athlete) =>
+      athlete.clubId.equals(clubId) && athlete.userId.equals(userId)
+    ) ?? null;
   }
 
   public async save(athlete: Athlete): Promise<Athlete> {
@@ -78,7 +87,7 @@ describe("use cases de atleta", () => {
     expect(rating?.totalMatches).toBe(0);
   });
 
-  it("rejeita usuario ja registrado como atleta sem criar rating", async () => {
+  it("rejeita usuario ja registrado como atleta no mesmo clube sem criar rating", async () => {
     const repository = new InMemoryAthleteRepository();
     const ratings = new InMemoryRatingRepository();
     await repository.save(
@@ -103,6 +112,34 @@ describe("use cases de atleta", () => {
       }),
     ).rejects.toMatchObject({ code: "athlete_already_registered" });
     expect(ratings.ratings.size).toBe(0);
+  });
+
+  it("permite mesmo usuario registrado como atleta em clubes diferentes", async () => {
+    const repository = new InMemoryAthleteRepository();
+    const ratings = new InMemoryRatingRepository();
+    await repository.save(
+      Athlete.register({
+        id: new AthleteId("athlete-1"),
+        clubId: new ClubId("club-1"),
+        userId: new ActorId("user-1"),
+        displayName: new AthleteDisplayName("Nico Pong"),
+      }),
+    );
+    const useCase = new RegisterAthleteUseCase(
+      repository as AthleteRepository,
+      ratings as RatingRepository,
+    );
+
+    const athlete = await useCase.execute({
+      id: "athlete-2",
+      clubId: "club-2",
+      userId: "user-1",
+      displayName: "Nico Spin",
+    });
+
+    expect(athlete.clubId.value).toBe("club-2");
+    expect(athlete.userId.value).toBe("user-1");
+    expect(ratings.ratings.size).toBe(1);
   });
 
   it("atualiza perfil tecnico e nome de exibicao", async () => {

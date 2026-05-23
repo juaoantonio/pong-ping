@@ -73,7 +73,12 @@ export class CoreIdentityEventsListener {
   public async handleTenantUserAuthenticated(
     event: IdentityTenantUserAuthenticatedEvent,
   ): Promise<void> {
-    if (await this.athletes.findByUserId(ActorId.from(event.userId))) {
+    if (
+      await this.athletes.findByClubAndUserId(
+        ClubId.from(event.tenantId),
+        ActorId.from(event.userId),
+      )
+    ) {
       return;
     }
 

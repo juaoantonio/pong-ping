@@ -8,6 +8,7 @@ import {
 import { RequireTenantRoles } from "../../identity/authorization/authorization.decorators";
 import { IDENTITY_TENANT_ROLE } from "../../identity/identity-roles";
 import { CoreIdentityTranslator } from "../application/identity";
+import { ClubId } from "../club/domain";
 import { DomainRuleViolation } from "../shared/domain";
 import { UpdateAthleteProfileUseCase } from "./application/use-cases";
 import { type Athlete } from "./domain";
@@ -66,8 +67,9 @@ export class AthleteCommandController {
   }
 
   private async currentAthlete(): Promise<Athlete> {
+    const tenant = this.context.getTenantOrThrow();
     const actorId = this.identity.toActorId(this.context.getPrincipalOrThrow());
-    const athlete = await this.athletes.findByUserId(actorId);
+    const athlete = await this.athletes.findByClubAndUserId(ClubId.from(tenant.id), actorId);
 
     if (!athlete) {
       throw new DomainRuleViolation("athlete_not_found", "Current athlete was not found.");

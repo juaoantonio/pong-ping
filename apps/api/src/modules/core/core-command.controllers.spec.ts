@@ -62,7 +62,7 @@ function queuedTable(athleteId = "athlete-1") {
 describe("controllers de comandos core", () => {
   it("atualiza o proprio perfil de atleta como membro", async () => {
     const updateAthleteProfile = { execute: vi.fn().mockResolvedValue(createAthlete()) };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new AthleteCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
@@ -83,7 +83,7 @@ describe("controllers de comandos core", () => {
 
   it("nega membro editando perfil de outro atleta", async () => {
     const updateAthleteProfile = { execute: vi.fn() };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new AthleteCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
@@ -99,7 +99,7 @@ describe("controllers de comandos core", () => {
 
   it("nega admin editando perfil de outro atleta", async () => {
     const updateAthleteProfile = { execute: vi.fn() };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new AthleteCommandController(
       contextStub({
         principal: {
@@ -120,7 +120,7 @@ describe("controllers de comandos core", () => {
 
   it("rejeita atualizacao de perfil quando atleta atual nao existe", async () => {
     const updateAthleteProfile = { execute: vi.fn() };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(null) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(null) };
     const controller = new AthleteCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
@@ -136,7 +136,7 @@ describe("controllers de comandos core", () => {
 
   it("cria mesa com tenant atual e atleta resolvido pelo principal", async () => {
     const createTableUseCase = { execute: vi.fn().mockResolvedValue(createTable()) };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new TableCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
@@ -166,7 +166,7 @@ describe("controllers de comandos core", () => {
   it("permite membro remover a si mesmo da fila", async () => {
     const output = queuedTable("athlete-1");
     const removeFromQueue = { execute: vi.fn().mockResolvedValue({ table: output.table, removedEntry: output.queueEntry }) };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new TableCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
@@ -191,7 +191,7 @@ describe("controllers de comandos core", () => {
 
   it("nega membro removendo outro atleta da fila", async () => {
     const removeFromQueue = { execute: vi.fn() };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new TableCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
@@ -214,7 +214,7 @@ describe("controllers de comandos core", () => {
   it("permite admin remover outro atleta da fila", async () => {
     const output = queuedTable("athlete-2");
     const removeFromQueue = { execute: vi.fn().mockResolvedValue({ table: output.table, removedEntry: output.queueEntry }) };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new TableCommandController(
       contextStub({
         principal: {
@@ -247,7 +247,7 @@ describe("controllers de comandos core", () => {
     const removeFromActiveGame = {
       execute: vi.fn().mockResolvedValue({ table: output.table, removedEntry: output.queueEntry }),
     };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new TableCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
@@ -290,7 +290,7 @@ describe("controllers de comandos core", () => {
       isCorrection: false,
     } as unknown as GameRecord;
     const recordGame = { execute: vi.fn().mockResolvedValue(record) };
-    const athletes = { findByUserId: vi.fn().mockResolvedValue(createAthlete()) };
+    const athletes = { findByClubAndUserId: vi.fn().mockResolvedValue(createAthlete()) };
     const controller = new CompetitionCommandController(
       contextStub() as never,
       new CoreIdentityTranslator(),
