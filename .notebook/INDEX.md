@@ -10,6 +10,7 @@
 - [Core application EntitySchema pattern](core-application-entityschema-pattern.md) - Core application/infrastructure mapping keeps domain pure and contains TypeORM casts in infrastructure.
 - [Core command HTTP pattern](core-command-http-pattern.md) - Core command routes use shared contracts, capability DTOs/serializers, tenant context, and application use cases.
 - [Core table command locking](core-table-command-locking.md) - Table commands that depend on queue/active-game state use tenant-scoped pessimistic locking.
+- [Core athlete tenant scoping](core-athlete-tenant-scoping.md) - Athletes are scoped by club plus identity user; current-athlete command lookups must include tenant context.
 - [Core read side pattern](core-read-side-pattern.md) - Core read APIs use tenant-scoped HTTP query providers and shared pagination/contracts.
 - [Core pendencies spec map](core-pendencies-spec-map.md) - Maps `PENDENCIAS_BACKEND.md` Core pendencies to separated `.specs/features` pre-implementation artifacts.
 - [Frontend club core query pattern](frontend-club-core-query-pattern.md) - Club frontend core API client, query keys, hooks, mutation invalidation, and screen state pattern.
